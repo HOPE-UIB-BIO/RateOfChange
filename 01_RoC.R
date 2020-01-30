@@ -71,8 +71,8 @@ ggplot(data = reshape2::melt(data.temp$Pollen),
 
 
 test<- fc_smooth(data.source = data.temp, sm.type = "m.avg", N.points = 5)
-test<- fc_smooth(data.source = data.temp, sm.type = "grim", grim.N.min = 3,grim.N.max = 5, grim.age.max = 300)
-
+test<- fc_smooth(data.source = data.temp, sm.type = "grim", N.points = 5,grim.N.max = 7, range.age.max = 300)
+test<- fc_smooth(data.source = data.temp, sm.type = "age.w", N.points = 5, range.age.max = 300)
 
 ggplot(data = reshape2::melt(test$Pollen), 
        aes(y=value, 
