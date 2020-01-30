@@ -1,9 +1,8 @@
 fc_smooth <- function(data.source, 
                       sm.type="none",
-                      N.points = 3,
-                      grim.N.min = 3, 
+                      N.points = 3, 
                       grim.N.max = 9,
-                      grim.age.max = 300)
+                      range.age.max = 300)
 {
   # imput variables:
   # data.source - data prepared by the function of fn_extract
@@ -13,18 +12,18 @@ fc_smooth <- function(data.source,
   #     "grim"    = Grimm smoothing
   #     "age.w"   = age weithed 
   #
-  # N.points = Number of points for moving average, need to be an odd number
-  #
-  # grim.N.min = minimal number of samples to look in Grimm smoothing
+  # N.points = Number of points for (need to be an odd number). Used for moving average, Grimm and Age-Weighted
   # grim.N.max = maximal number of samples to look in Grimm smoothing
-  # grim.N.age = minial age range for Grimm smoothing
+  # range.age.max = maximal age range for both Grimm and Age-weight smoothing
   #
-  
   
   # split data into 2 datasets
   p.counts <-  data.source$Pollen
   age <- data.source$Age   
   
+  # check if N.points is and odd number
+  if(N.points%%2 ==0)
+    stop("N.points has to be an odd number")
   
   # ----------------------------------------------
   #               NONE SMOOTHING 
@@ -44,10 +43,6 @@ fc_smooth <- function(data.source,
   
   if(sm.type=="m.avg")
   {
-    # check if N.points is and odd number
-    if(N.points%%2 ==0)
-      stop("N.points has to be an odd number")
-    
     print(paste("data will be smoothed by moving average over",N.points,"points"))
     
     N.offset <- floor(N.points/2)
@@ -79,25 +74,23 @@ fc_smooth <- function(data.source,
   
   if(sm.type == "grim")
   {
-    # check if grim.N.min and grim.N.max are an odd numbers
-    if(grim.N.min%%2 ==0)
-      stop("grim.N.min has to be an odd number")
+    # check if grim.N.max is an odd numbers
     if(grim.N.max%%2 ==0)
       stop("grim.N.max has to be an odd number")
     
-    if(grim.N.min>grim.N.max)
-      stop("grim.N.max has to be biger than grim.N.min")
+    # Check if miminal number of points in not gigger than maximum
+    if(N.points>grim.N.max)
+      stop("grim.N.max has to be biger than N.points")
     
-    print(paste("data will be smoothed by Grimm method with min samples",grim.N.min,
-                "max samples",grim.N.max,"and max age range of",grim.age.max))
-    
+    print(paste("data will be smoothed by Grimm method with min samples",N.points,
+                "max samples",grim.N.max,"and max age range of",range.age.max))
     
     # halve the number of points rounded down
-    N.grim.N.min <- floor(grim.N.min/2) 
+    N.N.points <- floor(N.points/2) 
     N.grim.N.max <- floor(grim.N.max/2)
     
-    N.first <- N.grim.N.min+1 # first posible value to look
-    N.last <- nrow(p.counts)-N.grim.N.min # last posible values to look
+    N.first <- N.N.points+1 # first posible value to look
+    N.last <- nrow(p.counts)-N.N.points # last posible values to look
     
     for(j in 1:ncol(p.counts)) # for every species
     {
@@ -106,14 +99,14 @@ fc_smooth <- function(data.source,
       
       for(i in N.first:N.last) # for each point between min and max
       {
-        F.low <- i-N.grim.N.min # min position to look for averaging in each step
-        F.high <- i+N.grim.N.min # max position to look for averaging in each step
+        F.low <- i-N.N.points # min position to look for averaging in each step
+        F.high <- i+N.N.points # max position to look for averaging in each step
         
-        N.active <- N.grim.N.min # length of the seach parameter (set as half of the minimal samples in teh begining)
+        N.active <- N.N.points # length of the seach parameter (set as half of the minimal samples in teh begining)
         
         # start for serch parametr 1 and continue until distance between
         # min sample size and max sample size (both halved)
-        for (k in 1:(N.grim.N.max-N.grim.N.min))  
+        for (k in 1:(N.grim.N.max-N.N.points))  
         {
           # create new search parameter that higher by 1
           N.active.test <- N.active+1
@@ -128,7 +121,7 @@ fc_smooth <- function(data.source,
           if( i-N.active.test > 0 & 
               i+N.active.test < nrow(p.counts) & 
               N.active.test<N.grim.N.max)
-            { if (abs(age$newage[i-N.active.test]-age$newage[i-N.active.test])<grim.age.max)
+            { if (abs(age$newage[i-N.active.test]-age$newage[i-N.active.test])<range.age.max)
               {N.active <- N.active+1}
             }
           
@@ -150,16 +143,12 @@ fc_smooth <- function(data.source,
   }
   
   # ----------------------------------------------
-  #           AGE WEIGHTED SMOOTHING 
+  #           AGE-WEIGHTED SMOOTHING 
   # ----------------------------------------------
   
   if(sm.type=="age.w")
   {
-    # check if N.points is and odd number
-    if(N.points%%2 ==0)
-      stop("N.points has to be an odd number")
-    
-    print(paste("data will be smoothed by moving average over",N.points,"points"))
+    print(paste("data will be smoothed by age-weighed average over",N.points,"points"))
     
     N.offset <- floor(N.points/2)
     N.first <- N.offset+1
@@ -174,7 +163,24 @@ fc_smooth <- function(data.source,
       {
         F.low <- i-N.offset # min position to look for averaging in each step
         F.high <- i+N.offset # max position to look for averaging in each step
-        col.res[i]<-mean(col.work[F.low:F.high])
+        
+        # create small df with values around observed sample (in range of offset)
+        df.work <-  data.frame(values= col.work[F.low:F.high], 
+                              age = age$newage[F.low:F.high], 
+                              Weight=rep(1,N.points))
+        
+        for (k in 1:nrow(df.work))
+        {
+          F.age <- df.work$age[k] # age value for selected sample
+          F.age.sample <- age$newage[i] # age value of obserced sample
+          F.age.dist <- abs(F.age-F.age.sample) # distance between those ages
+  
+          # Weith of points is calculated as range.age.max / distance bewtween oldest and youngest points.
+          # If cannot be smaller than 1. Values very far away from the point 
+          df.work$Weight[k] <- min(c(range.age.max/F.age.dist,1))   
+        }
+        
+        col.res[i]<-weighted.mean(df.work$values,df.work$Weight)
       }
       
       p.counts[N.first:N.last,j]<-col.res[N.first:N.last]
