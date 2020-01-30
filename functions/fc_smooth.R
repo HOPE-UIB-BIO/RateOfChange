@@ -11,6 +11,7 @@ fc_smooth <- function(data.source,
   #     "m.avg"   = moving average
   #     "grim"    = Grimm smoothing
   #     "age.w"   = age weithed 
+  #     "shep"    = Shepard's 5-term filter
   #
   # N.points = Number of points for (need to be an odd number). Used for moving average, Grimm and Age-Weighted
   # grim.N.max = maximal number of samples to look in Grimm smoothing
@@ -39,7 +40,6 @@ fc_smooth <- function(data.source,
   # ----------------------------------------------
   #           MOVING AVERAGE SMOOTHING 
   # ----------------------------------------------
-  
   
   if(sm.type=="m.avg")
   {
@@ -190,9 +190,37 @@ fc_smooth <- function(data.source,
   }
   
   
-
   # ----------------------------------------------
-  #                     FIN 
+  #             Shepard's 5-term filter 
   # ----------------------------------------------
+  
+  if(sm.type=="shep")
+  {
+    print(paste("data will be smoothed by Shepard's 5-term filter"))
+    
+    N.points <- 5
+    N.offset <- floor(N.points/2)
+    N.first <- N.offset+1
+    N.last <- nrow(p.counts)-N.offset
+    
+    for(j in 1:ncol(p.counts)) # for every species
+    {
+      col.work <- p.counts[[j]] # select the species
+      col.res <- rep(0,length(col.work)) # create empty vector of same lengt for values to be saved
+      
+      for(i in N.first:N.last)
+      {
+        # calculate the Shepard number by equasion
+        w.value  <- (17.0*col.work[i] + 12*(col.work[i+1]+col.work[i-1]) - 3.0*(col.work[i+2]+col.work[i-2])) / 35.0
+      # there is posibility that the resut will be smaller than zero, if that is the case use 0 instead
+      if(w.value<0){w.value<-0}
+      col.res[i] <- w.value
+      }
+      
+      p.counts[N.first:N.last,j]<-col.res[N.first:N.last]
+      
+    }
+    return(list(Pollen=p.counts, Age=age))
+  }
   
 }
