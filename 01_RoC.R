@@ -31,31 +31,43 @@ library (tidyverse)
 #             LOAD DATA & FUNCTIONS
 # ----------------------------------------------
 
-load("~/HOPE/Data/European_tibble_24.01.20.Rdata")
+load("~/HOPE/Data/tibble_Europe_filtered29.01.20.Rdata")
 
 files.sources <- list.files("~/HOPE/GITHUB/RateOfChange/functions/") 
 sapply(paste0("~/HOPE/GITHUB/RateOfChange/functions/", files.sources, sep =""), source)
 
 # ----------------------------------------------
-#               DATA MODIFICATON 
+#               DATA EXPLORATION 
 # ----------------------------------------------
 
-data.all <- tibble_Europe_corrected
+# DATA based shoud be based on the criteria 
+# 1) that each record need to span between ca 250-8000 years and 
+# 2) samples have more than 150 grains Contain only relevant data for analysis
+
+
+glimpse(tibble_Europe2)
+
+
 
 # ----------------------------------------------
 #               EXPLORATION 
 # ----------------------------------------------
 
-data.sub <- data.all[1,]
+data.sub <- tibble_Europe2[1,]
 
 glimpse(data.sub) 
 
-data.temp <- fc_extract(data.sub)
+data.temp <- fc_extract(data.sub,standardise = T, S.value = 150)
 
-purrr::map(data.temp, dim)
+rowSums(data.temp$Pollen)
+colSums(data.temp$Pollen)
 
-data.stand <- fc_standar(data.temp,150) 
+# ----------------------------------------------
+#               RESULT SAVE 
+# ----------------------------------------------
 
-rowSums(data.stand[,-1])
 
-
+# ----------------------------------------------
+#               CLEAN UP 
+# ----------------------------------------------
+rm(list = ls())
