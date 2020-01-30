@@ -4,6 +4,11 @@ fc_extract <-  function (data.source, standardise=T, S.value=150)
   # standardise = aparameter if the polen data shoudle be standardise to cetrain number of pollen grains
   # S.value = NUmber of grain to perform standardisation
   
+  # result of function is list length 2
+  # [1] POllen data (preferably standardise by function to S.value) saved as proportion of sum of sample
+  # [2] Age data with samples ordered by age
+  
+  
   print(paste("Data extraction started",Sys.time()))
   
   # extract both important tables a) age data, b) pollen data
@@ -46,6 +51,16 @@ fc_extract <-  function (data.source, standardise=T, S.value=150)
     p.counts <- p.counts[rowSums(p.counts)>0,]
   }
   
+  # create a new variable for age that would be used for all latter analysys
+  age$newage <-age$age
+  
+  # check if all values is new age are in positive values and interpolate if necesery
+  if(any(age$newage<0))
+  {
+    age$newage <- age$newage + min(age$newage)*(-1)
+  }
+  
+  
   if(standardise==T) # standardisation of pollen data to X(S.value) number of pollen grains
   {
     p.counts <- fc_standar(p.counts, S.value)
@@ -58,11 +73,19 @@ fc_extract <-  function (data.source, standardise=T, S.value=150)
     p.counts<- p.counts[colSums(p.counts)>0]
   }
   
+  # convert the values pollen data to proportion of sum of each sample
+  p.counts.row.sums <- apply(p.counts, 1, sum)
+  p.counts <- as.data.frame(lapply(p.counts, function(x) x/p.counts.row.sums))
+
   #perform dimension check
   dim.check()
   
   print(paste("Pollen data have",p.counts.col,"species with pollen record and",
               p.counts.row,"samples. Age data have",age.row,"samples"))
+  
+  print(paste("Age data has values of min",min(age$age),", max",max(age$age),",mean",
+              round(mean(age$age),2),",and median",round(median(age$age),2)))
+  
   
   # cretae list of 2 variables POllen & age
   dat.merge <- list(Pollen=p.counts, Age=age)

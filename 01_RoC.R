@@ -47,20 +47,40 @@ sapply(paste0("~/HOPE/GITHUB/RateOfChange/functions/", files.sources, sep =""), 
 
 glimpse(tibble_Europe2)
 
-
-
-# ----------------------------------------------
-#               EXPLORATION 
-# ----------------------------------------------
-
 data.sub <- tibble_Europe2[1,]
 
 glimpse(data.sub) 
 
 data.temp <- fc_extract(data.sub,standardise = T, S.value = 150)
 
-rowSums(data.temp$Pollen)
-colSums(data.temp$Pollen)
+
+# ----------------------------------------------
+#               EXPLORATION 
+# ----------------------------------------------
+
+library(reshape2)
+
+ggplot(data = reshape2::melt(data.temp$Pollen), 
+       aes(y=value, 
+           x=c(rep(1:nrow(data.temp$Pollen),ncol(data.temp$Pollen)) )))+
+  theme_classic()+
+  coord_flip(ylim = c(0,1))+
+  geom_point(alpha=1/5)+
+  geom_line(group=1)+
+  facet_wrap(~variable)
+
+
+test<- fc_smooth(data.source = data.temp, sm.type = "m.avg")
+test<- fc_smooth(data.source = data.temp, sm.type = "grim")
+
+ggplot(data = reshape2::melt(test$Pollen), 
+       aes(y=value, 
+           x=c(rep(1:nrow(test$Pollen),ncol(test$Pollen)) )))+
+  theme_classic()+
+  coord_flip(ylim = c(0,1))+
+  geom_point(alpha=1/5)+
+  geom_line(group=1)+
+  facet_wrap(~variable)
 
 # ----------------------------------------------
 #               RESULT SAVE 
