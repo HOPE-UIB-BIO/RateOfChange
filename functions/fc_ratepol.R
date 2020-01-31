@@ -19,8 +19,6 @@ fc_ratepol <- function (data.source, standardise = T, S.value = 150, sm.type = "
   # data extraction (already include data check)
   data.work <- fc_extract(data.sub)
   
-  
-  
   # standardisation of pollen data to X(S.value) number of pollen grains 
   if(standardise==T) # 
   {
@@ -43,7 +41,17 @@ fc_ratepol <- function (data.source, standardise = T, S.value = 150, sm.type = "
   data.smooth <- fc_check(data.smooth, proportion = T)
   
   
-  # rest of the function
+  # calculate DC for each sample
+  # exploration
+  data.source <- data.smooth
+  rm(data.source)
+  test1<- fc_calDC(data.smooth,DC="euc")
+  test1
+  test2<- fc_calDC(data.smooth,DC="euc.sd")
+  test2
+  
+  cor(test1, test2)
+  
   p1<-ggplot(data = reshape2::melt(data.smooth$Pollen), 
              aes(y=value, 
                  x=c(rep(1:nrow(data.smooth$Pollen),ncol(data.smooth$Pollen)) )))+
@@ -53,5 +61,12 @@ fc_ratepol <- function (data.source, standardise = T, S.value = 150, sm.type = "
     geom_line(group=1)+
     facet_wrap(~variable)
   
+  p2<-ggplot(data=data.frame(value=test,age=1:length(test)), aes(y=age, x=value))+geom_point()+theme_classic()
+  
   plot(p1)
+  plot(p2)
+  
+  # rest of the function
+  # WIP
+  
 }
