@@ -1,5 +1,8 @@
 fc_standar <- function (data.source, fc_standar.S.value)
 {
+  # data.source = imput data
+  # fc_standar.S.value = values to standardise number of pollen grains
+  
   print(paste("Data standardization started",Sys.time()))
   res.df <- data.source # prepare result df with same structure
   
