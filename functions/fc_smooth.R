@@ -61,10 +61,12 @@ fc_smooth <- function(data.source,
         col.res[i]<-mean(col.work[F.low:F.high])
       }
       
-      p.counts[N.first:N.last,j]<-col.res[N.first:N.last]
+      p.counts[,j]<-col.res
       
     }
-    return(list(Pollen=p.counts, Age=age))
+    p.counts.small <- p.counts[N.first:N.last,]
+    age.small <-age[N.first:N.last,] 
+    return(list(Pollen=p.counts.small, Age=age.small))
   }
   
   
@@ -136,10 +138,12 @@ fc_smooth <- function(data.source,
       }
       
       # update polen values
-      p.counts[N.first:N.last,j]<-col.res[N.first:N.last]
+      p.counts[,j]<-col.res[]
       
     }
-    return(list(Pollen=p.counts, Age=age))
+    p.counts.small <- p.counts[N.first:N.last,]
+    age.small <-age[N.first:N.last,] 
+    return(list(Pollen=p.counts.small, Age=age.small))
   }
   
   # ----------------------------------------------
@@ -183,10 +187,12 @@ fc_smooth <- function(data.source,
         col.res[i]<-weighted.mean(df.work$values,df.work$Weight)
       }
       
-      p.counts[N.first:N.last,j]<-col.res[N.first:N.last]
+      p.counts[,j]<-col.res
       
     }
-    return(list(Pollen=p.counts, Age=age))
+    p.counts.small <- p.counts[N.first:N.last,]
+    age.small <-age[N.first:N.last,] 
+    return(list(Pollen=p.counts.small, Age=age.small))
   }
   
   
@@ -217,10 +223,12 @@ fc_smooth <- function(data.source,
       col.res[i] <- w.value
       }
       
-      p.counts[N.first:N.last,j]<-col.res[N.first:N.last]
+      p.counts[,j]<-col.res
       
     }
-    return(list(Pollen=p.counts, Age=age))
+    p.counts.small <- p.counts[N.first:N.last,]
+    age.small <-age[N.first:N.last,] 
+    return(list(Pollen=p.counts.small, Age=age.small))
   }
   
 }

@@ -15,6 +15,7 @@ fc_calDC <- function (data.source, DC = "chisq")
   
   if (DC == "euc")
   {
+    print("Euclidan distance will be used as DC")
     for (i in 1:(data.source$Dim.val[2]-1)) # for each sample (except the last)
       {
       df.work<- data.source$Pollen[c(i,i+1),] # select only 2 samples (observed + 1 after)
@@ -40,6 +41,8 @@ fc_calDC <- function (data.source, DC = "chisq")
   
   if (DC=="euc.sd")
   {
+    print("Standardised Euclidan distance will be used as DC")
+    
     # calculation of standard deviation for each species
     if (data.source$Dim.val[2]<1)
       stop ("too few samples for standard deviation")
@@ -63,8 +66,6 @@ fc_calDC <- function (data.source, DC = "chisq")
       
       df.sp.supp$std[i]<-sqrt(sum(st.dev)/data.source$Dim.val[1])
     }
-    
-    
     
       # calculation of the DC
       for (i in 1:(data.source$Dim.val[2]-1)) # for each sample (except the last)
@@ -97,11 +98,63 @@ fc_calDC <- function (data.source, DC = "chisq")
     
   
   # ----------------------------------------------
-  #               NONE SMOOTHING 
+  #               CHORD DISTANCE 
   # ----------------------------------------------
   
+  if (DC == "chord")
+  {
+    print("Chord distance will be used as DC")
+    for (i in 1:(data.source$Dim.val[2]-1)) # for each sample (except the last)
+    {
+      df.work<- data.source$Pollen[c(i,i+1),] # select only 2 samples (observed + 1 after)
+      
+      df.work<-df.work[,colSums(df.work)>0] # get rid of "empty species"
+      
+      vector.work <- vector(mode="numeric", length = ncol(df.work)) # vector for result for each species
+      
+      for( j in 1:ncol(df.work)) # for each species
+      {
+        vector.work[j] <- (sqrt(df.work[1,j])-sqrt(df.work[2,j]))**2 # calculate the diference
+      }
+      
+      dat.res[i]<- sqrt(sum(vector.work)) # save the square root of sum of all dufereces
+      
+    }  
+    
+  }
   
-  return(dat.res)
+  
+  # ----------------------------------------------
+  #           CHI-SQUARED COEFICIENT 
+  # ----------------------------------------------
+  
+  if (DC == "chisq")
+  {
+    print("Chi-squared coeficient will be used as DC")
+    for (i in 1:(data.source$Dim.val[2]-1)) # for each sample (except the last)
+    {
+      df.work<- data.source$Pollen[c(i,i+1),] # select only 2 samples (observed + 1 after)
+  
+      df.work<-df.work[,colSums(df.work)>0] # get rid of "empty species"
+      
+      vector.work <- vector(mode="numeric", length = ncol(df.work)) # vector for result for each species
+      
+      for( j in 1:ncol(df.work)) # for each species
+      {
+        vector.work[j] <- ((df.work[1,j]-df.work[2,j])**2) / (df.work[1,j]+df.work[2,j]) # calculate the diference
+      }
+      
+      dat.res[i]<- sqrt(sum(vector.work)) # save the square root of sum of all dufereces
+      
+    }  
+    
+  }
+  
+  # ----------------------------------------------
+  #                   RESULT 
+  # ----------------------------------------------
+
+    return(dat.res)
   
   
 }

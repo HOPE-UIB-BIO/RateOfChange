@@ -15,7 +15,8 @@
 #   2) smoothing
 #   3) data transformation
 #   4) DC calculation
-#   5) result save
+#   5) Age standardization of DC
+#   6) result save
 
 # Comments from 28.01.2020:
 # standardization to 150 pollen
@@ -48,19 +49,24 @@ sapply(paste0("~/HOPE/GITHUB/RateOfChange/functions/", files.sources, sep =""), 
 glimpse(tibble_Europe2)
 
 # ----------------------------------------------
-#               EXPLORATION 
+#               COMPUTATION 
 # ----------------------------------------------
+N.datasets <- 10
 
-data.sub <- tibble_Europe2[50,]
+data.sub<-tibble_Europe2[c(1:N.datasets),]
 
-glimpse(data.sub) 
+list.res <- vector("list",length=nrow(data.sub))
 
-fc_ratepol(data.sub)
+for (i in 1:nrow(data.sub))
+{
+  list.res[[i]] <- fc_ratepol(data.sub[i,])
+}
 
 # ----------------------------------------------
 #               RESULT SAVE 
 # ----------------------------------------------
 
+list.res
 
 # ----------------------------------------------
 #               CLEAN UP 
