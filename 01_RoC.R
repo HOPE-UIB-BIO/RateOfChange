@@ -51,7 +51,7 @@ glimpse(tibble_Europe2)
 # ----------------------------------------------
 #               COMPUTATION 
 # ----------------------------------------------
-N.datasets <- 10
+N.datasets <- 1
 
 data.sub<-tibble_Europe2[c(1:N.datasets),]
 
@@ -59,8 +59,11 @@ list.res <- vector("list",length=nrow(data.sub))
 
 for (i in 1:nrow(data.sub))
 {
-  list.res[[i]] <- fc_ratepol(data.sub[i,])
+  list.res[[i]] <- fc_ratepol(data.sub[i,], result = "full")
 }
+
+apply(data.sub,1,fc_ratepol)
+
 
 # ----------------------------------------------
 #               RESULT SAVE 

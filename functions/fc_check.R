@@ -25,11 +25,13 @@ fc_check <- function (data.source, proportion = F)
   
   data.source <- kill.all(data.source) 
   
+  print("-")
   print(paste("Pollen data have",data.source$Dim.val[1],"species with pollen record and",
               data.source$Dim.val[2],"samples. Age data have",data.source$Dim.val[3],"samples"))
-  
+  print("-")
   print(paste("Age data has values of min",min(data.source$Age$age),", max",max(data.source$Age$age),",mean",
               round(mean(data.source$Age$age),2),",and median",round(median(data.source$Age$age),2)))
+  print("-")
   
   # check if all values is new age are in positive values and interpolate if necesery
   if(any(data.source$Age$newage<0))

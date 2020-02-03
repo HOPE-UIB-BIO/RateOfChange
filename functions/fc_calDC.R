@@ -7,7 +7,7 @@ fc_calDC <- function (data.source, DC = "chisq")
   #   "chisq    = chi-squared coeficient
   
   dat.res <- vector(mode="numeric",length = data.source$Dim.val[2]-1)
- 
+  print("-")
   
   # ----------------------------------------------
   #               EUCLIDAN DISTANCE 

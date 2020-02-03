@@ -21,6 +21,7 @@ fc_smooth <- function(data.source,
   # split data into 2 datasets
   p.counts <-  data.source$Pollen
   age <- data.source$Age   
+  print("-")
   
   # check if N.points is and odd number
   if(N.points%%2 ==0)

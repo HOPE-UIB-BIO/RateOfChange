@@ -13,10 +13,9 @@ fc_standar <- function (data.source, fc_standar.S.value)
   for(i in 1: data.pol.l)  # for each row(sample)
   {
     setTxtProgressBar(pb,i) #add progress bar unit
-    temp.row <- slice(data.source,i) # select row 
-    red.row <- temp.row # vector that is going to be reduced 
-    res.row <- rep(0,length(temp.row)) # vector that is going to be increased
-    N.row <- 1:length(temp.row) # order of vector
+    red.row <- slice(data.source,i) # select row  = vector that is going to be reduced
+    res.row <- rep(0,length(red.row)) # vector that is going to be increased
+    N.row <- 1:length(red.row) # order of vector
     
     for (j in 1:fc_standar.S.value) # Number of pollen grain we want to standardice to (150) 
     {

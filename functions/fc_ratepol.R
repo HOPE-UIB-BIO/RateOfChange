@@ -36,7 +36,11 @@ fc_ratepol <- function (data.source,
   #                               [2] plot of species pollen changes and Rate of Change in time 
   
   start.time <- Sys.time()
+  
+  print("-")
   print (paste("RATEPOL started", start.time))
+  print(paste("Data set ID",data.source$dataset.id))
+  print("-")
   
   # ----------------------------------------------
   #               DATA EXTRACTION
@@ -89,6 +93,7 @@ fc_ratepol <- function (data.source,
     age.diff[i] <- abs(data.smooth$Age$newage[i+1]-data.smooth$Age$newage[i])  
   }
   
+  print("-")
   print(paste("The time standardisation unit (TSU) is",round(mean(age.diff),2)))
   
   DC.res.s <- vector(mode = "numeric", length = sample.size.work )
@@ -125,11 +130,13 @@ fc_ratepol <- function (data.source,
                               DC=c(DC.res,NA),
                               Roc=c(DC.res.s,NA))
     
+    row.names(data.result) <- row.names(data.smooth$Pollen)
   }
   
   if (result == "small")
   {
     data.result <- data.frame(Age=data.smooth$Age$age[1:sample.size.work], RoC=DC.res.s)
+    row.names(data.result) <- row.names(data.smooth$Pollen)[1:sample.size.work]
     
     p1<- ggplot(data = data.result, 
                  aes(y=RoC, 
@@ -144,6 +151,7 @@ fc_ratepol <- function (data.source,
   
  end.time <- Sys.time()
  time.length <- end.time - start.time
+ print("-")
  print (paste("RATEPOL finished", end.time,"taking",time.length, class(time.length)))
  
  return(list(data=data.result, plot=p1))
