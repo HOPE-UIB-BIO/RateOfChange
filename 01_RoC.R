@@ -51,27 +51,46 @@ glimpse(tibble_Europe2)
 # ----------------------------------------------
 #               COMPUTATION 
 # ----------------------------------------------
-N.datasets <- 1
+
+# for now
+N.datasets <- 10
+
+# future for all datasets
+# N.datasets <- nrow(tibble_Europe2)
 
 data.sub<-tibble_Europe2[c(1:N.datasets),]
 
 list.res <- vector("list",length=nrow(data.sub))
 
+s.time <- Sys.time()
 for (i in 1:nrow(data.sub))
 {
-  list.res[[i]] <- fc_ratepol(data.sub[i,], result = "full")
+  list.res[[i]] <- fc_ratepol(data.sub[i,],
+                              standardise = T, 
+                              S.value = 150, 
+                              sm.type = "grim", 
+                              N.points = 5, 
+                              range.age.max = 300, 
+                              grim.N.max = 9,
+                              DC = "chisq",
+                              result = "small")
 }
+f.time <- Sys.time()
+tot.time <- f.time - s.time
+tot.time
 
-apply(data.sub,1,fc_ratepol)
+# Why apply does not work???
 
 
 # ----------------------------------------------
 #               RESULT SAVE 
 # ----------------------------------------------
 
-list.res
 
 # ----------------------------------------------
 #               CLEAN UP 
 # ----------------------------------------------
 rm(list = ls())
+
+#WIP
+install.packages("~/HOPE/GITHUB/packages/mvpart_1.6-2.tar.gz", repos = NULL, type = "source")
