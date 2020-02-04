@@ -6,7 +6,7 @@ fc_ratepol <- function (data.source,
                         range.age.max = 300, 
                         grim.N.max = 9,
                         DC = "chisq",
-                        result = "small")
+                        result = "tibble")
 {
   # data.source = data in format of one dataset from tibble
   # standardise = aparameter if the polen data shoudle be standardise to cetrain number of pollen grains
@@ -39,12 +39,15 @@ fc_ratepol <- function (data.source,
   
   print("-")
   print (paste("RATEPOL started", start.time))
-  print(paste("Data set ID",data.source$dataset.id))
-  print("-")
+  
   
   # ----------------------------------------------
   #               DATA EXTRACTION
   # ----------------------------------------------
+  dataset.ID <- data.source$dataset.id
+  print(paste("Data set ID",dataset.ID))
+  print("-")
+  
   # already include data check
   data.work <- fc_extract(data.source) 
   
@@ -96,7 +99,7 @@ fc_ratepol <- function (data.source,
   print("-")
   print(paste("The time standardisation unit (TSU) is",round(mean(age.diff),2)))
   
-  DC.res.s <- vector(mode = "numeric", length = sample.size.work )
+  DC.res.s <- vector(mode = "numeric", length = sample.size.work)
   for (j in 1:sample.size.work)
   {
     DC.res.s[j] <- DC.res[j]*mean(age.diff)/age.diff[j]
@@ -131,6 +134,7 @@ fc_ratepol <- function (data.source,
                               Roc=c(DC.res.s,NA))
     
     row.names(data.result) <- row.names(data.smooth$Pollen)
+    r<-list(ID=dataset.ID, data=data.result, plot=p1)
   }
   
   if (result == "small")
@@ -146,6 +150,14 @@ fc_ratepol <- function (data.source,
       coord_flip(ylim=c(0,1))+
       #geom_point(alpha=1/5)+
       geom_line()
+    r <- list(ID=dataset.ID, data=data.result, plot=p1)
+  }
+  
+  if (result == "tibble")
+  {
+    data.result <- data.frame(Age=data.smooth$Age$age[1:sample.size.work], RoC=DC.res.s)
+    row.names(data.result) <- row.names(data.smooth$Pollen)[1:sample.size.work]
+    r <- data.result
   }
   
   
@@ -154,6 +166,6 @@ fc_ratepol <- function (data.source,
  print("-")
  print (paste("RATEPOL finished", end.time,"taking",time.length, class(time.length)))
  
- return(list(data=data.result, plot=p1))
+ return(r)
  
 }

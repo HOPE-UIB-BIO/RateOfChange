@@ -28,6 +28,7 @@
 # ----------------------------------------------
 library (tidyverse)
 library(reshape2)
+library(mvpart)
 
 # ----------------------------------------------
 #             LOAD DATA & FUNCTIONS
@@ -52,18 +53,14 @@ glimpse(tibble_Europe2)
 #               COMPUTATION 
 # ----------------------------------------------
 
-# for now
-N.datasets <- 10
-
-# future for all datasets
-# N.datasets <- nrow(tibble_Europe2)
+N.datasets <- nrow(tibble_Europe2)
 
 data.sub<-tibble_Europe2[c(1:N.datasets),]
 
 list.res <- vector("list",length=nrow(data.sub))
 
 s.time <- Sys.time()
-for (i in 1:nrow(data.sub))
+for (i in 1:nrow(data.sub)) 
 {
   list.res[[i]] <- fc_ratepol(data.sub[i,],
                               standardise = T, 
@@ -79,18 +76,41 @@ f.time <- Sys.time()
 tot.time <- f.time - s.time
 tot.time
 
-# Why apply does not work???
-
+# Why purrr does not work???
 
 # ----------------------------------------------
-#               RESULT SAVE 
+#             RESULT VISUALISATION 
 # ----------------------------------------------
 
+# plot creation 
+res.df.plot <- data.frame(matrix(ncol = 3, nrow = 0))
+names(res.df.plot) <- c("Age","Roc","ID")
+
+for (k in 1:length(list.res))
+{
+  list.res[[k]]$data$ID <- rep(list.res[[k]]$ID,nrow(list.res[[k]]$data))
+  res.df.plot <- rbind(res.df.plot,list.res[[k]]$data)
+}
+
+res.df.plot[res.df.plot$RoC==max(res.df.plot$RoC),]
+summary(as.factor(res.df.plot$ID))
+
+
+
+RoC_summary <- res.df.plot[is.infinite(res.df.plot$RoC)==F,] %>%
+  ggplot(aes( y=RoC, 
+              x= Age))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip()+
+  #geom_point(alpha=1/5)+
+  geom_line(aes(group=as.factor(ID)),alpha=1/10)+
+  geom_smooth(color="blue", method = "loess", se=F)
+RoC_summary
+
+ggsave("RoC_summary.pdf")
 
 # ----------------------------------------------
 #               CLEAN UP 
 # ----------------------------------------------
 rm(list = ls())
-
-#WIP
-install.packages("~/HOPE/GITHUB/packages/mvpart_1.6-2.tar.gz", repos = NULL, type = "source")
