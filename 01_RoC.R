@@ -28,7 +28,7 @@
 # ----------------------------------------------
 library(tidyverse)
 library(reshape2)
-library(mvpart)
+library(ggpubr)
 
 # ----------------------------------------------
 #             LOAD DATA & FUNCTIONS
@@ -55,10 +55,12 @@ glimpse(tibble_Europe2)
 
 N.datasets <- nrow(tibble_Europe2)
 
-# dataset N66 is broken 
-data.sub<-tibble_Europe2[c(1:65,67:N.datasets),]
+# dataset 66, 71, 75, 126, 132 are broken 
+
+data.sub<-tibble_Europe2[c(1:65,67:70,72:74,76:125,127:131,133:N.datasets),]
 
 list.res <- vector("list",length=nrow(data.sub))
+length(list.res)
 
 s.time <- Sys.time()
 
@@ -101,15 +103,43 @@ for (k in 1:length(list.res))
 }
 
 
-RoC_summary <- res.df.plot[is.infinite(res.df.plot$RoC.mean)==F,] %>%
+RoC_summary_p1 <- res.df.plot[,] %>%
   ggplot(aes( y=RoC.mean, 
               x= DF.Age))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  coord_flip()+
-  geom_line(aes(group=as.factor(ID)),alpha=1/5)+
-  geom_smooth(color="red", method = "loess", se=F)+
-  geom_point(data = res.df.plot[res.df.plot$Peak==T,], color="blue", alpha=1/10)
+  coord_flip(xlim=c(0,20000), ylim = c(0,5))+
+  geom_line(aes(group=as.factor(ID)),alpha=1/10, size=1)+
+  geom_hline(yintercept = 0, color="red")+
+  geom_smooth(color="green", method = "loess", se=F)+
+  xlab("Age")+ylab("Rate of Change")
+RoC_summary_p1
+
+RoC_summary_p2 <- res.df.plot[,] %>%
+  ggplot(aes( y=RoC.mean, 
+              x= DF.Age))+
+  theme_classic()+
+  scale_color_gradient2(low="white",mid="darkblue",high="black", midpoint = 4)+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip(xlim=c(0,20000), ylim = c(0,5))+
+  geom_point(data = res.df.plot[res.df.plot$Peak==T,],aes(color=RoC.mean), alpha=1/10, size=3)+
+  geom_hline(yintercept = 0, color="red")+
+  geom_smooth(color="green", method = "loess", se=F)+
+  xlab("Age")+ylab("Rate of Change")+
+  theme(legend.position = "none")
+RoC_summary_p2
+
+RoC_summary_p3 <- res.df.plot[res.df.plot$Peak==T,] %>%
+  ggplot(aes( x= DF.Age))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip(xlim=c(0,20000))+
+  geom_density(fill="gray")+
+  xlab("Age")+ylab("Density of Peak-points")
+RoC_summary_p3
+
+
+RoC_summary<- ggarrange(RoC_summary_p1,RoC_summary_p2,RoC_summary_p3, ncol = 3, labels = c("A","B","C"))
 RoC_summary
 
 ggsave("RoC_summary.pdf")
