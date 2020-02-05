@@ -1,4 +1,4 @@
-fc_extract <-  function (data.source)
+fc_extract <-  function (data.source, Debug = F)
 {
   # data.source = load data in format of one dataset from tibble
   # result of function is list length 3
@@ -6,8 +6,12 @@ fc_extract <-  function (data.source)
   # [2] Age data with samples ordered by age
   # [3] NUmber of pollen species and number of samples for pollen & age data
   
-  print("-")
-  print(paste("Data extraction started",Sys.time()))
+  if (Debug==T)
+  {
+    print("-")
+    print(paste("Data extraction started",Sys.time()))
+    
+  }
   
   # extract both important tables a) age data, b) pollen data
   age <- data.source$list_ages[[1]]$ages
@@ -39,12 +43,30 @@ fc_extract <-  function (data.source)
   if(is.unsorted(dat.merge$Age$age)==T) # check if is age of samples in order
     stop("Age data is not sorted")
   
-  if(dat.merge$Age$age[1]>dat.merge$Age$age[dat.merge$Dim.val[3]]){print("Age data is in decreasing format")}
-  if(dat.merge$Age$age[1]<dat.merge$Age$age[dat.merge$Dim.val[3]]){print("Age data is in increasing format")}
+  if(dat.merge$Age$age[1]>dat.merge$Age$age[dat.merge$Dim.val[3]]){
+    if (Debug==T)
+    {
+      print("Age data was in decreasing format, changed accordingly")
+      dat.merge$Age <- dat.merge$Age[order(dat.merge$Age$age),]
+    }
+    
+    }
+  if(dat.merge$Age$age[1]<dat.merge$Age$age[dat.merge$Dim.val[3]]){
+    if (Debug==T)
+    {
+      print("Age data is in increasing format")  
+    }
+    
+    }
   
-  print("-")
-  print(paste("Data extraction completed",Sys.time()))
-  print("-")
+  if (Debug==T)
+  {
+    print("-")
+    print(paste("Data extraction completed",Sys.time()))
+    print("-")
+    
+  }
+  
   
   return(dat.merge)
 }

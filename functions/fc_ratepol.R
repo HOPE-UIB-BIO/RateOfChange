@@ -1,4 +1,5 @@
-fc_ratepol <- function (data.source, 
+fc_ratepol <- function (data.source,
+                        rand = 999,
                         standardise = T, 
                         S.value = 150, 
                         sm.type = "grim", 
@@ -6,11 +7,15 @@ fc_ratepol <- function (data.source,
                         range.age.max = 300, 
                         grim.N.max = 9,
                         DC = "chisq",
-                        result = "tibble")
+                        Debug = F)
 {
   # data.source = data in format of one dataset from tibble
+  # 
+  # rand = number of randomization for estimation significance
+  #
   # standardise = aparameter if the polen data shoudle be standardise to cetrain number of pollen grains
-  # S.value = NUmber of grain to perform standardisation
+  # 
+  # S.value = Number of grain to perform standardisation
   #
   # sm.type = type of smoothing applied smooting 
   #     "none"    = data will not be smoothed 
@@ -29,15 +34,11 @@ fc_ratepol <- function (data.source,
   #   "chord"   = chord distance
   #   "chisq    = chi-squared coeficient
   #
-  # result = type of requested result
-  #   "small" = result list of 2: [1] DF with age and Rate of change; 
-  #                               [2] plot of Rate of change in time
-  #   "full"  = result list of 2: [1] DF with all pollen samples, age data, Rate of Change data, 
-  #                               [2] plot of species pollen changes and Rate of Change in time 
+  # Debug = show internal messages from program ? [T/F]
+
   
   start.time <- Sys.time()
   
-  print("-")
   print (paste("RATEPOL started", start.time))
   
   
@@ -45,127 +46,138 @@ fc_ratepol <- function (data.source,
   #               DATA EXTRACTION
   # ----------------------------------------------
   dataset.ID <- data.source$dataset.id
+  
   print(paste("Data set ID",dataset.ID))
-  print("-")
   
   # already include data check
-  data.work <- fc_extract(data.source) 
+  data.work <- fc_extract(data.source, Debug=Debug) 
   
   # ----------------------------------------------
-  #             DATA STANDARFISATION
+  #             RANDOMOMIZATION
   # ----------------------------------------------
-  # standardisation of pollen data to X(S.value) number of pollen grains 
-  if(standardise==T) # 
+  
+  # create result table to store all result from randomisation
+  result.tibble <- data.frame(matrix(ncol=3, nrow = 0))
+  names(result.tibble) <- c("ID","DF.Age","DF.RoC")
+  
+  data.sd <- data.work
+  
+  for (l in 1:rand)
   {
-    data.work$Pollen <- fc_standar(data.work$Pollen, S.value)
+    # ----------------------------------------------
+    #             DATA STANDARFISATION
+    # ----------------------------------------------
+    # standardisation of pollen data to X(S.value) number of pollen grains 
+    if(standardise==T) # 
+    {
+      data.sd$Pollen <- fc_standar(data.work$Pollen, S.value, Debug=Debug)
+      
+      if(any(rowSums(data.sd$Pollen)!=S.value))
+        stop("standardisation was unsuccesfull")
+    }
     
-    if(any(rowSums(data.work$Pollen)!=S.value))
-      stop("standardisation was unsuccesfull")
-  }
-  
-  # data check with proportioning
-  data.work <- fc_check(data.work, proportion = T)
-  
-  # ----------------------------------------------
-  #               DATA SMOOTHING
-  # ----------------------------------------------
-  data.smooth <- fc_smooth(data.work, 
-                           sm.type = sm.type, 
-                           N.points = N.points,
-                           grim.N.max = grim.N.max, 
-                           range.age.max = range.age.max)
-  
-  #data check (with proportioning ???)
-  data.smooth <- fc_check(data.smooth, proportion = T)
-  
-  # ----------------------------------------------
-  #               DC CALCULATION
-  # ----------------------------------------------
-  # calculate DC for each sample
-  DC.res <- fc_calDC(data.smooth,DC=DC)
-  
-  # ----------------------------------------------
-  #             AGE STANDARDISATION
-  # ----------------------------------------------
-  
-  sample.size.work <- data.smooth$Dim.val[2]-1 
-  
-  age.diff <- vector(mode = "numeric", length = sample.size.work )
-  for (i in 1:sample.size.work)
-  {
-    age.diff[i] <- abs(data.smooth$Age$newage[i+1]-data.smooth$Age$newage[i])  
-  }
-  
-  print("-")
-  print(paste("The time standardisation unit (TSU) is",round(mean(age.diff),2)))
-  
-  DC.res.s <- vector(mode = "numeric", length = sample.size.work)
-  for (j in 1:sample.size.work)
-  {
-    DC.res.s[j] <- DC.res[j]*mean(age.diff)/age.diff[j]
-  }
-  
-  # ----------------------------------------------
-  #               RESULT SUMMARY
-  # ----------------------------------------------
-  
-  
-  if (result == "full")
-  {
-    data.plot <- data.frame(data.smooth$Pollen[1:sample.size.work,],RoC=DC.res.s)
+    # data check with proportioning
+    data.sd <- fc_check(data.sd, proportion = T, Debug=Debug)
     
-    data.plot.melt <- reshape2::melt(data.plot)
-    data.plot.melt$age <- c(rep(data.smooth$Age$age[1:sample.size.work],data.smooth$Dim.val[1]+1)) 
+    # ----------------------------------------------
+    #               DATA SMOOTHING
+    # ----------------------------------------------
+    # smooth pollen data by selected smoothing type
+    data.smooth <- fc_smooth(data.sd, 
+                             sm.type = sm.type, 
+                             N.points = N.points,
+                             grim.N.max = grim.N.max, 
+                             range.age.max = range.age.max,
+                             Debug=Debug)
     
-    p1<-ggplot(data = data.plot.melt, 
-               aes(y=value, 
-                   x= age,
-                   color=variable))+
-      theme_classic()+
-      scale_x_continuous(trans = "reverse")+
-      coord_flip(ylim = c(0,1))+
-      #geom_point(alpha=1/5)+
-      geom_line()
+    #data check (with proportioning ???)
+    data.smooth <- fc_check(data.smooth, proportion = T, Debug=Debug)
     
-    data.result <- data.frame(data.smooth$Pollen,
-                              data.smooth$Age,
-                              Age.diff=c(age.diff,NA),
-                              DC=c(DC.res,NA),
-                              Roc=c(DC.res.s,NA))
+    # ----------------------------------------------
+    #               DC CALCULATION
+    # ----------------------------------------------
+    # calculate DC for each sample
+    DC.res <- fc_calDC(data.smooth,DC=DC, Debug=Debug)
     
-    row.names(data.result) <- row.names(data.smooth$Pollen)
-    r<-list(ID=dataset.ID, data=data.result, plot=p1)
-  }
+    # ----------------------------------------------
+    #             AGE STANDARDISATION
+    # ----------------------------------------------
+    
+    sample.size.work <- data.smooth$Dim.val[2]-1 
+    
+    age.diff <- vector(mode = "numeric", length = sample.size.work )
+    for (i in 1:sample.size.work)
+    {
+      age.diff[i] <- abs(data.smooth$Age$newage[i+1]-data.smooth$Age$newage[i]) 
+      # temporary fix for errors in age data where age difference between samples is 0
+      if(age.diff[i]==0)
+      {age.diff[i]<-1}
+    }
+    
+    
+    
+    if (Debug ==T)
+    {
+      print("-")
+      print(paste("The time standardisation unit (TSU) is",round(mean(age.diff),2)))  
+    }
+    
+    
+    
+    DC.res.s <- vector(mode = "numeric", length = sample.size.work)
+    for (j in 1:sample.size.work)
+    {
+      DC.res.s[j] <- DC.res[j]*mean(age.diff)/age.diff[j]
+    }
+    
+    # ----------------------------------------------
+    #         RESULT OF SINGLE RAND RUN
+    # ----------------------------------------------
+    
+      data.result <- data.frame(Age=data.smooth$Age$age[1:sample.size.work], RoC=DC.res.s)
+      row.names(data.result) <- row.names(data.smooth$Pollen)[1:sample.size.work]
+      
+      data.result.temp <- as.data.frame(list(ID=l,DF=data.result)) 
+      
+      result.tibble <- rbind(result.tibble,data.result.temp)
+    
+  }# end of the randomization
   
-  if (result == "small")
-  {
-    data.result <- data.frame(Age=data.smooth$Age$age[1:sample.size.work], RoC=DC.res.s)
-    row.names(data.result) <- row.names(data.smooth$Pollen)[1:sample.size.work]
-    
-    p1<- ggplot(data = data.result, 
-                 aes(y=RoC, 
-                     x= Age))+
-      theme_classic()+
-      scale_x_continuous(trans = "reverse")+
-      coord_flip(ylim=c(0,1))+
-      #geom_point(alpha=1/5)+
-      geom_line()
-    r <- list(ID=dataset.ID, data=data.result, plot=p1)
-  }
+  # ----------------------------------------------
+  #             RESULTs SUMMARY
+  # ----------------------------------------------
   
-  if (result == "tibble")
-  {
-    data.result <- data.frame(Age=data.smooth$Age$age[1:sample.size.work], RoC=DC.res.s)
-    row.names(data.result) <- row.names(data.smooth$Pollen)[1:sample.size.work]
-    r <- data.result
-  }
+  # pivot all result by the randomisations
+  r <- reshape2::dcast(result.tibble, DF.Age~ID, value.var = "DF.RoC")
+  
+  # create new dataframe with summary of randomisation results
+  r.m <-data.frame(DF.Age=r$DF.Age,
+                   RoC.mean = rowSums( select(r,-c("DF.Age"))/rand),
+                   RoC.se = apply(select(r,-c("DF.Age")),1, FUN= function(x) sd(x)/sqrt(rand)),
+                   RoC.05q = apply(select(r,-c("DF.Age")),1, FUN= function(x) quantile(x,0.05)),
+                   RoC.95q = apply(select(r,-c("DF.Age")),1, FUN= function(x) quantile(x,0.95))
+                   )
+  # copy row names
+  row.names(r.m) <- row.names(data.result.temp)
+  
+  # treshold for RoC peaks is set as median of all RoC in dataset
+  r.treshold <- median(r.m$RoC.mean)
+  
+  # calculate P-value from randomisations (what number of randomisation is higher than treshold)
+  r.m$RoC.p <- apply(select(r,-c("DF.Age")),1,FUN=function(x) {
+    y<-x>r.treshold
+    return(1-length(y[y==T])/rand)
+  })
+  
+  # mark significant peaks
+  r.m$Peak <-  r.m$RoC.p < 0.05
   
   
  end.time <- Sys.time()
  time.length <- end.time - start.time
  print("-")
- print (paste("RATEPOL finished", end.time,"taking",time.length, class(time.length)))
+ print (paste("RATEPOL finished", end.time,"taking",time.length, units(time.length)))
  
- return(r)
+ return(list(ID=dataset.ID,Data=r.m))
  
 }

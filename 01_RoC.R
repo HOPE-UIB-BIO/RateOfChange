@@ -26,7 +26,7 @@
 # ----------------------------------------------
 #                     SETUP
 # ----------------------------------------------
-library (tidyverse)
+library(tidyverse)
 library(reshape2)
 library(mvpart)
 
@@ -55,27 +55,33 @@ glimpse(tibble_Europe2)
 
 N.datasets <- nrow(tibble_Europe2)
 
-data.sub<-tibble_Europe2[c(1:N.datasets),]
+# dataset N66 is broken 
+data.sub<-tibble_Europe2[c(1:65,67:N.datasets),]
 
 list.res <- vector("list",length=nrow(data.sub))
 
 s.time <- Sys.time()
+
 for (i in 1:nrow(data.sub)) 
 {
-  list.res[[i]] <- fc_ratepol(data.sub[i,],
-                              standardise = T, 
+  list.res[[i]] <- fc_ratepol(data.source =  data.sub[i,],
+                              rand = 99,
+                              standardise = T,
                               S.value = 150, 
                               sm.type = "grim", 
                               N.points = 5, 
                               range.age.max = 300, 
                               grim.N.max = 9,
                               DC = "chisq",
-                              result = "small")
+                              Debug = F)
+  
 }
 f.time <- Sys.time()
 tot.time <- f.time - s.time
 tot.time
 
+
+length(list.res)
 # Why purrr does not work???
 
 # ----------------------------------------------
@@ -83,29 +89,27 @@ tot.time
 # ----------------------------------------------
 
 # plot creation 
-res.df.plot <- data.frame(matrix(ncol = 3, nrow = 0))
-names(res.df.plot) <- c("Age","Roc","ID")
+res.df.plot <- data.frame(matrix(ncol = 7, nrow = 0))
+names(res.df.plot) <- c("DF.Age","RoC.mean","RoC.se","RoC.05q","RoC.95q","RoC.p","Peak")
+
+
 
 for (k in 1:length(list.res))
 {
-  list.res[[k]]$data$ID <- rep(list.res[[k]]$ID,nrow(list.res[[k]]$data))
-  res.df.plot <- rbind(res.df.plot,list.res[[k]]$data)
+  list.res[[k]]$Data$ID <- rep(list.res[[k]]$ID,nrow(list.res[[k]]$Data))
+  res.df.plot <- rbind(res.df.plot,list.res[[k]]$Data)
 }
 
-res.df.plot[res.df.plot$RoC==max(res.df.plot$RoC),]
-summary(as.factor(res.df.plot$ID))
 
-
-
-RoC_summary <- res.df.plot[is.infinite(res.df.plot$RoC)==F,] %>%
-  ggplot(aes( y=RoC, 
-              x= Age))+
+RoC_summary <- res.df.plot[is.infinite(res.df.plot$RoC.mean)==F,] %>%
+  ggplot(aes( y=RoC.mean, 
+              x= DF.Age))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip()+
-  #geom_point(alpha=1/5)+
-  geom_line(aes(group=as.factor(ID)),alpha=1/10)+
-  geom_smooth(color="blue", method = "loess", se=F)
+  geom_line(aes(group=as.factor(ID)),alpha=1/5)+
+  geom_smooth(color="red", method = "loess", se=F)+
+  geom_point(data = res.df.plot[res.df.plot$Peak==T,], color="blue", alpha=1/10)
 RoC_summary
 
 ggsave("RoC_summary.pdf")

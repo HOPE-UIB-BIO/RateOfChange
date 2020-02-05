@@ -2,7 +2,8 @@ fc_smooth <- function(data.source,
                       sm.type="none",
                       N.points = 3, 
                       grim.N.max = 9,
-                      range.age.max = 300)
+                      range.age.max = 300,
+                      Debug = F)
 {
   # imput variables:
   # data.source - data prepared by the function of fn_extract
@@ -21,7 +22,6 @@ fc_smooth <- function(data.source,
   # split data into 2 datasets
   p.counts <-  data.source$Pollen
   age <- data.source$Age   
-  print("-")
   
   # check if N.points is and odd number
   if(N.points%%2 ==0)
@@ -33,7 +33,8 @@ fc_smooth <- function(data.source,
   
   if(sm.type=="none")
   {
-    print("data will not be smoothed")
+    if (Debug==T){print("data will not be smoothed")}
+    
     return(list(Pollen=p.counts, Age=age))
   }
   
@@ -44,7 +45,7 @@ fc_smooth <- function(data.source,
   
   if(sm.type=="m.avg")
   {
-    print(paste("data will be smoothed by moving average over",N.points,"points"))
+    if(Debug==T){print(paste("data will be smoothed by moving average over",N.points,"points"))}
     
     N.offset <- floor(N.points/2)
     N.first <- N.offset+1
@@ -85,9 +86,12 @@ fc_smooth <- function(data.source,
     if(N.points>grim.N.max)
       stop("grim.N.max has to be biger than N.points")
     
-    print(paste("data will be smoothed by Grimm method with min samples",N.points,
-                "max samples",grim.N.max,"and max age range of",range.age.max))
-    
+    if (Debug==T)
+      {
+      print(paste("data will be smoothed by Grimm method with min samples",N.points,
+                  "max samples",grim.N.max,"and max age range of",range.age.max))
+      }
+        
     # halve the number of points rounded down
     N.N.points <- floor(N.points/2) 
     N.grim.N.max <- floor(grim.N.max/2)
@@ -153,7 +157,7 @@ fc_smooth <- function(data.source,
   
   if(sm.type=="age.w")
   {
-    print(paste("data will be smoothed by age-weighed average over",N.points,"points"))
+    if(Debug==T){print(paste("data will be smoothed by age-weighed average over",N.points,"points"))}
     
     N.offset <- floor(N.points/2)
     N.first <- N.offset+1
@@ -203,7 +207,7 @@ fc_smooth <- function(data.source,
   
   if(sm.type=="shep")
   {
-    print(paste("data will be smoothed by Shepard's 5-term filter"))
+    if(Debug==T){print(paste("data will be smoothed by Shepard's 5-term filter"))}
     
     N.points <- 5
     N.offset <- floor(N.points/2)
