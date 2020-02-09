@@ -1,4 +1,4 @@
-fc_calDC <- function (data.source, DC = "chisq")
+fc_calDC <- function (data.source, DC = "chisq", Debug = F)
 {
   # DC = disimilarity coeficient
   #   "euc"     = Euclidan distance
@@ -7,7 +7,6 @@ fc_calDC <- function (data.source, DC = "chisq")
   #   "chisq    = chi-squared coeficient
   
   dat.res <- vector(mode="numeric",length = data.source$Dim.val[2]-1)
-  print("-")
   
   # ----------------------------------------------
   #               EUCLIDAN DISTANCE 
@@ -15,7 +14,7 @@ fc_calDC <- function (data.source, DC = "chisq")
   
   if (DC == "euc")
   {
-    print("Euclidan distance will be used as DC")
+    if (Debug==T){print("Euclidan distance will be used as DC")}
     for (i in 1:(data.source$Dim.val[2]-1)) # for each sample (except the last)
       {
       df.work<- data.source$Pollen[c(i,i+1),] # select only 2 samples (observed + 1 after)
@@ -41,7 +40,7 @@ fc_calDC <- function (data.source, DC = "chisq")
   
   if (DC=="euc.sd")
   {
-    print("Standardised Euclidan distance will be used as DC")
+    if(Debug==T){print("Standardised Euclidan distance will be used as DC")}
     
     # calculation of standard deviation for each species
     if (data.source$Dim.val[2]<1)
@@ -103,7 +102,8 @@ fc_calDC <- function (data.source, DC = "chisq")
   
   if (DC == "chord")
   {
-    print("Chord distance will be used as DC")
+    if(Debug==T){print("Chord distance will be used as DC")}
+    
     for (i in 1:(data.source$Dim.val[2]-1)) # for each sample (except the last)
     {
       df.work<- data.source$Pollen[c(i,i+1),] # select only 2 samples (observed + 1 after)
@@ -130,7 +130,8 @@ fc_calDC <- function (data.source, DC = "chisq")
   
   if (DC == "chisq")
   {
-    print("Chi-squared coeficient will be used as DC")
+    if(Debug==T){print("Chi-squared coeficient will be used as DC")}
+    
     for (i in 1:(data.source$Dim.val[2]-1)) # for each sample (except the last)
     {
       df.work<- data.source$Pollen[c(i,i+1),] # select only 2 samples (observed + 1 after)

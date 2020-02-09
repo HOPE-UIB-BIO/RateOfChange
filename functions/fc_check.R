@@ -1,4 +1,4 @@
-fc_check <- function (data.source, proportion = F)
+fc_check <- function (data.source, proportion = F, Debug=F)
 {
   # check if there is a sample that do not have a pollen data and delete it
   # & 
@@ -25,13 +25,17 @@ fc_check <- function (data.source, proportion = F)
   
   data.source <- kill.all(data.source) 
   
-  print("-")
-  print(paste("Pollen data have",data.source$Dim.val[1],"species with pollen record and",
-              data.source$Dim.val[2],"samples. Age data have",data.source$Dim.val[3],"samples"))
-  print("-")
-  print(paste("Age data has values of min",min(data.source$Age$age),", max",max(data.source$Age$age),",mean",
-              round(mean(data.source$Age$age),2),",and median",round(median(data.source$Age$age),2)))
-  print("-")
+  if(Debug==T)
+  {
+    print("-")
+    print(paste("Pollen data have",data.source$Dim.val[1],"species with pollen record and",
+                data.source$Dim.val[2],"samples. Age data have",data.source$Dim.val[3],"samples"))
+    print("-")
+    print(paste("Age data has values of min",min(data.source$Age$age),", max",max(data.source$Age$age),",mean",
+                round(mean(data.source$Age$age),2),",and median",round(median(data.source$Age$age),2)))
+    print("-")
+    
+  }
   
   # check if all values is new age are in positive values and interpolate if necesery
   if(any(data.source$Age$newage<0))
@@ -41,7 +45,8 @@ fc_check <- function (data.source, proportion = F)
   
   if (proportion == T)
   {
-    print ("POllen values converted to proportions")
+    if (Debug==T){print ("POllen values converted to proportions")}
+
     # convert the values pollen data to proportion of sum of each sample
     p.counts.row.sums <- apply(data.source$Pollen, 1, sum)
     data.source$Pollen <- as.data.frame(lapply(data.source$Pollen, function(x) x/p.counts.row.sums))
