@@ -7,12 +7,8 @@ fc_standar <- function (data.source, fc_standar.S.value, Debug=F)
   
   data.pol.l <- nrow(data.source) # number of samples
   
-  # pb<-txtProgressBar(min = 1, max=data.pol.l) # create text progres bar
-  
   for(i in 1: data.pol.l)  # for each row(sample)
   {
-    # setTxtProgressBar(pb,i) #add progress bar unit
-    
     select.row <- data.source[i,] # selected row
     
     n1 <- 1:ncol(data.source) #number for each species name in pollen data
@@ -35,7 +31,7 @@ fc_standar <- function (data.source, fc_standar.S.value, Debug=F)
     
     # replace pollen by new randomised values
     data.source[i,as.numeric(names(table(rsample)))] <- as.numeric(table(rsample))
-    # close(pb) # close progress bar
+    
   }
   if(Debug==T){print(paste("Data standardization finished",Sys.time()))}
   

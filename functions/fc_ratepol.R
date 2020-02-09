@@ -61,9 +61,12 @@ fc_ratepol <- function (data.source,
   names(result.tibble) <- c("ID","DF.Age","DF.RoC")
   
   data.sd <- data.work
+  pb<-txtProgressBar(min = 1, max=rand) # create text progres bar
   
   for (l in 1:rand)
   {
+    setTxtProgressBar(pb,l) #add progress bar unit
+    
     # ----------------------------------------------
     #             DATA STANDARFISATION
     # ----------------------------------------------
@@ -140,7 +143,7 @@ fc_ratepol <- function (data.source,
       data.result.temp <- as.data.frame(list(ID=l,DF=data.result)) 
       
       result.tibble <- rbind(result.tibble,data.result.temp)
-    
+       close(pb) # close progress bar
   }# end of the randomization
   
   # ----------------------------------------------
