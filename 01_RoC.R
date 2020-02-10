@@ -29,6 +29,10 @@
 library(tidyverse)
 library(reshape2)
 library(ggpubr)
+library(doSNOW)
+library(parallel)
+library(foreach)
+library(doParallel)
 
 # ----------------------------------------------
 #             LOAD DATA & FUNCTIONS
@@ -47,27 +51,29 @@ sapply(paste0("~/HOPE/GITHUB/RateOfChange/functions/", files.sources, sep =""), 
 # 1) that each record need to span between ca 250-8000 years and 
 # 2) samples have more than 150 grains Contain only relevant data for analysis
 
-glimpse(tibble_Europe2)
-
-# ----------------------------------------------
-#               COMPUTATION 
-# ----------------------------------------------
-
 N.datasets <- nrow(tibble_Europe2)
 
 # dataset 66, 71, 75, 126, 132 are broken 
 
 data.sub<-tibble_Europe2[c(1:65,67:70,72:74,76:125,127:131,133:N.datasets),]
 
+glimpse(data.sub)
+
+# ----------------------------------------------
+#               COMPUTATION 
+# ----------------------------------------------
+
+
 list.res <- vector("list",length=nrow(data.sub))
-length(list.res)
 
 s.time <- Sys.time()
 
 for (i in 1:nrow(data.sub)) 
 {
+  print(paste(i,"out of",length(list.res)))
+  
   list.res[[i]] <- fc_ratepol(data.source =  data.sub[i,],
-                              rand = 99,
+                              rand = 999,
                               standardise = T,
                               S.value = 150, 
                               sm.type = "grim", 
@@ -83,7 +89,6 @@ tot.time <- f.time - s.time
 tot.time
 
 
-length(list.res)
 # Why purrr does not work???
 
 # ----------------------------------------------
@@ -102,6 +107,7 @@ for (k in 1:length(list.res))
   res.df.plot <- rbind(res.df.plot,list.res[[k]]$Data)
 }
 
+write.csv(res.df.plot,"results20201002.csv")
 
 RoC_summary_p1 <- res.df.plot[,] %>%
   ggplot(aes( y=RoC.mean, 

@@ -56,16 +56,27 @@ fc_ratepol <- function (data.source,
   #             RANDOMOMIZATION
   # ----------------------------------------------
   
-  # create result table to store all result from randomisation
-  result.tibble <- data.frame(matrix(ncol=3, nrow = 0))
-  names(result.tibble) <- c("ID","DF.Age","DF.RoC")
-  
+  # save data as new dataframe
   data.sd <- data.work
-  pb<-txtProgressBar(min = 1, max=rand) # create text progres bar
   
-  for (l in 1:rand)
-  {
-    setTxtProgressBar(pb,l) #add progress bar unit
+  # detect number of cores for parallel computation
+  Ncores <- detectCores()
+  
+  # create cluster 
+  cl <- makeCluster(Ncores)
+  registerDoSNOW(cl)
+  
+  # add all functions to the cluster
+  clusterExport(cl, c("fc_standar","fc_check","fc_smooth","fc_calDC"))
+  
+  # create progress bar based os the number of replication
+  pb <- txtProgressBar(max = rand, style = 3)
+  progress <- function(n) setTxtProgressBar(pb, n)
+  opts <- list(progress = progress)
+  
+  
+  # repeat the calculation X times, whrere X is the number of randomisation
+  result.tibble <- foreach(l=1:rand,.combine = rbind, .options.snow=opts) %dopar% {
     
     # ----------------------------------------------
     #             DATA STANDARFISATION
@@ -118,13 +129,11 @@ fc_ratepol <- function (data.source,
     }
     
     
-    
     if (Debug ==T)
     {
       print("-")
       print(paste("The time standardisation unit (TSU) is",round(mean(age.diff),2)))  
     }
-    
     
     
     DC.res.s <- vector(mode = "numeric", length = sample.size.work)
@@ -142,34 +151,42 @@ fc_ratepol <- function (data.source,
       
       data.result.temp <- as.data.frame(list(ID=l,DF=data.result)) 
       
-      result.tibble <- rbind(result.tibble,data.result.temp)
+      return(data.result.temp)
+      # result.tibble <- rbind(result.tibble,data.result.temp)
        close(pb) # close progress bar
   }# end of the randomization
+  
+  # close progress bar and cluster
+  close(pb)
+  stopCluster(cl) 
+  
   
   # ----------------------------------------------
   #             RESULTs SUMMARY
   # ----------------------------------------------
   
   # pivot all result by the randomisations
-  r <- reshape2::dcast(result.tibble, DF.Age~ID, value.var = "DF.RoC")
+  r<- reshape2::dcast(result.tibble, DF.Age~ID, value.var = "DF.RoC")
   
   # create new dataframe with summary of randomisation results
   r.m <-data.frame(DF.Age=r$DF.Age,
-                   RoC.mean = rowSums( select(r,-c("DF.Age"))/rand),
+                   RoC.mean = rowSums(select(r,-c("DF.Age"))/rand),
                    RoC.se = apply(select(r,-c("DF.Age")),1, FUN= function(x) sd(x)/sqrt(rand)),
                    RoC.05q = apply(select(r,-c("DF.Age")),1, FUN= function(x) quantile(x,0.05)),
                    RoC.95q = apply(select(r,-c("DF.Age")),1, FUN= function(x) quantile(x,0.95))
                    )
   # copy row names
-  row.names(r.m) <- row.names(data.result.temp)
+  row.names(r.m) <- row.names(result.tibble[result.tibble$ID==1,])
   
   # treshold for RoC peaks is set as median of all RoC in dataset
   r.treshold <- median(r.m$RoC.mean)
   
   # calculate P-value from randomisations (what number of randomisation is higher than treshold)
   r.m$RoC.p <- apply(select(r,-c("DF.Age")),1,FUN=function(x) {
-    y<-x>r.treshold
-    return(1-length(y[y==T])/rand)
+    y<- x>r.treshold
+    y.lengt <-length(y[y==T])
+    z <- 1-(y.lengt/rand)
+    return(z)
   })
   
   # mark significant peaks
