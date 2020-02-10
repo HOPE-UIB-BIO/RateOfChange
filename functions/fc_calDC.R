@@ -25,7 +25,9 @@ fc_calDC <- function (data.source, DC = "chisq", Debug = F)
       
       for( j in 1:ncol(df.work)) # for each species
         {
-        vector.work[j] <- (df.work[1,j]-df.work[2,j])**2 # calculate the diference
+        a<- .subset2(df.work,j)[1]
+        b<- .subset2(df.work,j)[2]
+        vector.work[j] <- (a-b)**2 # calculate the diference
         }
       
       dat.res[i]<- sqrt(sum(vector.work)) # save the square root of sum of all dufereces
@@ -84,7 +86,9 @@ fc_calDC <- function (data.source, DC = "chisq", Debug = F)
           #print(paste("j",j))
           if (df.sp.supp.work$std[j]!=0) # check if the standard deviation is not equal zero
           {
-            vector.work[j] <- ((df.work[1,j]-df.work[2,j])/df.sp.supp.work$std[j])**2 # calculate the diference  
+            a<- .subset2(df.work,j)[1]
+            b<- .subset2(df.work,j)[2]
+            vector.work[j] <- ((a-b)/df.sp.supp.work$std[j])**2 # calculate the diference  
           }
           
         }
@@ -114,7 +118,9 @@ fc_calDC <- function (data.source, DC = "chisq", Debug = F)
       
       for( j in 1:ncol(df.work)) # for each species
       {
-        vector.work[j] <- (sqrt(df.work[1,j])-sqrt(df.work[2,j]))**2 # calculate the diference
+        a<- .subset2(df.work,j)[1]
+        b<- .subset2(df.work,j)[2]
+        vector.work[j] <- (sqrt(a)-sqrt(b))**2 # calculate the diference
       }
       
       dat.res[i]<- sqrt(sum(vector.work)) # save the square root of sum of all dufereces
@@ -142,7 +148,9 @@ fc_calDC <- function (data.source, DC = "chisq", Debug = F)
       
       for( j in 1:ncol(df.work)) # for each species
       {
-        vector.work[j] <- ((df.work[1,j]-df.work[2,j])**2) / (df.work[1,j]+df.work[2,j]) # calculate the diference
+        a<- .subset2(df.work,j)[1]
+        b<- .subset2(df.work,j)[2]
+        vector.work[j] <- ((a-b)**2) / (a+b) # calculate the diference
       }
       
       dat.res[i]<- sqrt(sum(vector.work)) # save the square root of sum of all dufereces
