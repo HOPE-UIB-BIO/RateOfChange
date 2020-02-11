@@ -65,7 +65,7 @@ fc_calDC <- function (data.source, DC = "chisq", Debug = F)
         st.dev[j] <- (.subset2(data.source$Pollen,i)[j] - df.sp.supp$mean[i])**2
       }
       
-      df.sp.supp$std[i]<-sqrt(sum(st.dev)/data.source$Dim.val[1])
+      df.sp.supp$std[i]<-sqrt(0+sum(st.dev)/(data.source$Dim.val[2]-1))
     }
     
       # calculation of the DC
@@ -76,7 +76,6 @@ fc_calDC <- function (data.source, DC = "chisq", Debug = F)
         
         # get rid of "empty species" in data & in sp.std
         df.sp.supp.work<- df.sp.supp[colSums(df.work)>0,]
-        
         df.work<-df.work[,colSums(df.work)>0] 
         
         vector.work <- vector(mode="numeric", length = ncol(df.work)) # vector for result for each species

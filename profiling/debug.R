@@ -1,23 +1,23 @@
-data.source <- tibble_Europe2[2,]
+data.source <- tibble_Europe2[3,]
 rand = 9
 standardise = T
 S.value = 150
-sm.type = "grim" 
+sm.type = "shep" 
 N.points = 5
 range.age.max = 300
 grim.N.max = 9
-DC = "chisq"
+DC = "euc.sd"
 Debug = F
 
-test <- fc_ratepol(data.sub[2,],
+test <- fc_ratepol(data.sub[3,],
                   rand = 9,
                   standardise = T, 
                   S.value = 150, 
-                  sm.type = "m.avg", 
+                  sm.type = "shep", 
                   N.points = 5, 
                   range.age.max = 300, 
                   grim.N.max = 9,
-                  DC = "chisq",
+                  DC = "euc.sd",
                   Debug = F)
 
 test$Data %>% ggplot(aes( y=RoC.mean, 
