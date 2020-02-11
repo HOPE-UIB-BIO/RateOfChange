@@ -55,14 +55,14 @@ fc_calDC <- function (data.source, DC = "chisq", Debug = F)
     for (i in 1:nrow(df.sp.supp)) # for each species
     {
       #print(paste("i",i))
-      df.sp.supp$mean[i] <- mean(data.source$Pollen[,i])
+      df.sp.supp$mean[i] <- mean(.subset2(data.source$Pollen,i))
       
-      st.dev <- vector(mode="numeric",length =data.source$Dim.val[2])
+      st.dev <- vector(mode="numeric",length = data.source$Dim.val[2])
       
       for( j in 1:data.source$Dim.val[2]) # for each sample
       {
         #print(paste("j",j))
-        st.dev[j] <- (data.source$Pollen[j,i]-df.sp.supp$mean[i])**2
+        st.dev[j] <- (.subset2(data.source$Pollen,i)[j] - df.sp.supp$mean[i])**2
       }
       
       df.sp.supp$std[i]<-sqrt(sum(st.dev)/data.source$Dim.val[1])

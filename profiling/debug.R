@@ -1,5 +1,5 @@
 data.source <- tibble_Europe2[2,]
-rand = 99
+rand = 9
 standardise = T
 S.value = 150
 sm.type = "grim" 
@@ -10,14 +10,14 @@ DC = "chisq"
 Debug = F
 
 test <- fc_ratepol(data.sub[2,],
-                  rand = 99,
+                  rand = 9,
                   standardise = T, 
                   S.value = 150, 
                   sm.type = "m.avg", 
                   N.points = 5, 
                   range.age.max = 300, 
                   grim.N.max = 9,
-                  DC = "chord",
+                  DC = "chisq",
                   Debug = F)
 
 test$Data %>% ggplot(aes( y=RoC.mean, 
@@ -87,3 +87,79 @@ r.m %>% ggplot(aes( y=RoC.mean,
   geom_hline(yintercept = median(r.m$RoC.mean), color="blue")+
   xlab("Age")+ylab("Rate of Change")+
   coord_flip()
+
+microbenchmark (
+  .subset2(as.data.frame(t(data.source)),i),
+  data.source[i,]
+)
+
+microbenchmark(
+  data.source[,i],
+  .subset2(data.source,i)
+)
+
+
+test <- as.data.frame(matrix(1:16,ncol=4,nrow = 4))
+
+library(data.table)
+
+test2 <- as.data.table(matrix(1:16,ncol=4,nrow = 4))
+
+test2[,..i]  
+test2[i,]
+test2
+
+microbenchmark(
+  test[i,],
+  slice(test,i),
+  test2[i,]
+)
+
+
+microbenchmark(
+  test[,i],
+  .subset2(test,i),
+  pull(test,i),
+  select(test,i),
+  test2[,..i]
+)
+
+microbenchmark(
+  test[i,],
+  slice(test,i),
+  test2[i,],
+  test[,i],
+  .subset2(test,i),
+  pull(test,i),
+  select(test,i),
+  test2[,..i]
+)
+
+microbenchmark(
+  .subset2(test,2)[2],
+  .subset(.subset2(test,2),2)
+)
+
+
+test3 <- 1:20
+
+microbenchmark(
+  .subset(test3,15),
+  test3[15]
+)
+
+
+
+
+DF.size <- data.frame(matrix(nrow=nrow(data.sub),ncol=3))
+names(DF.size) <- c("order","ID","size")
+DF.size$order <- 1:nrow(DF.size)
+
+for(i in 1:nrow(DF.size))
+{
+  DF.size$ID[i] <- data.sub$dataset.id[[i]]
+  DF.size$size[i] <- nrow(data.sub$filtered.counts[[i]])
+}
+
+DF.size[order(DF.size$size),]
+

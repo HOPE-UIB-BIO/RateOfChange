@@ -25,10 +25,12 @@ names(DF.performance) <- c("smooth","DC","user","system","elapsed")
 DF.performance$smooth <- c(rep("m.avg",4),rep("grim",4),rep("age.w",4),rep("shep",4))
 DF.performance$DC <- c(rep(c("euc","euc.sd","chord","chisq"),4))
 
+dataset.N <- 3
+
 for(i in 1:nrow(DF.performance))
 {
-  a<- system.time(fc_ratepol(data.sub[2,],
-                             rand = 99,
+  a<- system.time(fc_ratepol(data.sub[dataset.N,],
+                             rand = 9,
                              standardise = T, 
                              S.value = 150, 
                              sm.type = DF.performance$smooth[i], 
@@ -46,7 +48,10 @@ for(i in 1:nrow(DF.performance))
 DF.performance %>%
   ggplot(aes(y=elapsed, x=smooth))+
   geom_bar(aes(fill=DC),stat="identity", position = "dodge", color="black")+
+  ggtitle(paste("ID",data.sub$site.id[[dataset.N]],",N samples",nrow(data.sub$filtered.counts[[dataset.N]])))+
   theme_classic()
+
+ggsave("ComputationTime2.pdf")
 
 DF.performance[order(DF.performance$elapsed),]
 
@@ -54,14 +59,14 @@ DF.performance[order(DF.performance$elapsed),]
 # test of individual code parts
 
 data.source <- tibble_Europe2[2,]
-rand = 99
+rand = 9
 standardise = T
 S.value = 150
-sm.type = "age.w" 
+sm.type = "shep" 
 N.points = 5
 range.age.max = 300
 grim.N.max = 9
-DC = "chord"
+DC = "euc.sd"
 Debug = F
 dataset.ID <- data.source$dataset.id
 
