@@ -99,7 +99,7 @@ for (k in 1:length(list.res))
   res.df.plot <- rbind(res.df.plot,list.res[[k]]$Data)
 }
 
-write.csv(res.df.plot,"results20201002.csv")
+write.csv(res.df.plot,"results20202007.csv")
 
 
 # ----------------------------------------------

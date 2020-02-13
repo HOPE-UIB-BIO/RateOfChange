@@ -44,38 +44,21 @@ fc_calDC <- function (data.source, DC = "chisq", Debug = F)
   {
     if(Debug==T){print("Standardised Euclidan distance will be used as DC")}
     
-    # calculation of standard deviation for each species
-    if (data.source$Dim.val[2]<1)
-      stop ("too few samples for standard deviation")
+  # calculation of standard deviation for each species
     
-    # dataframe for storing mean, deviance and standar deviation for each species
-    df.sp.supp <- as.data.frame(matrix(ncol=2,nrow=data.source$Dim.val[1]))
-    names(df.sp.supp) <- c("mean","std")
+    # vector for standar deviation for each species
+    df.sp.supp <- vector(mode="numeric",length = data.source$Dim.val[1])
+    # calculate the SD for each species
+    df.sp.supp <- apply(data.source$Pollen,2,sd)
     
-    for (i in 1:nrow(df.sp.supp)) # for each species
-    {
-      #print(paste("i",i))
-      df.sp.supp$mean[i] <- mean(.subset2(data.source$Pollen,i))
-      
-      st.dev <- vector(mode="numeric",length = data.source$Dim.val[2])
-      
-      for( j in 1:data.source$Dim.val[2]) # for each sample
-      {
-        #print(paste("j",j))
-        st.dev[j] <- (.subset2(data.source$Pollen,i)[j] - df.sp.supp$mean[i])**2
-      }
-      
-      df.sp.supp$std[i]<-sqrt(0+sum(st.dev)/(data.source$Dim.val[2]-1))
-    }
-    
-      # calculation of the DC
+  # calculation of the DC
       for (i in 1:(data.source$Dim.val[2]-1)) # for each sample (except the last)
       {
         #print(paste("i",i))
         df.work<- data.source$Pollen[c(i,i+1),] # select only 2 samples (observed + 1 after)
         
         # get rid of "empty species" in data & in sp.std
-        df.sp.supp.work<- df.sp.supp[colSums(df.work)>0,]
+        df.sp.supp.work<- df.sp.supp[colSums(df.work)>0]
         df.work<-df.work[,colSums(df.work)>0] 
         
         vector.work <- vector(mode="numeric", length = ncol(df.work)) # vector for result for each species
@@ -83,11 +66,11 @@ fc_calDC <- function (data.source, DC = "chisq", Debug = F)
         for( j in 1:ncol(df.work)) # for each species
         {
           #print(paste("j",j))
-          if (df.sp.supp.work$std[j]!=0) # check if the standard deviation is not equal zero
+          if (df.sp.supp.work[j]!=0) # check if the standard deviation is not equal zero
           {
             a<- .subset2(df.work,j)[1]
             b<- .subset2(df.work,j)[2]
-            vector.work[j] <- ((a-b)/df.sp.supp.work$std[j])**2 # calculate the diference  
+            vector.work[j] <- ((a-b)/df.sp.supp.work[j])**2 # calculate the diference  
           }
           
         }

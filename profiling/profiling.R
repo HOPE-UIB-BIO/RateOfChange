@@ -18,44 +18,6 @@ N.datasets <- nrow(tibble_Europe2)
 data.sub<-tibble_Europe2[c(1:65,67:70,72:74,76:125,127:131,133:N.datasets),]
 
 
-# test for difefrent setting 
-
-DF.performance <- data.frame(matrix(nrow = 16, ncol=5))
-names(DF.performance) <- c("smooth","DC","user","system","elapsed")
-DF.performance$smooth <- c(rep("m.avg",4),rep("grim",4),rep("age.w",4),rep("shep",4))
-DF.performance$DC <- c(rep(c("euc","euc.sd","chord","chisq"),4))
-
-dataset.N <- 3
-
-for(i in 1:nrow(DF.performance))
-{
-  a<- system.time(fc_ratepol(data.sub[dataset.N,],
-                             rand = 9,
-                             standardise = T, 
-                             S.value = 150, 
-                             sm.type = DF.performance$smooth[i], 
-                             N.points = 5, 
-                             range.age.max = 300, 
-                             grim.N.max = 9,
-                             DC = DF.performance$DC[i],
-                             Debug = F))
-  
-  DF.performance$user[i] <- a[1]
-  DF.performance$system[i] <- a[2]
-  DF.performance$elapsed[i] <- a[3]
-}
-
-DF.performance %>%
-  ggplot(aes(y=elapsed, x=smooth))+
-  geom_bar(aes(fill=DC),stat="identity", position = "dodge", color="black")+
-  ggtitle(paste("ID",data.sub$site.id[[dataset.N]],",N samples",nrow(data.sub$filtered.counts[[dataset.N]])))+
-  theme_classic()
-
-ggsave("ComputationTime2.pdf")
-
-DF.performance[order(DF.performance$elapsed),]
-
-
 # test of individual code parts
 
 data.source <- tibble_Europe2[2,]
@@ -151,6 +113,3 @@ profvis({
   data.result.temp <- as.data.frame(list(ID=1,DF=data.result)) 
   
 }, interval = 0.001)
-
-
-

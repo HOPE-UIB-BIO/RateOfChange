@@ -91,13 +91,13 @@ fc_ratepol <- function (data.source,
     }
     
     # data check with proportioning
-    data.sd <- fc_check(data.sd, proportion = T, Debug=Debug)
+    data.sd.check <- fc_check(data.sd, proportion = T, Debug=Debug)
     
     # ----------------------------------------------
     #               DATA SMOOTHING
     # ----------------------------------------------
     # smooth pollen data by selected smoothing type
-    data.smooth <- fc_smooth(data.sd, 
+    data.smooth <- fc_smooth(data.sd.check, 
                              sm.type = sm.type, 
                              N.points = N.points,
                              grim.N.max = grim.N.max, 
@@ -105,24 +105,24 @@ fc_ratepol <- function (data.source,
                              Debug=Debug)
     
     #data check (with proportioning ???)
-    data.smooth <- fc_check(data.smooth, proportion = T, Debug=Debug)
+    data.smooth.check <- fc_check(data.smooth, proportion = T, Debug=Debug)
     
     # ----------------------------------------------
     #               DC CALCULATION
     # ----------------------------------------------
     # calculate DC for each sample
-    DC.res <- fc_calDC(data.smooth,DC=DC, Debug=Debug)
+    DC.res <- fc_calDC(data.smooth.check,DC=DC, Debug=Debug)
     
     # ----------------------------------------------
     #             AGE STANDARDISATION
     # ----------------------------------------------
     
-    sample.size.work <- data.smooth$Dim.val[2]-1 
+    sample.size.work <- data.smooth.check$Dim.val[2]-1 
     
     age.diff <- vector(mode = "numeric", length = sample.size.work )
     for (i in 1:sample.size.work)
     {
-      age.diff[i] <- abs(data.smooth$Age$newage[i+1]-data.smooth$Age$newage[i]) 
+      age.diff[i] <- abs(data.smooth.check$Age$newage[i+1]-data.smooth.check$Age$newage[i]) 
       # temporary fix for errors in age data where age difference between samples is 0
       if(age.diff[i]==0)
       {age.diff[i]<-1}
@@ -146,8 +146,8 @@ fc_ratepol <- function (data.source,
     #         RESULT OF SINGLE RAND RUN
     # ----------------------------------------------
     
-      data.result <- data.frame(Age=data.smooth$Age$age[1:sample.size.work], RoC=DC.res.s)
-      row.names(data.result) <- row.names(data.smooth$Pollen)[1:sample.size.work]
+      data.result <- data.frame(Age=data.smooth.check$Age$age[1:sample.size.work], RoC=DC.res.s)
+      row.names(data.result) <- row.names(data.smooth.check$Pollen)[1:sample.size.work]
       
       data.result.temp <- as.data.frame(list(ID=l,DF=data.result)) 
       

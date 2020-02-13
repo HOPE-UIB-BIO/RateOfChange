@@ -59,7 +59,7 @@ p0<-data.frame(POLLEN=reshape2::melt(tibble_Europe2[2,]$filtered.counts[[1]]),
   #geom_smooth(method = "loess",color="blue",se=F)+
   facet_wrap(~POLLEN.variable)+
   xlab("Age")+ylab("Pollen")+
-  coord_flip()
+  coord_flip(xlim=c(0,20000))
 p0
 
 ggsave("ExamplePlot01.pdf",plot= p0, width = 50, height = 30, units= "cm", dpi= 600)
@@ -69,7 +69,7 @@ p1a <- res.df.plot[res.df.plot$ID=="17334",] %>%
               x= DF.Age))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim=c(0,15000), ylim = c(0,1.5))+
+  coord_flip(xlim=c(0,20000), ylim = c(0,1.5))+
   geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), alpha=1/2)+
   geom_line(aes(group=as.factor(ID)),alpha=1, size=1)+
   geom_point(data = res.df.plot[res.df.plot$Peak==T & res.df.plot$ID=="17334",],color="blue", alpha=1, size=3)+
@@ -83,7 +83,7 @@ p1b <- res.df.plot[res.df.plot$Peak==T & res.df.plot$ID=="17334",] %>%
   theme_classic()+
   geom_density(fill="gray")+
   scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim=c(0,15000))+
+  coord_flip(xlim=c(0,20000))+
   xlab("Age")+ylab("Density of Peak-Points")
 p1b
 

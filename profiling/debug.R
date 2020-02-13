@@ -1,8 +1,8 @@
 data.source <- tibble_Europe2[3,]
-rand = 9
+rand = 99
 standardise = T
 S.value = 150
-sm.type = "shep" 
+sm.type = "grim" 
 N.points = 5
 range.age.max = 300
 grim.N.max = 9
@@ -10,14 +10,14 @@ DC = "euc.sd"
 Debug = F
 
 test <- fc_ratepol(data.sub[3,],
-                  rand = 9,
+                  rand = 99,
                   standardise = T, 
                   S.value = 150, 
-                  sm.type = "shep", 
+                  sm.type = "grim", 
                   N.points = 5, 
                   range.age.max = 300, 
                   grim.N.max = 9,
-                  DC = "euc.sd",
+                  DC = "chord",
                   Debug = F)
 
 test$Data %>% ggplot(aes( y=RoC.mean, 
@@ -35,17 +35,18 @@ test$Data %>% ggplot(aes( y=RoC.mean,
 data.sub<-tibble_Europe2[c(1:10),]
 
 
-data.frame(POLLEN=reshape2::melt(tibble_Europe2[2,]$filtered.counts[[1]]), 
-           AGE=rep(tibble_Europe2[2,]$list_ages[[1]]$ages$age, ncol(tibble_Europe2[2,]$filtered.counts[[1]]))) %>%
+data.frame(POLLEN=reshape2::melt(tibble_Europe2$filtered.counts[[3]]), 
+           AGE=rep(tibble_Europe2$list_ages[[3]]$ages$age, ncol(tibble_Europe2$filtered.counts[[3]]))) %>%
   ggplot(aes( y=POLLEN.value, 
                   x= AGE))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   #geom_point(alpha=1/5)+
-  #geom_line(aes(group=POLLEN.variable), alpha=1/10)+
+  geom_line(aes(group=POLLEN.variable), alpha=1)+
   #geom_smooth(method = "loess",color="blue",se=F)+
-  geom_density_2d()+
+  #geom_density_2d()+
   xlab("Age")+ylab("Pollen")+
+  facet_wrap(~POLLEN.variable)+
   coord_flip()
 
 
