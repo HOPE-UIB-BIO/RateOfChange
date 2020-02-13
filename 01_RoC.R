@@ -89,16 +89,8 @@ tot.time <- f.time - s.time
 tot.time
 
 
-# Why purrr does not work???
-
-# ----------------------------------------------
-#             RESULT VISUALISATION 
-# ----------------------------------------------
-
-# plot creation 
 res.df.plot <- data.frame(matrix(ncol = 7, nrow = 0))
 names(res.df.plot) <- c("DF.Age","RoC.mean","RoC.se","RoC.05q","RoC.95q","RoC.p","Peak")
-
 
 
 for (k in 1:length(list.res))
@@ -107,48 +99,8 @@ for (k in 1:length(list.res))
   res.df.plot <- rbind(res.df.plot,list.res[[k]]$Data)
 }
 
-write.csv(res.df.plot,"results20201002.csv")
+write.csv(res.df.plot,"results20202007.csv")
 
-RoC_summary_p1 <- res.df.plot[,] %>%
-  ggplot(aes( y=RoC.mean, 
-              x= DF.Age))+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim=c(0,20000), ylim = c(0,5))+
-  geom_line(aes(group=as.factor(ID)),alpha=1/10, size=1)+
-  geom_hline(yintercept = 0, color="red")+
-  geom_smooth(color="green", method = "loess", se=F)+
-  xlab("Age")+ylab("Rate of Change")
-RoC_summary_p1
-
-RoC_summary_p2 <- res.df.plot[,] %>%
-  ggplot(aes( y=RoC.mean, 
-              x= DF.Age))+
-  theme_classic()+
-  scale_color_gradient2(low="white",mid="darkblue",high="black", midpoint = 4)+
-  scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim=c(0,20000), ylim = c(0,5))+
-  geom_point(data = res.df.plot[res.df.plot$Peak==T,],aes(color=RoC.mean), alpha=1/10, size=3)+
-  geom_hline(yintercept = 0, color="red")+
-  geom_smooth(color="green", method = "loess", se=F)+
-  xlab("Age")+ylab("Rate of Change")+
-  theme(legend.position = "none")
-RoC_summary_p2
-
-RoC_summary_p3 <- res.df.plot[res.df.plot$Peak==T,] %>%
-  ggplot(aes( x= DF.Age))+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim=c(0,20000))+
-  geom_density(fill="gray")+
-  xlab("Age")+ylab("Density of Peak-points")
-RoC_summary_p3
-
-
-RoC_summary<- ggarrange(RoC_summary_p1,RoC_summary_p2,RoC_summary_p3, ncol = 3, labels = c("A","B","C"))
-RoC_summary
-
-ggsave("RoC_summary.pdf")
 
 # ----------------------------------------------
 #               CLEAN UP 

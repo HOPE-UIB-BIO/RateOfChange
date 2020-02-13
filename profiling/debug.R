@@ -1,0 +1,166 @@
+data.source <- tibble_Europe2[3,]
+rand = 99
+standardise = T
+S.value = 150
+sm.type = "grim" 
+N.points = 5
+range.age.max = 300
+grim.N.max = 9
+DC = "euc.sd"
+Debug = F
+
+test <- fc_ratepol(data.sub[3,],
+                  rand = 99,
+                  standardise = T, 
+                  S.value = 150, 
+                  sm.type = "grim", 
+                  N.points = 5, 
+                  range.age.max = 300, 
+                  grim.N.max = 9,
+                  DC = "chord",
+                  Debug = F)
+
+test$Data %>% ggplot(aes( y=RoC.mean, 
+                     x= DF.Age))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), color="gray")+
+  #geom_point(alpha=1/5)+
+  geom_line()+
+  geom_point(data = test$Data[test$Data$Peak==T,], color="red", size=3)+
+  geom_hline(yintercept = median(test$Data$RoC.mean), color="blue")+
+  xlab("Age")+ylab("Rate of Change")+
+  coord_flip()
+
+data.sub<-tibble_Europe2[c(1:10),]
+
+
+data.frame(POLLEN=reshape2::melt(tibble_Europe2$filtered.counts[[3]]), 
+           AGE=rep(tibble_Europe2$list_ages[[3]]$ages$age, ncol(tibble_Europe2$filtered.counts[[3]]))) %>%
+  ggplot(aes( y=POLLEN.value, 
+                  x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  #geom_point(alpha=1/5)+
+  geom_line(aes(group=POLLEN.variable), alpha=1)+
+  #geom_smooth(method = "loess",color="blue",se=F)+
+  #geom_density_2d()+
+  xlab("Age")+ylab("Pollen")+
+  facet_wrap(~POLLEN.variable)+
+  coord_flip()
+
+
+
+n.sets <- 1:length(test)
+
+names(n.sets) <- n.sets
+
+for(i in n.sets[c(1:65,67:70,72:74,76:125,127:131,133:length(n.sets))])
+{
+  vec<- test[[i]]$age
+  for(j in 2:length(vec))
+    {
+    z<- abs(vec[j]-vec[j-1])
+    if(z==0) stop(names(n.sets)[i])
+    }
+}
+
+# 66, 71, 75, 126, 132
+
+tibble_Europe2$list_ages[[66]]$ages
+tibble_Europe2$list_ages[[75]]$ages
+tibble_Europe2$list_ages[[126]]$ages
+
+tibble_Europe2$list_ages[[71]]$ages
+tibble_Europe2$list_ages[[132]]$ages
+
+
+
+
+r.m %>% ggplot(aes( y=RoC.mean, 
+                     x= DF.Age))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), color="gray")+
+  #geom_point(alpha=1/5)+
+  geom_line()+
+  geom_point(data = r.m[r.m$Peak==T,], color="red", size=3)+
+  geom_hline(yintercept = median(r.m$RoC.mean), color="blue")+
+  xlab("Age")+ylab("Rate of Change")+
+  coord_flip()
+
+microbenchmark (
+  .subset2(as.data.frame(t(data.source)),i),
+  data.source[i,]
+)
+
+microbenchmark(
+  data.source[,i],
+  .subset2(data.source,i)
+)
+
+
+test <- as.data.frame(matrix(1:16,ncol=4,nrow = 4))
+
+library(data.table)
+
+test2 <- as.data.table(matrix(1:16,ncol=4,nrow = 4))
+
+test2[,..i]  
+test2[i,]
+test2
+
+microbenchmark(
+  test[i,],
+  slice(test,i),
+  test2[i,]
+)
+
+
+microbenchmark(
+  test[,i],
+  .subset2(test,i),
+  pull(test,i),
+  select(test,i),
+  test2[,..i]
+)
+
+microbenchmark(
+  test[i,],
+  slice(test,i),
+  test2[i,],
+  test[,i],
+  .subset2(test,i),
+  pull(test,i),
+  select(test,i),
+  test2[,..i]
+)
+
+microbenchmark(
+  .subset2(test,2)[2],
+  .subset(.subset2(test,2),2)
+)
+
+
+test3 <- 1:20
+
+microbenchmark(
+  .subset(test3,15),
+  test3[15]
+)
+
+
+
+
+DF.size <- data.frame(matrix(nrow=nrow(data.sub),ncol=3))
+names(DF.size) <- c("order","ID","size")
+DF.size$order <- 1:nrow(DF.size)
+
+for(i in 1:nrow(DF.size))
+{
+  DF.size$ID[i] <- data.sub$dataset.id[[i]]
+  DF.size$size[i] <- nrow(data.sub$filtered.counts[[i]])
+}
+
+DF.size[order(DF.size$size),]
+

@@ -20,8 +20,8 @@ fc_smooth <- function(data.source,
   #
   
   # split data into 2 datasets
-  p.counts <-  data.source$Pollen
-  age <- data.source$Age   
+  p.counts <-  as.data.frame(data.source$Pollen)
+  age <- as.data.frame(data.source$Age)   
   
   # check if N.points is and odd number
   if(N.points%%2 ==0)
@@ -53,14 +53,14 @@ fc_smooth <- function(data.source,
     
     for(j in 1:ncol(p.counts)) # for every species
     {
-      col.work<- p.counts[[j]] # select the species
+      col.work<- .subset2(p.counts,j) # select the species
       col.res <- rep(0,length(col.work)) # create empty vector of same lengt for values to be saved
       
       for(i in N.first:N.last)
       {
         F.low <- i-N.offset # min position to look for averaging in each step
         F.high <- i+N.offset # max position to look for averaging in each step
-        col.res[i]<-mean(col.work[F.low:F.high])
+        col.res[i]<-mean(.subset(col.work,c(F.low:F.high)))
       }
       
       p.counts[,j]<-col.res
@@ -101,7 +101,7 @@ fc_smooth <- function(data.source,
     
     for(j in 1:ncol(p.counts)) # for every species
     {
-      col.work<- p.counts[[j]] # select the species
+      col.work<- .subset2(p.counts,j) # select the species
       col.res <- rep(0,length(col.work)) # create empty vector of same lengt for values to be saved
       
       for(i in N.first:N.last) # for each point between min and max
@@ -138,12 +138,12 @@ fc_smooth <- function(data.source,
           
         }
         # save mean of all points in seach parameter
-        col.res[i]<-mean(col.work[F.low:F.high])
+        col.res[i]<-mean(.subset(col.work,c(F.low:F.high)))
         
       }
       
       # update polen values
-      p.counts[,j]<-col.res[]
+      p.counts[,j]<-col.res
       
     }
     p.counts.small <- p.counts[N.first:N.last,]
@@ -165,7 +165,7 @@ fc_smooth <- function(data.source,
     
     for(j in 1:ncol(p.counts)) # for every species
     {
-      col.work<- p.counts[[j]] # select the species
+      col.work<- .subset2(p.counts,j) # select the species
       col.res <- rep(0,length(col.work)) # create empty vector of same lengt for values to be saved
       
       for(i in N.first:N.last)
@@ -174,14 +174,20 @@ fc_smooth <- function(data.source,
         F.high <- i+N.offset # max position to look for averaging in each step
         
         # create small df with values around observed sample (in range of offset)
-        df.work <-  data.frame(values= col.work[F.low:F.high], 
-                              age = age$newage[F.low:F.high], 
-                              Weight=rep(1,N.points))
+        #df.work <-  data.frame(values= col.work[c(F.low:F.high)], 
+         #                     age = age$newage[c(F.low:F.high)], 
+          #                    Weight=rep(1,N.points))
+        
+        df.work <-  data.frame(values= .subset(col.work,c(F.low:F.high)),
+                               age = .subset(age$newage,c(F.low:F.high)), 
+                               Weight=rep(1,N.points))
+        
+        
         
         for (k in 1:nrow(df.work))
         {
-          F.age <- df.work$age[k] # age value for selected sample
-          F.age.sample <- age$newage[i] # age value of obserced sample
+          F.age <- .subset(df.work$age,k) # age value for selected sample
+          F.age.sample <- .subset(age$newage,i) # age value of obserced sample
           F.age.dist <- abs(F.age-F.age.sample) # distance between those ages
   
           # Weith of points is calculated as range.age.max / distance bewtween oldest and youngest points.
@@ -192,11 +198,11 @@ fc_smooth <- function(data.source,
         col.res[i]<-weighted.mean(df.work$values,df.work$Weight)
       }
       
-      p.counts[,j]<-col.res
+      p.counts[,j] <- col.res 
       
     }
-    p.counts.small <- p.counts[N.first:N.last,]
-    age.small <-age[N.first:N.last,] 
+    p.counts.small <- p.counts[c(N.first:N.last),]
+    age.small <-age[c(N.first:N.last),] 
     return(list(Pollen=p.counts.small, Age=age.small))
   }
   
@@ -216,13 +222,13 @@ fc_smooth <- function(data.source,
     
     for(j in 1:ncol(p.counts)) # for every species
     {
-      col.work <- p.counts[[j]] # select the species
+      col.work <- .subset2(p.counts,j) # select the species
       col.res <- rep(0,length(col.work)) # create empty vector of same lengt for values to be saved
       
       for(i in N.first:N.last)
       {
         # calculate the Shepard number by equasion
-        w.value  <- (17.0*col.work[i] + 12*(col.work[i+1]+col.work[i-1]) - 3.0*(col.work[i+2]+col.work[i-2])) / 35.0
+        w.value  <- (17*.subset(col.work,i) + 12*(.subset(col.work,i+1)+.subset(col.work,i-1)) - 3*(.subset(col.work,i+2)+.subset(col.work,i-2))) / 35
       # there is posibility that the resut will be smaller than zero, if that is the case use 0 instead
       if(w.value<0){w.value<-0}
       col.res[i] <- w.value
