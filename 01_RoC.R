@@ -37,8 +37,12 @@ library(doParallel)
 # ----------------------------------------------
 #             LOAD DATA & FUNCTIONS
 # ----------------------------------------------
+# download.file("https://www.dropbox.com/s/lovb5ef7o5dn9e1/tibble_Europe_filtered13.02.20.RData?dl=1","~/HOPE/Data/tibble_Europe_filtered13.02.20.RData")
 
-load("~/HOPE/Data/tibble_Europe_filtered29.01.20.Rdata")
+setwd("~/HOPE/GITHUB/RateOfChange")
+# "C:/Users/ondre/Dropbox/HOPE_data"
+
+load("C:/Users/ondre/Dropbox/HOPE_data/tibble_Europe_filtered13.02.20.RData")
 
 files.sources <- list.files("~/HOPE/GITHUB/RateOfChange/functions/") 
 sapply(paste0("~/HOPE/GITHUB/RateOfChange/functions/", files.sources, sep =""), source)
@@ -54,8 +58,9 @@ sapply(paste0("~/HOPE/GITHUB/RateOfChange/functions/", files.sources, sep =""), 
 N.datasets <- nrow(tibble_Europe2)
 
 # dataset 66, 71, 75, 126, 132 are broken 
+# tibble_Europe2[c(1:65,67:70,72:74,76:125,127:131,133:N.datasets),]
 
-data.sub<-tibble_Europe2[c(1:65,67:70,72:74,76:125,127:131,133:N.datasets),]
+data.sub<-tibble_Europe2
 
 glimpse(data.sub)
 
@@ -70,7 +75,7 @@ s.time <- Sys.time()
 
 for (i in 1:nrow(data.sub)) 
 {
-  print(paste(i,"out of",length(list.res)))
+  cat(paste(i,"out of",length(list.res)), fill=T)
   
   list.res[[i]] <- fc_ratepol(data.source =  data.sub[i,],
                               rand = 999,
@@ -89,8 +94,8 @@ tot.time <- f.time - s.time
 tot.time
 
 
-res.df.plot <- data.frame(matrix(ncol = 7, nrow = 0))
-names(res.df.plot) <- c("DF.Age","RoC.mean","RoC.se","RoC.05q","RoC.95q","RoC.p","Peak")
+res.df.plot <- data.frame(matrix(ncol = 10, nrow = 0))
+names(res.df.plot) <- c("sample.id","depth","age","newage","RoC.median","RoC.se","RoC.05q","RoC.95q","RoC.p","Peak")
 
 
 for (k in 1:length(list.res))
@@ -99,7 +104,7 @@ for (k in 1:length(list.res))
   res.df.plot <- rbind(res.df.plot,list.res[[k]]$Data)
 }
 
-write.csv(res.df.plot,"results20202007.csv")
+write.csv(res.df.plot,"results20202014.csv")
 
 
 # ----------------------------------------------
