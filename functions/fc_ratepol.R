@@ -39,7 +39,7 @@ fc_ratepol <- function (data.source,
   
   start.time <- Sys.time()
   
-  print (paste("RATEPOL started", start.time))
+  cat(paste("RATEPOL started", start.time), fill=T)
   
   
   # ----------------------------------------------
@@ -47,7 +47,7 @@ fc_ratepol <- function (data.source,
   # ----------------------------------------------
   dataset.ID <- data.source$dataset.id
   
-  print(paste("Data set ID",dataset.ID))
+  cat(paste("Data set ID",dataset.ID), fill = T)
   
   # already include data check
   data.work <- fc_extract(data.source, Debug=Debug) 
@@ -55,9 +55,6 @@ fc_ratepol <- function (data.source,
   # ----------------------------------------------
   #             RANDOMOMIZATION
   # ----------------------------------------------
-  
-  # save data as new dataframe
-  data.sd <- data.work
   
   # detect number of cores for parallel computation
   Ncores <- detectCores()
@@ -84,7 +81,7 @@ fc_ratepol <- function (data.source,
     # standardisation of pollen data to X(S.value) number of pollen grains 
     if(standardise==T) # 
     {
-      data.sd$Pollen <- fc_standar(data.work$Pollen, S.value, Debug=Debug)
+      data.sd <- fc_standar(data.work, S.value, Debug=Debug)
       
       if(any(rowSums(data.sd$Pollen)!=S.value))
         stop("standardisation was unsuccesfull")
@@ -120,22 +117,23 @@ fc_ratepol <- function (data.source,
     sample.size.work <- data.smooth.check$Dim.val[2]-1 
     
     age.diff <- vector(mode = "numeric", length = sample.size.work )
+    
     for (i in 1:sample.size.work)
     {
       age.diff[i] <- abs(data.smooth.check$Age$newage[i+1]-data.smooth.check$Age$newage[i]) 
       # temporary fix for errors in age data where age difference between samples is 0
-      if(age.diff[i]==0)
+      if(age.diff[i]<1)
       {age.diff[i]<-1}
     }
     
     
     if (Debug ==T)
     {
-      print("-")
-      print(paste("The time standardisation unit (TSU) is",round(mean(age.diff),2)))  
+      cat("", fill=T)
+      cat(paste("The time standardisation unit (TSU) is",round(mean(age.diff),2)), fill=T)  
     }
     
-    
+  
     DC.res.s <- vector(mode = "numeric", length = sample.size.work)
     for (j in 1:sample.size.work)
     {
@@ -146,8 +144,9 @@ fc_ratepol <- function (data.source,
     #         RESULT OF SINGLE RAND RUN
     # ----------------------------------------------
     
-      data.result <- data.frame(Age=data.smooth.check$Age$age[1:sample.size.work], RoC=DC.res.s)
-      row.names(data.result) <- row.names(data.smooth.check$Pollen)[1:sample.size.work]
+      data.result <- data.frame(sample.id=data.smooth.check$Age$sample.id[1:sample.size.work], 
+                                #Age=data.smooth.check$Age$newage[1:sample.size.work],
+                                RoC=DC.res.s)
       
       data.result.temp <- as.data.frame(list(ID=l,DF=data.result)) 
       
@@ -166,38 +165,43 @@ fc_ratepol <- function (data.source,
   # ----------------------------------------------
   
   # pivot all result by the randomisations
-  r<- reshape2::dcast(result.tibble, DF.Age~ID, value.var = "DF.RoC")
+  r<- reshape2::dcast(result.tibble, DF.sample.id~ID, value.var = "DF.RoC")
+  
+  r.small <- r[,-1]
   
   # create new dataframe with summary of randomisation results
-  r.m <-data.frame(DF.Age=r$DF.Age,
-                   RoC.mean = rowSums(select(r,-c("DF.Age"))/rand),
-                   RoC.se = apply(select(r,-c("DF.Age")),1, FUN= function(x) sd(x)/sqrt(rand)),
-                   RoC.05q = apply(select(r,-c("DF.Age")),1, FUN= function(x) quantile(x,0.05)),
-                   RoC.95q = apply(select(r,-c("DF.Age")),1, FUN= function(x) quantile(x,0.95))
+  r.m <-data.frame(
+                   RoC.median = apply(r.small,1, FUN = function(x) median(x)),
+                   RoC.se = apply(r.small,1, FUN= function(x) sd(x)/sqrt(rand)),
+                   RoC.05q = apply(r.small,1, FUN= function(x) quantile(x,0.05)),
+                   RoC.95q = apply(r.small,1, FUN= function(x) quantile(x,0.95))
                    )
-  # copy row names
-  row.names(r.m) <- row.names(result.tibble[result.tibble$ID==1,])
   
   # treshold for RoC peaks is set as median of all RoC in dataset
-  r.treshold <- median(r.m$RoC.mean)
+  r.treshold <- median(r.m$RoC.median)
   
   # calculate P-value from randomisations (what number of randomisation is higher than treshold)
-  r.m$RoC.p <- apply(select(r,-c("DF.Age")),1,FUN=function(x) {
-    y<- x>r.treshold
-    y.lengt <-length(y[y==T])
-    z <- 1-(y.lengt/rand)
-    return(z)
-  })
+  #r.m$RoC.p <- apply(select(r,-c("DF.sample.id")),1,FUN=function(x) {
+  #  y<- x>r.treshold
+  #  y.lengt <-length(y[y==T])
+  #  z <- 1-(y.lengt/rand)
+  #  return(z)
+  #})
   
   # mark significant peaks
-  r.m$Peak <-  r.m$RoC.p < 0.05
+  r.m$Peak <- r.m$RoC.05q>r.treshold  #r.m$RoC.p < 0.05
+
+  # macth the samples by the sample ID
+  r.m$sample.id <- r$DF.sample.id
+  suppressWarnings(r.m.full <- right_join(data.work$Age,r.m, by="sample.id"))
   
-  
- end.time <- Sys.time()
- time.length <- end.time - start.time
- print("-")
- print (paste("RATEPOL finished", end.time,"taking",time.length, units(time.length)))
+  # outro
  
- return(list(ID=dataset.ID,Data=r.m))
+  end.time <- Sys.time()
+ time.length <- end.time - start.time
+ cat("", fill=T)
+ cat(paste("RATEPOL finished", end.time,"taking",time.length, units(time.length)), fill=T)
+ 
+ return(list(ID=dataset.ID,Data=r.m.full))
  
 }

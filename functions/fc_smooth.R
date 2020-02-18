@@ -33,9 +33,9 @@ fc_smooth <- function(data.source,
   
   if(sm.type=="none")
   {
-    if (Debug==T){print("data will not be smoothed")}
+    if (Debug==T){cat("data will not be smoothed",fill=T)}
     
-    return(list(Pollen=p.counts, Age=age))
+    return(list(Pollen=p.counts, Age=age, Dim.val= data.source$Dim.val))
   }
   
   
@@ -45,7 +45,7 @@ fc_smooth <- function(data.source,
   
   if(sm.type=="m.avg")
   {
-    if(Debug==T){print(paste("data will be smoothed by moving average over",N.points,"points"))}
+    if(Debug==T){cat(paste("data will be smoothed by moving average over",N.points,"points"),fill=T)}
     
     N.offset <- floor(N.points/2)
     N.first <- N.offset+1
@@ -68,7 +68,7 @@ fc_smooth <- function(data.source,
     }
     p.counts.small <- p.counts[N.first:N.last,]
     age.small <-age[N.first:N.last,] 
-    return(list(Pollen=p.counts.small, Age=age.small))
+    return(list(Pollen=p.counts.small, Age=age.small, Dim.val= data.source$Dim.val))
   }
   
   
@@ -88,8 +88,8 @@ fc_smooth <- function(data.source,
     
     if (Debug==T)
       {
-      print(paste("data will be smoothed by Grimm method with min samples",N.points,
-                  "max samples",grim.N.max,"and max age range of",range.age.max))
+      print(cat("data will be smoothed by Grimm method with min samples",N.points,
+                  "max samples",grim.N.max,"and max age range of",range.age.max),fill=T)
       }
         
     # halve the number of points rounded down
@@ -148,7 +148,7 @@ fc_smooth <- function(data.source,
     }
     p.counts.small <- p.counts[N.first:N.last,]
     age.small <-age[N.first:N.last,] 
-    return(list(Pollen=p.counts.small, Age=age.small))
+    return(list(Pollen=p.counts.small, Age=age.small, Dim.val= data.source$Dim.val))
   }
   
   # ----------------------------------------------
@@ -157,7 +157,7 @@ fc_smooth <- function(data.source,
   
   if(sm.type=="age.w")
   {
-    if(Debug==T){print(paste("data will be smoothed by age-weighed average over",N.points,"points"))}
+    if(Debug==T){cat(paste("data will be smoothed by age-weighed average over",N.points,"points"),fill=T)}
     
     N.offset <- floor(N.points/2)
     N.first <- N.offset+1
@@ -174,15 +174,9 @@ fc_smooth <- function(data.source,
         F.high <- i+N.offset # max position to look for averaging in each step
         
         # create small df with values around observed sample (in range of offset)
-        #df.work <-  data.frame(values= col.work[c(F.low:F.high)], 
-         #                     age = age$newage[c(F.low:F.high)], 
-          #                    Weight=rep(1,N.points))
-        
         df.work <-  data.frame(values= .subset(col.work,c(F.low:F.high)),
                                age = .subset(age$newage,c(F.low:F.high)), 
                                Weight=rep(1,N.points))
-        
-        
         
         for (k in 1:nrow(df.work))
         {
@@ -203,7 +197,7 @@ fc_smooth <- function(data.source,
     }
     p.counts.small <- p.counts[c(N.first:N.last),]
     age.small <-age[c(N.first:N.last),] 
-    return(list(Pollen=p.counts.small, Age=age.small))
+    return(list(Pollen=p.counts.small, Age=age.small, Dim.val= data.source$Dim.val))
   }
   
   
@@ -213,7 +207,7 @@ fc_smooth <- function(data.source,
   
   if(sm.type=="shep")
   {
-    if(Debug==T){print(paste("data will be smoothed by Shepard's 5-term filter"))}
+    if(Debug==T){cat(paste("data will be smoothed by Shepard's 5-term filter"),fill=T)}
     
     N.points <- 5
     N.offset <- floor(N.points/2)
@@ -239,7 +233,7 @@ fc_smooth <- function(data.source,
     }
     p.counts.small <- p.counts[N.first:N.last,]
     age.small <-age[N.first:N.last,] 
-    return(list(Pollen=p.counts.small, Age=age.small))
+    return(list(Pollen=p.counts.small, Age=age.small, Dim.val= data.source$Dim.val))
   }
   
 }

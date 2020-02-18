@@ -16,6 +16,7 @@ sapply(paste0("~/HOPE/GITHUB/RateOfChange/functions/", files.sources, sep =""), 
 
 N.datasets <- nrow(tibble_Europe2)
 data.sub<-tibble_Europe2[c(1:65,67:70,72:74,76:125,127:131,133:N.datasets),]
+data.sub<-tibble_Europe2[c(1:N.datasets),]
 
 
 performance.smooth <- c(rep("m.avg",4),rep("grim",4),rep("age.w",4),rep("shep",4))
@@ -27,12 +28,15 @@ names(DF.performance) <- c("smooth","DC","user","system","elapsed")
 DF.performance$smooth <- performance.smooth
 DF.performance$DC <- performance.DC
 
-dataset.N <- 182
+dataset.N <- 128
+rand = 99
+
+# 3 & 187
 
 for(i in 1:nrow(DF.performance))
 {
   a<- system.time(fc_ratepol(data.sub[dataset.N,],
-                             rand = 9,
+                             rand = rand,
                              standardise = T, 
                              S.value = 150, 
                              sm.type = DF.performance$smooth[i], 
@@ -50,10 +54,12 @@ for(i in 1:nrow(DF.performance))
 DF.performance %>%
   ggplot(aes(y=elapsed, x=smooth))+
   geom_bar(aes(fill=DC),stat="identity", position = "dodge", color="black")+
-  ggtitle(paste("ID",data.sub$site.id[[dataset.N]],",N samples",nrow(data.sub$filtered.counts[[dataset.N]])))+
+  ggtitle(paste("ID",data.sub$site.id[[dataset.N]],
+                ",N samples",nrow(data.sub$filtered.counts[[dataset.N]]),
+                "N.randomisation",rand))+
   theme_classic()
 
-ggsave("ComputationTimeB.pdf")
+ggsave("ComputationTime.pdf")
 
 DF.performance[order(DF.performance$elapsed),]
 
@@ -61,8 +67,6 @@ DF.performance[order(DF.performance$elapsed),]
 # comparison of result between diferent settings
 
 performance.list <- vector("list",length = 16)
-
-dataset.N <- 2
 
 
 for(i in 1:length(performance.list))
@@ -84,15 +88,15 @@ for(i in 1:length(performance.list))
 for(i in 1:length(performance.list))
 {
   data.temp <- performance.list[[i]]
-  p.temp<-ggplot(data=data.temp, aes(y=Data.RoC.mean, 
-                                             x= Data.DF.Age))+
+  p.temp<-ggplot(data=data.temp, aes(y=Data.RoC.median, 
+                                             x= Data.age))+
     theme_classic()+
     scale_x_continuous(trans = "reverse")+
-    coord_flip(xlim=c(0,15000), ylim = c(0,1.5))+
-    geom_ribbon(aes(ymin=Data.RoC.05q, ymax=Data.RoC.95q), alpha=1/2)+
-    geom_line(aes(group=as.factor(ID)),alpha=1, size=1)+
+    coord_flip(xlim=c(0,15000), ylim = c(0,5))+
+    geom_ribbon(aes(ymin=Data.RoC.05q, ymax=Data.RoC.95q), alpha=1/5)+
+    geom_line(aes(group=as.factor(ID)),alpha=1, size=2)+
     geom_point(data = data.temp[data.temp$Data.Peak==T,],color="blue", alpha=1, size=3)+
-    geom_hline(yintercept = median(data.temp$Data.RoC.mean), color="blue")+
+    geom_hline(yintercept = median(data.temp$Data.RoC.median), color="blue")+
     geom_hline(yintercept = 0, color="red")+
     xlab("Age")+ylab("Rate of Change")+
     ggtitle(paste(performance.smooth[i],"+",performance.DC[i]))
