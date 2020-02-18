@@ -1,6 +1,7 @@
 dataset.N <- 66
 
-data.source <- data.sub[dataset.N,]
+data.source.pollen <- tibble_Europe2$filtered.counts[[1]]
+data.source.age <- tibble_Europe2$list_ages[[1]]
 rand = 9
 standardise = T
 S.value = 150
@@ -10,6 +11,23 @@ range.age.max = 300
 grim.N.max = 9
 DC = "chisq"
 Debug = F
+
+
+data.source.pollen.extract <- data.source.pollen
+data.source.age.extract <- data.source.age
+
+
+data.source.pollen.check <- data.source.pollen
+data.source.age.check <- data.source.age
+proportion = F
+Debug=F
+
+
+
+
+
+
+
 
 
 test <- fc_ratepol(data.sub[dataset.N,],

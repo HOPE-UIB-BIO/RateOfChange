@@ -1,4 +1,5 @@
-fc_ratepol <- function (data.source,
+fc_ratepol <- function (data.source.pollen,
+                        data.source.age,
                         rand = 999,
                         standardise = T, 
                         S.value = 150, 
@@ -45,12 +46,13 @@ fc_ratepol <- function (data.source,
   # ----------------------------------------------
   #               DATA EXTRACTION
   # ----------------------------------------------
-  dataset.ID <- data.source$dataset.id
   
-  cat(paste("Data set ID",dataset.ID), fill = T)
+  # dataset.ID <- data.source$dataset.id
+  
+  # cat(paste("Data set ID",dataset.ID), fill = T)
   
   # already include data check
-  data.work <- fc_extract(data.source, Debug=Debug) 
+  data.work <- fc_extract(data.source.pollen,data.source.age, Debug=Debug) 
   
   # ----------------------------------------------
   #             RANDOMOMIZATION
@@ -198,10 +200,10 @@ fc_ratepol <- function (data.source,
   # outro
  
   end.time <- Sys.time()
- time.length <- end.time - start.time
- cat("", fill=T)
- cat(paste("RATEPOL finished", end.time,"taking",time.length, units(time.length)), fill=T)
+  time.length <- end.time - start.time
+  cat("", fill=T)
+  cat(paste("RATEPOL finished", end.time,"taking",time.length, units(time.length)), fill=T)
  
- return(list(ID=dataset.ID,Data=r.m.full))
+ return(r.m.full)
  
 }

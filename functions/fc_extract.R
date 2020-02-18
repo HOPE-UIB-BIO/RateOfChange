@@ -1,4 +1,6 @@
-fc_extract <-  function (data.source, Debug = F)
+fc_extract <-  function (data.source.pollen.extract,
+                         data.source.age.extract,
+                         Debug = F)
 {
   # data.source = load data in format of one dataset from tibble
   # result of function is list length 3
@@ -15,9 +17,9 @@ fc_extract <-  function (data.source, Debug = F)
   }
   
   # extract both important tables a) age data, b) pollen data
-  age <- data.source$list_ages[[1]]$ages
-  p.counts <- data.source$filtered.counts[[1]]
-  age.un <- data.frame(data.source$list_ages[[1]]$age_position)
+  age <- data.source.age.extract$ages
+  p.counts <- data.source.pollen.extract
+  age.un <- data.frame(data.source.age.extract$age_position)
   names(age.un) <- age$sample.id
   
   # create a new variableswould be used all latter analysys
@@ -73,7 +75,6 @@ fc_extract <-  function (data.source, Debug = F)
     cat("",fill = T)
     
   }
-  
   
   return(dat.merge)
 }

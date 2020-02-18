@@ -55,57 +55,50 @@ sapply(paste0("~/HOPE/GITHUB/RateOfChange/functions/", files.sources, sep =""), 
 # 1) that each record need to span between ca 250-8000 years and 
 # 2) samples have more than 150 grains Contain only relevant data for analysis
 
-N.datasets <- nrow(tibble_Europe2)
+
 
 # dataset 66, 71, 75, 126, 132 are broken 
 # tibble_Europe2[c(1:65,67:70,72:74,76:125,127:131,133:N.datasets),]
+# N.datasets <- nrow(tibble_Europe2)
+# data.sub<-tibble_Europe2
+# glimpse(data.sub)
 
-data.sub<-tibble_Europe2
 
-glimpse(data.sub)
+glimpse(tibble_Europe2)
 
 # ----------------------------------------------
 #               COMPUTATION 
 # ----------------------------------------------
 
-
-list.res <- vector("list",length=nrow(data.sub))
-
 s.time <- Sys.time()
 
-for (i in 1:nrow(data.sub)) 
-{
-  cat(paste(i,"out of",length(list.res)), fill=T)
-  
-  list.res[[i]] <- fc_ratepol(data.source =  data.sub[i,],
-                              rand = 999,
-                              standardise = T,
-                              S.value = 150, 
-                              sm.type = "grim", 
-                              N.points = 5, 
-                              range.age.max = 300, 
-                              grim.N.max = 9,
-                              DC = "chisq",
-                              Debug = F)
-  
-}
+tibble_Europe_Roc <-  tibble_Europe2 %>%
+  mutate(., ROC = map2(filtered.counts,list_ages,
+                       .f = function(.x,.y)
+                         {res <- fc_ratepol(
+                           data.source.pollen = .x,
+                           data.source.age = .y,
+                           rand = 9,
+                           standardise = T, 
+                           S.value = 150, 
+                           sm.type = "grim", 
+                           N.points = 5, 
+                           range.age.max = 300, 
+                           grim.N.max = 9,
+                           DC = "chisq",
+                           Debug = T
+                         )} ))
+
 f.time <- Sys.time()
 tot.time <- f.time - s.time
 tot.time
 
-
-res.df.plot <- data.frame(matrix(ncol = 10, nrow = 0))
-names(res.df.plot) <- c("sample.id","depth","age","newage","RoC.median","RoC.se","RoC.05q","RoC.95q","RoC.p","Peak")
-
-
-for (k in 1:length(list.res))
-{
-  list.res[[k]]$Data$ID <- rep(list.res[[k]]$ID,nrow(list.res[[k]]$Data))
-  res.df.plot <- rbind(res.df.plot,list.res[[k]]$Data)
-}
+res.df.plot <- tibble_Europe_Roc %>%
+  select(dataset.id, collection.handle, long, lat, ROC) %>%
+  unnest(cols = c(ROC)) %>%
+  select(.,-c(newage))
 
 write.csv(res.df.plot,"results20202014.csv")
-
 
 # ----------------------------------------------
 #               CLEAN UP 
