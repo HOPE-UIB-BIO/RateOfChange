@@ -86,7 +86,7 @@ tibble_Europe_Roc <-  tibble_Europe2 %>%
                            range.age.max = 300, 
                            grim.N.max = 9,
                            DC = "chisq",
-                           Debug = T
+                           Debug = F
                          )} ))
 
 f.time <- Sys.time()

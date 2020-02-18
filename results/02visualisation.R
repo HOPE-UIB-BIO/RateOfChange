@@ -77,6 +77,29 @@ RoC_summary
 ggsave("RoC_summary.pdf")
 
 
+library(scales)
+
+tibble_Europe_Roc %>%
+  mutate(
+    N.RoC.points = select(.,ROC) %>%
+           pluck(.,1) %>% 
+           map_dbl(.,.f=function(x) {
+              dplyr::filter(x,Peak==T) %>%
+              nrow() }),
+    N.Samples = select(.,ROC) %>%
+            pluck(.,1) %>% 
+      map_dbl(.,.f=function(x) {
+        nrow(x) }),
+    Ratio = N.RoC.points/N.Samples
+    ) %>% 
+  ggplot(aes(x = long, y = lat)) +
+  borders(fill = "gray60", colour = "gray50") +
+  coord_fixed(ylim = c(30, 80), xlim = c(-10, 50)) +
+  geom_point(aes(size=Ratio, color=N.RoC.points)) + 
+  scale_color_gradient("Number of Peak-points",low="black",high = "red")+
+  scale_size("Ration of Peak-points to total samples")+
+  labs(x = "Longitude", y = "Latitude")
+
 
 # ----------------------------------------------
 # example figures for individual plots + exploration
