@@ -1,42 +1,48 @@
-data.source <- tibble_Europe2[3,]
-rand = 99
+dataset.N <- 66
+
+data.source <- data.sub[dataset.N,]
+rand = 9
 standardise = T
 S.value = 150
 sm.type = "grim" 
 N.points = 5
 range.age.max = 300
 grim.N.max = 9
-DC = "euc.sd"
+DC = "chisq"
 Debug = F
 
-test <- fc_ratepol(data.sub[3,],
-                  rand = 99,
+
+test <- fc_ratepol(data.sub[dataset.N,],
+                  rand = 999,
                   standardise = T, 
                   S.value = 150, 
                   sm.type = "grim", 
                   N.points = 5, 
                   range.age.max = 300, 
                   grim.N.max = 9,
-                  DC = "chord",
+                  DC = "chisq",
                   Debug = F)
 
-test$Data %>% ggplot(aes( y=RoC.mean, 
-                     x= DF.Age))+
+
+test$Data %>% ggplot(aes( y=RoC.median, 
+                     x= age))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), color="gray")+
+  geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), color="gray", alpha=1/5)+
   #geom_point(alpha=1/5)+
-  geom_line()+
-  geom_point(data = test$Data[test$Data$Peak==T,], color="red", size=3)+
-  geom_hline(yintercept = median(test$Data$RoC.mean), color="blue")+
+  geom_line(size=1)+
+  geom_point(data = test$Data[test$Data$Peak==T,], color="blue", size=3)+
+  geom_hline(yintercept = mean(test$Data$RoC.median), color="green")+
+  geom_hline(yintercept = median(test$Data$RoC.median), color="blue")+
+  geom_hline(yintercept = 0, color="red")+
   xlab("Age")+ylab("Rate of Change")+
   coord_flip()
 
 data.sub<-tibble_Europe2[c(1:10),]
 
 
-data.frame(POLLEN=reshape2::melt(tibble_Europe2$filtered.counts[[3]]), 
-           AGE=rep(tibble_Europe2$list_ages[[3]]$ages$age, ncol(tibble_Europe2$filtered.counts[[3]]))) %>%
+data.frame(POLLEN=reshape2::melt(tibble_Europe2$filtered.counts[[dataset.N]]), 
+           AGE=rep(tibble_Europe2$list_ages[[dataset.N]]$ages$age, ncol(tibble_Europe2$filtered.counts[[dataset.N]]))) %>%
   ggplot(aes( y=POLLEN.value, 
                   x= AGE))+
   theme_classic()+
@@ -163,4 +169,45 @@ for(i in 1:nrow(DF.size))
 }
 
 DF.size[order(DF.size$size),]
+
+
+test<-  tibble_Europe2 %>%
+  mutate( 
+    MAT = map(list_ages, .f = function(x) {
+       pluck(x,"age_position")
+    }),
+    MAT.ed = map(MAT, .f = function(x) {
+      x[,8:ncol(x)]
+    }),
+    HasZero = map(MAT.ed, .f = function(x) {
+      ifelse(any(x==0),T,F)
+    })
+  ) %>%
+  select(c("dataset.id","HasZero"))
+
+rm(test)
+
+
+test2 <- test$HasZero %>% unlist()
+
+c(1:length(test2))[test2]
+
+N <- 238
+
+tibble_Europe2$list_ages[[N]]$age_position %>%
+  apply(., 2, FUN= function(x) {any(x==0)})
+
+
+tibble_Europe2$list_ages[[N]]$age_quantile %>%
+  t()
+
+tibble_Europe2$list_ages[[N]]$age_position[,10]
+  
+tibble_Europe2$list_ages[[N]]$age_position %>%
+  as.data.frame() %>%
+  select(.,"Pos14")
+
+
+tibble_Europe2[214,]$dataset.id
+
 
