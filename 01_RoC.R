@@ -33,6 +33,7 @@ library(doSNOW)
 library(parallel)
 library(foreach)
 library(doParallel)
+library(scales)
 
 # ----------------------------------------------
 #             LOAD DATA & FUNCTIONS
@@ -78,7 +79,7 @@ tibble_Europe_Roc <-  tibble_Europe2 %>%
                          {res <- fc_ratepol(
                            data.source.pollen = .x,
                            data.source.age = .y,
-                           rand = 9,
+                           rand = 99,
                            standardise = T, 
                            S.value = 150, 
                            sm.type = "grim", 
@@ -93,12 +94,25 @@ f.time <- Sys.time()
 tot.time <- f.time - s.time
 tot.time
 
-res.df.plot <- tibble_Europe_Roc %>%
+
+tibble_Europe_Roc %>%
   select(dataset.id, collection.handle, long, lat, ROC) %>%
   unnest(cols = c(ROC)) %>%
-  select(.,-c(newage))
+  select(.,-c(newage)) %>%
+  write.csv(.,"results20202014.csv")
 
-write.csv(res.df.plot,"results20202014.csv")
+# ----------------------------------------------
+#               Plot it in map 
+# ----------------------------------------------
+
+fc_draw_RoC(tibble_Europe_Roc,type = "perplot")
+
+fc_draw_RoC(tibble_Europe_Roc,type = "singleplot", dataset.N = 20131)
+
+fc_draw_RoC(tibble_Europe_Roc,type = "summary")
+
+fc_draw_RoC(tibble_Europe_Roc,type = "map")
+
 
 # ----------------------------------------------
 #               CLEAN UP 

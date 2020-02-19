@@ -77,29 +77,6 @@ RoC_summary
 ggsave("RoC_summary.pdf")
 
 
-library(scales)
-
-tibble_Europe_Roc %>%
-  mutate(
-    N.RoC.points = select(.,ROC) %>%
-           pluck(.,1) %>% 
-           map_dbl(.,.f=function(x) {
-              dplyr::filter(x,Peak==T) %>%
-              nrow() }),
-    N.Samples = select(.,ROC) %>%
-            pluck(.,1) %>% 
-      map_dbl(.,.f=function(x) {
-        nrow(x) }),
-    Ratio = N.RoC.points/N.Samples
-    ) %>% 
-  ggplot(aes(x = long, y = lat)) +
-  borders(fill = "gray60", colour = "gray50") +
-  coord_fixed(ylim = c(30, 80), xlim = c(-10, 50)) +
-  geom_point(aes(size=Ratio, color=N.RoC.points)) + 
-  scale_color_gradient("Number of Peak-points",low="black",high = "red")+
-  scale_size("Ration of Peak-points to total samples")+
-  labs(x = "Longitude", y = "Latitude")
-
 
 # ----------------------------------------------
 # example figures for individual plots + exploration
@@ -138,18 +115,18 @@ p0
 ggsave("ExamplePlot01.pdf",plot= p0, width = 50, height = 30, units= "cm", dpi= 600)
 
 p1a <-   res.df.plot %>%
-  filter(ID==unique(res.df.plot$ID)[dataset.N]) %>%
+  filter(dataset.id==unique(res.df.plot$dataset.id)[dataset.N]) %>%
   ggplot(aes( y=RoC.median, 
               x= age)) +
   theme_classic() +
   scale_x_continuous(trans = "reverse") +
   coord_flip(xlim=c(0,max.age), ylim = c(0,5)) +
   geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), alpha=1/5) +
-  geom_line(aes(group=as.factor(ID)),alpha=1, size=2) +
+  geom_line(alpha=1, size=2) +
   geom_point(data = . %>% filter(Peak==T),color="blue", alpha=1, size=3) +
   geom_hline(yintercept = c( 
     res.df.plot %>%
-      filter(ID==unique(res.df.plot$ID)[dataset.N]) %>%
+      filter(dataset.id==unique(res.df.plot$dataset.id)[dataset.N]) %>%
       select("RoC.median") %>%
       apply(.,2, FUN = median)
   ), color="blue") +
@@ -159,8 +136,15 @@ p1a <-   res.df.plot %>%
 p1a
 
 
+
+tibble_Europe_Roc %>%
+  filter(dataset.id==20) %>%
+  select(ROC) %>%
+  unnest(cols = ROC)
+
+
 p1b <- res.df.plot %>%
-  filter(ID==unique(res.df.plot$ID)[dataset.N]) %>%
+  filter(dataset.id==unique(res.df.plot$dataset.id)[dataset.N]) %>%
   filter(Peak==T)%>%
   ggplot(aes(x=age))+
   theme_classic()+
