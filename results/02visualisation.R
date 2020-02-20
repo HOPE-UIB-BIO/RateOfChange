@@ -4,15 +4,16 @@
 # ----------------------------------------------
 #             RESULT VISUALISATION 
 # ----------------------------------------------
-
+age.treshold <- 15000
 
 RoC_summary_p1 <- res.df.plot %>%
+  filter (age < age.treshold) %>%
   ggplot(aes( y=RoC.median, 
               x= age))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim=c(0,30000), ylim = c(0,5))+
-  geom_line(aes(group=as.factor(ID)),alpha=1/10, size=1)+
+  coord_flip(xlim=c(0,age.treshold), ylim = c(0,5))+
+  geom_line(aes(group=as.factor(dataset.id)),alpha=1/10, size=1)+
   geom_hline(yintercept = 0, color="red")+
   geom_smooth(color="green", method = "loess", se=F)+
   xlab("Age")+ylab("Rate of Change")
@@ -20,11 +21,12 @@ RoC_summary_p1
 
 
 RoC_summary_p1b <-res.df.plot %>%
+  filter (age < age.treshold) %>%
   ggplot(aes(x=age))+
   geom_density(fill="gray")+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim=c(0,30000))+
+  coord_flip(xlim=c(0,age.treshold))+
   xlab("")+ylab("Density of the samples")
 RoC_summary_p1b
 
@@ -34,19 +36,20 @@ res.df.plot %>%
   geom_histogram(fill="gray",color="gray80", binwidth = 200)+
   theme_classic()+
   scale_x_continuous()+ #trans = "reverse"
-  coord_cartesian (xlim=c(0,30000))+
+  coord_cartesian (xlim=c(0,age.treshold))+
   xlab("age")+ylab("Number of the samples")+
   ggtitle("binwidth = 200")
 
 
 RoC_summary_p2 <- res.df.plot %>%
+  filter (age < age.treshold) %>%
   filter(Peak==T) %>%
   ggplot(aes( y=RoC.median, 
               x= age))+
   theme_classic()+
   scale_color_gradient2(low="white",mid="darkblue",high="black", midpoint = 4)+
   scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim=c(0,30000), ylim = c(0,5))+
+  coord_flip(xlim=c(0,age.treshold), ylim = c(0,5))+
   geom_point(aes(color=RoC.median), alpha=1/10, size=3)+
   geom_hline(yintercept = 0, color="red")+
   geom_smooth(color="orange", method = "loess", se=F)+
@@ -55,11 +58,12 @@ RoC_summary_p2 <- res.df.plot %>%
 RoC_summary_p2
 
 RoC_summary_p2b <- res.df.plot %>%
+  filter (age < age.treshold) %>%
   filter (Peak==T) %>%
   ggplot(aes( x= age))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim=c(0,30000))+
+  coord_flip(xlim=c(0,age.treshold))+
   geom_density(fill="gray")+
   xlab("")+ylab("Density of Peak-points")
 RoC_summary_p2b
@@ -71,6 +75,12 @@ RoC_summary<- ggarrange(RoC_summary_p1,RoC_summary_p1b,
 RoC_summary
 
 ggsave("RoC_summary.pdf")
+
+
+
+# ----------------------------------------------
+# example figures for individual plots + exploration
+# ----------------------------------------------
 
 which(tibble_Europe2$dataset.id %in%  22988)
 
@@ -105,18 +115,18 @@ p0
 ggsave("ExamplePlot01.pdf",plot= p0, width = 50, height = 30, units= "cm", dpi= 600)
 
 p1a <-   res.df.plot %>%
-  filter(ID==unique(res.df.plot$ID)[dataset.N]) %>%
+  filter(dataset.id==unique(res.df.plot$dataset.id)[dataset.N]) %>%
   ggplot(aes( y=RoC.median, 
               x= age)) +
   theme_classic() +
   scale_x_continuous(trans = "reverse") +
   coord_flip(xlim=c(0,max.age), ylim = c(0,5)) +
   geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), alpha=1/5) +
-  geom_line(aes(group=as.factor(ID)),alpha=1, size=2) +
+  geom_line(alpha=1, size=2) +
   geom_point(data = . %>% filter(Peak==T),color="blue", alpha=1, size=3) +
   geom_hline(yintercept = c( 
     res.df.plot %>%
-      filter(ID==unique(res.df.plot$ID)[dataset.N]) %>%
+      filter(dataset.id==unique(res.df.plot$dataset.id)[dataset.N]) %>%
       select("RoC.median") %>%
       apply(.,2, FUN = median)
   ), color="blue") +
@@ -126,8 +136,15 @@ p1a <-   res.df.plot %>%
 p1a
 
 
+
+tibble_Europe_Roc %>%
+  filter(dataset.id==20) %>%
+  select(ROC) %>%
+  unnest(cols = ROC)
+
+
 p1b <- res.df.plot %>%
-  filter(ID==unique(res.df.plot$ID)[dataset.N]) %>%
+  filter(dataset.id==unique(res.df.plot$dataset.id)[dataset.N]) %>%
   filter(Peak==T)%>%
   ggplot(aes(x=age))+
   theme_classic()+
