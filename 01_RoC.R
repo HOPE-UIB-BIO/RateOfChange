@@ -79,7 +79,7 @@ tibble_Europe_Roc <-  tibble_Europe2 %>%
                          {res <- fc_ratepol(
                            data.source.pollen = .x,
                            data.source.age = .y,
-                           rand = 99,
+                           rand = 999,
                            standardise = T, 
                            S.value = 150, 
                            sm.type = "grim", 
@@ -94,25 +94,30 @@ f.time <- Sys.time()
 tot.time <- f.time - s.time
 tot.time
 
+# ----------------------------------------------
+#                 SAVE RESULT 
+# ----------------------------------------------
 
 tibble_Europe_Roc %>%
   select(dataset.id, collection.handle, long, lat, ROC) %>%
   unnest(cols = c(ROC)) %>%
   select(.,-c(newage)) %>%
-  write.csv(.,"results20202014.csv")
+  write.csv(.,"results20202020.csv")
 
 # ----------------------------------------------
-#               Plot it in map 
+#               PLOT RESULTS 
 # ----------------------------------------------
 
 fc_draw_RoC(tibble_Europe_Roc,type = "perplot")
+ggsave("PerPlot.pdf",width = 50, height = 30, units= "cm", dpi= 600)
 
 fc_draw_RoC(tibble_Europe_Roc,type = "singleplot", dataset.N = 20131)
 
 fc_draw_RoC(tibble_Europe_Roc,type = "summary")
+ggsave("Summary.pdf",dpi= 600)
 
 fc_draw_RoC(tibble_Europe_Roc,type = "map")
-
+ggsave("RoC_map_Europe.pdf",dpi= 600)
 
 # ----------------------------------------------
 #               CLEAN UP 

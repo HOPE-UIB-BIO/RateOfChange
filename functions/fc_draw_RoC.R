@@ -69,7 +69,7 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, dataset.
       coord_flip(xlim=c(0,age.treshold))+
       geom_density(fill="gray")+
       xlab("")+ylab("Density of Peak-points")
-    p.fin
+    
     
     
     p.fin <- ggarrange(RoC_summary_p1,RoC_summary_p1b,
