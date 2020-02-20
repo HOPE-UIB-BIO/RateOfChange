@@ -104,6 +104,9 @@ tibble_Europe_Roc %>%
   select(.,-c(newage)) %>%
   write.csv(.,"results20202020.csv")
 
+# save.image("~/HOPE/GITHUB/RateOfChange/ENV20200220.RData")
+# load("~/HOPE/GITHUB/RateOfChange/ENV20200220.RData")
+
 # ----------------------------------------------
 #               PLOT RESULTS 
 # ----------------------------------------------
@@ -111,7 +114,7 @@ tibble_Europe_Roc %>%
 fc_draw_RoC(tibble_Europe_Roc,type = "perplot")
 ggsave("PerPlot.pdf",width = 50, height = 30, units= "cm", dpi= 600)
 
-fc_draw_RoC(tibble_Europe_Roc,type = "singleplot", dataset.N = 20131)
+fc_draw_RoC(tibble_Europe_Roc,type = "singleplot", dataset.N = 22828, age.treshold = 8800)
 
 fc_draw_RoC(tibble_Europe_Roc,type = "summary")
 ggsave("Summary.pdf",dpi= 600)

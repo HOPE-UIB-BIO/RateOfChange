@@ -1,4 +1,4 @@
-fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, dataset.N="" )
+fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.treshold=5, dataset.N="" )
 {
   
   res.df.plot <- data.source %>%
@@ -13,7 +13,7 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, dataset.
                   x= age))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
-      coord_flip(xlim=c(0,age.treshold), ylim = c(0,5))+
+      coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold))+
       geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), alpha=1/5)+
       geom_line(alpha=1, size=1)+
       geom_point(data = res.df.plot[res.df.plot$Peak==T,],color="blue", alpha=1, size=1)+
@@ -30,7 +30,7 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, dataset.
                   x= age))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
-      coord_flip(xlim=c(0,age.treshold), ylim = c(0,5))+
+      coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold))+
       geom_line(aes(group=as.factor(dataset.id)),alpha=1/10, size=1)+
       geom_hline(yintercept = 0, color="red")+
       geom_smooth(color="green", method = "loess", se=F)+
@@ -53,7 +53,7 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, dataset.
       theme_classic()+
       scale_color_gradient2(low="white",mid="darkblue",high="black", midpoint = 4)+
       scale_x_continuous(trans = "reverse")+
-      coord_flip(xlim=c(0,age.treshold), ylim = c(0,5))+
+      coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold))+
       geom_point(aes(color=RoC.median), alpha=1/10, size=3)+
       geom_hline(yintercept = 0, color="red")+
       geom_smooth(color="orange", method = "loess", se=F)+
@@ -120,7 +120,7 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, dataset.
                   x= age)) +
       theme_classic() +
       scale_x_continuous(trans = "reverse") +
-      coord_flip(xlim=c(0,age.treshold), ylim = c(0,5)) +
+      coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold)) +
       geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), alpha=1/5) +
       geom_line(alpha=1, size=2) +
       geom_point(data = . %>% filter(Peak==T),color="blue", alpha=1, size=3) +
