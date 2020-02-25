@@ -1,9 +1,9 @@
 dataset.N <- 130
-
 data.source.pollen <- tibble_Europe2$filtered.counts[[dataset.N]]
 data.source.age <- tibble_Europe2$list_ages[[dataset.N]]
-rand = 1000
-interest.treshold = 10000
+rand = 10
+interest.treshold = 8000
+BIN = 250
 standardise = T
 S.value = 150
 sm.type = "grim" 
@@ -32,29 +32,30 @@ which(tibble_Europe2$dataset.id %in%  22936 )
 dataset.N <- 130
 
 
-test <- fc_ratepol(data.source.pollen =  tibble_Europe2$filtered.counts[[dataset.N]],
-                   data.source.age = tibble_Europe2$list_ages[[dataset.N]],
-                  rand = 1000,
-                  interest.treshold = 10000,
-                  standardise = T, 
-                  S.value = 150, 
-                  sm.type = "grim", 
-                  N.points = 5, 
-                  range.age.max = 300, 
-                  grim.N.max = 9,
-                  DC = "chisq",
-                  Debug = F)
+test <- fc_ratepol( data.source.pollen =  tibble_Europe2$filtered.counts[[dataset.N]],
+                    data.source.age = tibble_Europe2$list_ages[[dataset.N]],
+                    rand = 100,
+                    interest.treshold = 8000,
+                    BIN = 150,
+                    standardise = T, 
+                    S.value = 150, 
+                    sm.type = "grim", 
+                    N.points = 5, 
+                    range.age.max = 300, 
+                    grim.N.max = 9,
+                    DC = "chisq",
+                    Debug = F)
 
-test %>% ggplot(aes( y=RoC, 
-                     x= age))+
+test %>% ggplot(aes( y=DF.RoC, 
+                     x= DF.Newage))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), color="gray", alpha=1/5)+
+  geom_ribbon(aes(ymin=DF.RoC.05q, ymax=DF.RoC.95q), color="gray", alpha=1/5)+
   #geom_point(alpha=1/5)+
   geom_line(size=1)+
   geom_point(data = test[test$Peak==T,], color="blue", size=3)+
   #geom_hline(yintercept = mean(test$RoC.median), color="green")+
-  geom_hline(yintercept = median(test$RoC), color="blue")+
+  geom_hline(yintercept = median(test$DF.RoC), color="blue")+
   geom_hline(yintercept = 0, color="red")+
   xlab("Age")+ylab("Rate of Change")+
   coord_flip(xlim=c(0,8000), ylim=c(0,5))
@@ -74,16 +75,16 @@ data.sd.check$Pollen %>% colSums()
 data.sd.check.t$Pollen %>% colSums()
 
 
-r.m.full %>% ggplot(aes( y=RoC, 
-                      x= age))+
+r.m.full %>% ggplot(aes( y=DF.RoC, 
+                      x= DF.Newage))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), color="gray", alpha=1/5)+
+  geom_ribbon(aes(ymin=DF.RoC.05q, ymax=DF.RoC.95q), color="gray", alpha=1/5)+
   #geom_point(alpha=1/5)+
   geom_line(size=1)+
   geom_point(data = r.m.full[r.m.full$Peak==T,], color="blue", size=3)+
   #geom_hline(yintercept = mean(test$RoC.median), color="green")+
-  geom_hline(yintercept = median(r.m.full$RoC), color="blue")+
+  geom_hline(yintercept = median(r.m.full$DF.RoC), color="blue")+
   geom_hline(yintercept = 0, color="red")+
   xlab("Age")+ylab("Rate of Change")+
   coord_flip(xlim=c(0,8000), ylim=c(0,5)) 
