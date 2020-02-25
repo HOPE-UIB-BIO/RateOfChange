@@ -1,8 +1,9 @@
-dataset.N <- 66
+dataset.N <- 130
 
-data.source.pollen <- tibble_Europe2$filtered.counts[[1]]
-data.source.age <- tibble_Europe2$list_ages[[1]]
-rand = 9
+data.source.pollen <- tibble_Europe2$filtered.counts[[dataset.N]]
+data.source.age <- tibble_Europe2$list_ages[[dataset.N]]
+rand = 1000
+interest.treshold = 10000
 standardise = T
 S.value = 150
 sm.type = "grim" 
@@ -23,15 +24,18 @@ proportion = F
 Debug=F
 
 
+tibble_Europe_Roc$ROC[[1]]
 
 
+which(tibble_Europe2$dataset.id %in%  22936 )
+
+dataset.N <- 130
 
 
-
-
-
-test <- fc_ratepol(data.sub[dataset.N,],
-                  rand = 999,
+test <- fc_ratepol(data.source.pollen =  tibble_Europe2$filtered.counts[[dataset.N]],
+                   data.source.age = tibble_Europe2$list_ages[[dataset.N]],
+                  rand = 1000,
+                  interest.treshold = 10000,
                   standardise = T, 
                   S.value = 150, 
                   sm.type = "grim", 
@@ -41,20 +45,52 @@ test <- fc_ratepol(data.sub[dataset.N,],
                   DC = "chisq",
                   Debug = F)
 
-
-test$Data %>% ggplot(aes( y=RoC.median, 
+test %>% ggplot(aes( y=RoC, 
                      x= age))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), color="gray", alpha=1/5)+
   #geom_point(alpha=1/5)+
   geom_line(size=1)+
-  geom_point(data = test$Data[test$Data$Peak==T,], color="blue", size=3)+
-  geom_hline(yintercept = mean(test$Data$RoC.median), color="green")+
-  geom_hline(yintercept = median(test$Data$RoC.median), color="blue")+
+  geom_point(data = test[test$Peak==T,], color="blue", size=3)+
+  #geom_hline(yintercept = mean(test$RoC.median), color="green")+
+  geom_hline(yintercept = median(test$RoC), color="blue")+
   geom_hline(yintercept = 0, color="red")+
   xlab("Age")+ylab("Rate of Change")+
-  coord_flip()
+  coord_flip(xlim=c(0,8000), ylim=c(0,5))
+
+
+data.sd <- fc_standar(data.work, S.value, Debug=Debug)
+data.sd.check <- fc_check(data.sd, proportion = T, Debug=Debug)
+
+data.sd.t <- fc_standar(data.work.t, S.value, Debug=Debug)
+data.sd.check.t <- fc_check(data.sd.t, proportion = T, Debug=Debug)
+
+
+data.sd.check$Age$newage
+data.sd.check.t$Age$newage
+
+data.sd.check$Pollen %>% colSums()
+data.sd.check.t$Pollen %>% colSums()
+
+
+r.m.full %>% ggplot(aes( y=RoC, 
+                      x= age))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), color="gray", alpha=1/5)+
+  #geom_point(alpha=1/5)+
+  geom_line(size=1)+
+  geom_point(data = r.m.full[r.m.full$Peak==T,], color="blue", size=3)+
+  #geom_hline(yintercept = mean(test$RoC.median), color="green")+
+  geom_hline(yintercept = median(r.m.full$RoC), color="blue")+
+  geom_hline(yintercept = 0, color="red")+
+  xlab("Age")+ylab("Rate of Change")+
+  coord_flip(xlim=c(0,8000), ylim=c(0,5)) 
+
+
+
+
 
 data.sub<-tibble_Europe2[c(1:10),]
 
@@ -227,5 +263,36 @@ tibble_Europe2$list_ages[[N]]$age_position %>%
 
 
 tibble_Europe2[214,]$dataset.id
+
+
+
+s.time <- Sys.time()
+
+tibble_Europe_Roc <-  tibble_Europe2[1:5,] %>%
+  mutate(., ROC = map2(filtered.counts,list_ages,
+                       .f = function(.x,.y)
+                       {res <- fc_ratepol(
+                         data.source.pollen = .x,
+                         data.source.age = .y,
+                         interest.treshold = 10000,
+                         rand = 1000,
+                         standardise = T, 
+                         S.value = 150, 
+                         sm.type = "grim", 
+                         N.points = 5, 
+                         range.age.max = 500, 
+                         grim.N.max = 9,
+                         DC = "chisq",
+                         Debug = F
+                       )} ))
+
+f.time <- Sys.time()
+tot.time <- f.time - s.time
+tot.time
+
+
+tibble_Europe2$list_ages[[1]]$age_position %>% apply(.,1, FUN= is.unsorted) 
+
+tibble_Europe2$list_ages[[1]]$age_position[1,]
 
 

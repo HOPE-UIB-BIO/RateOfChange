@@ -43,7 +43,7 @@ library(scales)
 setwd("~/HOPE/GITHUB/RateOfChange")
 # "C:/Users/ondre/Dropbox/HOPE_data"
 
-load("C:/Users/ondre/Dropbox/HOPE_data/tibble_Europe_filtered13.02.20.RData")
+load("C:/Users/ondre/Dropbox/HOPE_data/tibble_Europe_filtered18.02.20.RData")
 
 files.sources <- list.files("~/HOPE/GITHUB/RateOfChange/functions/") 
 sapply(paste0("~/HOPE/GITHUB/RateOfChange/functions/", files.sources, sep =""), source)
@@ -79,6 +79,7 @@ tibble_Europe_Roc <-  tibble_Europe2 %>%
                          {res <- fc_ratepol(
                            data.source.pollen = .x,
                            data.source.age = .y,
+                           interest.treshold = 10000,
                            rand = 999,
                            standardise = T, 
                            S.value = 150, 
@@ -111,15 +112,15 @@ tibble_Europe_Roc %>%
 #               PLOT RESULTS 
 # ----------------------------------------------
 
-fc_draw_RoC(tibble_Europe_Roc,type = "perplot")
+fc_draw_RoC(tibble_Europe_Roc,type = "perplot", age.treshold = 8000)
 ggsave("PerPlot.pdf",width = 50, height = 30, units= "cm", dpi= 600)
 
-fc_draw_RoC(tibble_Europe_Roc,type = "singleplot", dataset.N = 22828, age.treshold = 8800)
+fc_draw_RoC(tibble_Europe_Roc,type = "singleplot", dataset.N = 22352, age.treshold = 8000)
 
-fc_draw_RoC(tibble_Europe_Roc,type = "summary")
+fc_draw_RoC(tibble_Europe_Roc,type = "summary", age.treshold = 8000)
 ggsave("Summary.pdf",dpi= 600)
 
-fc_draw_RoC(tibble_Europe_Roc,type = "map")
+fc_draw_RoC(tibble_Europe_Roc,type = "map", age.treshold = 8000)
 ggsave("RoC_map_Europe.pdf",dpi= 600)
 
 # ----------------------------------------------

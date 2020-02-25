@@ -9,7 +9,8 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
   if (type=="perplot")
   {
     p.fin<- res.df.plot %>%
-      ggplot(aes( y=RoC.median, 
+      filter(age <= age.treshold) %>%
+      ggplot(aes( y=RoC, 
                   x= age))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
@@ -25,8 +26,8 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
   if( type=="summary")
   {
     RoC_summary_p1 <- res.df.plot %>%
-      filter (age < age.treshold) %>%
-      ggplot(aes( y=RoC.median, 
+      filter (age <= age.treshold) %>%
+      ggplot(aes( y=RoC, 
                   x= age))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
@@ -48,13 +49,13 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
     RoC_summary_p2 <- res.df.plot %>%
       filter (age < age.treshold) %>%
       filter(Peak==T) %>%
-      ggplot(aes( y=RoC.median, 
+      ggplot(aes( y=RoC, 
                   x= age))+
       theme_classic()+
       scale_color_gradient2(low="white",mid="darkblue",high="black", midpoint = 4)+
       scale_x_continuous(trans = "reverse")+
       coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold))+
-      geom_point(aes(color=RoC.median), alpha=1/10, size=3)+
+      geom_point(aes(color=RoC), alpha=1/10, size=3)+
       geom_hline(yintercept = 0, color="red")+
       geom_smooth(color="orange", method = "loess", se=F)+
       xlab("")+ylab("Rate of Change")+
@@ -87,12 +88,14 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
         N.RoC.points = select(.,ROC) %>%
           pluck(.,1) %>% 
           map_dbl(.,.f=function(x) {
-            dplyr::filter(x,Peak==T) %>%
+            filter(x,age <= age.treshold) %>%
+            filter(.,Peak==T) %>%
               nrow() }),
         N.Samples = select(.,ROC) %>%
           pluck(.,1) %>% 
           map_dbl(.,.f=function(x) {
-            nrow(x) }),
+            filter(x,age <= age.treshold) %>%
+            nrow(.) }),
         Ratio = N.RoC.points/N.Samples
       ) %>% 
       ggplot(aes(x = long, y = lat)) +
@@ -116,7 +119,8 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
       unnest(cols = ROC)
     
     p.fin <- single.plot %>%
-      ggplot(aes( y=RoC.median, 
+      filter(age <= age.treshold) %>%
+      ggplot(aes( y=RoC, 
                   x= age)) +
       theme_classic() +
       scale_x_continuous(trans = "reverse") +
@@ -124,10 +128,11 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
       geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), alpha=1/5) +
       geom_line(alpha=1, size=2) +
       geom_point(data = . %>% filter(Peak==T),color="blue", alpha=1, size=3) +
-      geom_hline(yintercept = single.plot$RoC.median %>%
+      geom_hline(yintercept = single.plot$RoC %>%
                    median(), color="blue") +
       geom_hline(yintercept = 0, color="red") +
-      xlab("Age")+ylab("Rate of Change")
+      xlab("Age")+ylab("Rate of Change")+
+      ggtitle(dataset.N)
   }
   
  return(p.fin) 

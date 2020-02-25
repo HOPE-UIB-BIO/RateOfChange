@@ -1,6 +1,7 @@
 fc_ratepol <- function (data.source.pollen,
                         data.source.age,
-                        rand = 999,
+                        rand = 1000,
+                        interest.treshold = F,
                         standardise = T, 
                         S.value = 150, 
                         sm.type = "grim", 
@@ -54,6 +55,11 @@ fc_ratepol <- function (data.source.pollen,
   # already include data check
   data.work <- fc_extract(data.source.pollen,data.source.age, Debug=Debug) 
   
+  if (interest.treshold!=FALSE)
+  {
+    data.work <- fc_reduce(data.work,interest.treshold)  
+  }  
+  
   # ----------------------------------------------
   #             RANDOMOMIZATION
   # ----------------------------------------------
@@ -80,10 +86,12 @@ fc_ratepol <- function (data.source.pollen,
     # ----------------------------------------------
     #             DATA STANDARFISATION
     # ----------------------------------------------
+    data.sd <- data.work 
+    
     # standardisation of pollen data to X(S.value) number of pollen grains 
     if(standardise==T) # 
     {
-      data.sd <- fc_standar(data.work, S.value, Debug=Debug)
+      data.sd <- fc_standar(data.sd, S.value, Debug=Debug)
       
       if(any(rowSums(data.sd$Pollen)!=S.value))
         stop("standardisation was unsuccesfull")
@@ -122,7 +130,7 @@ fc_ratepol <- function (data.source.pollen,
     
     for (i in 1:sample.size.work)
     {
-      age.diff[i] <- abs(data.smooth.check$Age$newage[i+1]-data.smooth.check$Age$newage[i]) 
+      age.diff[i] <- data.smooth.check$Age$newage[i+1]-data.smooth.check$Age$newage[i] 
       # temporary fix for errors in age data where age difference between samples is 0
       if(age.diff[i]<1)
       {age.diff[i]<-1}
@@ -139,7 +147,7 @@ fc_ratepol <- function (data.source.pollen,
     DC.res.s <- vector(mode = "numeric", length = sample.size.work)
     for (j in 1:sample.size.work)
     {
-      DC.res.s[j] <- DC.res[j]*mean(age.diff)/age.diff[j]
+      DC.res.s[j] <- (DC.res[j]*mean(age.diff))/age.diff[j]
     }
     
     # ----------------------------------------------
@@ -173,22 +181,15 @@ fc_ratepol <- function (data.source.pollen,
   
   # create new dataframe with summary of randomisation results
   r.m <-data.frame(
-                   RoC.median = apply(r.small,1, FUN = function(x) median(x)),
+                   RoC = apply(r.small,1, FUN = function(x) median(x)),
                    RoC.se = apply(r.small,1, FUN= function(x) sd(x)/sqrt(rand)),
-                   RoC.05q = apply(r.small,1, FUN= function(x) quantile(x,0.05)),
-                   RoC.95q = apply(r.small,1, FUN= function(x) quantile(x,0.95))
+                   RoC.05q = apply(r.small,1, FUN= function(x) quantile(x,0.025)),
+                   RoC.95q = apply(r.small,1, FUN= function(x) quantile(x,0.975))
                    )
   
   # treshold for RoC peaks is set as median of all RoC in dataset
-  r.treshold <- median(r.m$RoC.median)
+  r.treshold <- median(r.m$RoC)
   
-  # calculate P-value from randomisations (what number of randomisation is higher than treshold)
-  #r.m$RoC.p <- apply(select(r,-c("DF.sample.id")),1,FUN=function(x) {
-  #  y<- x>r.treshold
-  #  y.lengt <-length(y[y==T])
-  #  z <- 1-(y.lengt/rand)
-  #  return(z)
-  #})
   
   # mark significant peaks
   r.m$Peak <- r.m$RoC.05q>r.treshold  #r.m$RoC.p < 0.05
@@ -196,6 +197,7 @@ fc_ratepol <- function (data.source.pollen,
   # macth the samples by the sample ID
   r.m$sample.id <- r$DF.sample.id
   suppressWarnings(r.m.full <- right_join(data.work$Age,r.m, by="sample.id"))
+    
   
   # outro
  
