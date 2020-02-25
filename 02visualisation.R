@@ -82,9 +82,9 @@ ggsave("RoC_summary.pdf")
 # example figures for individual plots + exploration
 # ----------------------------------------------
 
-which(tibble_Europe2$dataset.id %in%  22828 )
+which(tibble_Europe2$dataset.id %in%  22936 )
 
-dataset.N <- 140 # 140
+dataset.N <- 130 # 140
 max.age <- max(tibble_Europe2$list_ages[[dataset.N]]$ages$age)
 
 N.taxa <- 10
@@ -108,7 +108,7 @@ p0<-data.frame(POLLEN=tibble_Europe2$filtered.counts[[dataset.N]] %>%
   #geom_smooth(method = "loess",color="blue",se=F)+
   facet_wrap(~POLLEN.variable)+
   xlab("Age")+ylab("Pollen")+
-  coord_flip(xlim=c(0,max.age))
+  coord_flip(xlim=c(0,8000))
 p0
 
 ggsave("ExamplePlot01.pdf",plot= p0, width = 50, height = 30, units= "cm", dpi= 600)

@@ -56,15 +56,6 @@ sapply(paste0("~/HOPE/GITHUB/RateOfChange/functions/", files.sources, sep =""), 
 # 1) that each record need to span between ca 250-8000 years and 
 # 2) samples have more than 150 grains Contain only relevant data for analysis
 
-
-
-# dataset 66, 71, 75, 126, 132 are broken 
-# tibble_Europe2[c(1:65,67:70,72:74,76:125,127:131,133:N.datasets),]
-# N.datasets <- nrow(tibble_Europe2)
-# data.sub<-tibble_Europe2
-# glimpse(data.sub)
-
-
 glimpse(tibble_Europe2)
 
 # ----------------------------------------------

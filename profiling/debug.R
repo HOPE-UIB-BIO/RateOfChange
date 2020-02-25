@@ -107,7 +107,7 @@ data.frame(POLLEN=reshape2::melt(tibble_Europe2$filtered.counts[[dataset.N]]),
   #geom_density_2d()+
   xlab("Age")+ylab("Pollen")+
   facet_wrap(~POLLEN.variable)+
-  coord_flip()
+  coord_flip(ylim = c(0,8000))
 
 
 
@@ -137,15 +137,15 @@ tibble_Europe2$list_ages[[132]]$ages
 
 
 
-r.m %>% ggplot(aes( y=RoC.mean, 
-                     x= DF.Age))+
+r.m.full %>% ggplot(aes( y=RoC, 
+                     x= age))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), color="gray")+
   #geom_point(alpha=1/5)+
   geom_line()+
-  geom_point(data = r.m[r.m$Peak==T,], color="red", size=3)+
-  geom_hline(yintercept = median(r.m$RoC.mean), color="blue")+
+  geom_point(data = r.m.full[r.m.full$Peak==T,], color="red", size=3)+
+  geom_hline(yintercept = median(r.m.full$RoC), color="blue")+
   xlab("Age")+ylab("Rate of Change")+
   coord_flip()
 
@@ -274,7 +274,7 @@ tibble_Europe_Roc <-  tibble_Europe2[1:5,] %>%
                        {res <- fc_ratepol(
                          data.source.pollen = .x,
                          data.source.age = .y,
-                         interest.treshold = 10000,
+                         interest.treshold = 8000,
                          rand = 1000,
                          standardise = T, 
                          S.value = 150, 
