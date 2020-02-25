@@ -6,7 +6,7 @@ fc_ratepol <- function (data.source.pollen,
                         S.value = 150, 
                         sm.type = "grim", 
                         N.points = 5, 
-                        range.age.max = 300, 
+                        range.age.max = 500, 
                         grim.N.max = 9,
                         DC = "chisq",
                         Debug = F)
@@ -55,10 +55,7 @@ fc_ratepol <- function (data.source.pollen,
   # already include data check
   data.work <- fc_extract(data.source.pollen,data.source.age, Debug=Debug) 
   
-  if (interest.treshold!=FALSE)
-  {
-    data.work <- fc_reduce(data.work,interest.treshold)  
-  }  
+  #if (interest.treshold!=FALSE)  {data.work <- fc_reduce(data.work,interest.treshold)}  
   
   # ----------------------------------------------
   #             RANDOMOMIZATION
@@ -186,17 +183,26 @@ fc_ratepol <- function (data.source.pollen,
                    RoC.05q = apply(r.small,1, FUN= function(x) quantile(x,0.025)),
                    RoC.95q = apply(r.small,1, FUN= function(x) quantile(x,0.975))
                    )
-  
-  # treshold for RoC peaks is set as median of all RoC in dataset
-  r.treshold <- median(r.m$RoC)
-  
-  
-  # mark significant peaks
-  r.m$Peak <- r.m$RoC.05q>r.treshold  #r.m$RoC.p < 0.05
-
   # macth the samples by the sample ID
   r.m$sample.id <- r$DF.sample.id
   suppressWarnings(r.m.full <- right_join(data.work$Age,r.m, by="sample.id"))
+  
+  
+  # reduce results by the focus age time
+  if (interest.treshold!=F)
+  {
+    r.m.full <- r.m.full %>%
+      filter(age<=interest.treshold)
+  }
+    
+
+  # treshold for RoC peaks is set as median of all RoC in dataset
+  r.treshold <- median(r.m.full$RoC)
+  
+  
+  # mark significant peaks
+  r.m.full$Peak <- r.m.full$RoC.05q>r.treshold  #r.m$RoC.p < 0.05
+
     
   
   # outro
