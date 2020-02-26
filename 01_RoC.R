@@ -104,15 +104,15 @@ tibble_Europe_Roc %>%
 #               PLOT RESULTS 
 # ----------------------------------------------
 
-fc_draw_RoC(tibble_Europe_Roc,type = "perplot", age.treshold = 8000, Roc.treshold = 3)
+fc_draw_RoC(tibble_Europe_Roc,type = "perplot", age.treshold = 8000, Roc.treshold = 3,Signif.value = "Peak")
 ggsave("PerPlot.pdf",width = 50, height = 30, units= "cm", dpi= 600)
 
 fc_draw_RoC(tibble_Europe_Roc,type = "singleplot", dataset.N = 22352, age.treshold = 8000)
 
-fc_draw_RoC(tibble_Europe_Roc,type = "summary", age.treshold = 8000, Roc.treshold = 3)
+fc_draw_RoC(tibble_Europe_Roc,type = "summary", age.treshold = 8000, Roc.treshold = 3, Signif.value = "Peak")
 ggsave("Summary.pdf",dpi= 600)
 
-fc_draw_RoC(tibble_Europe_Roc,type = "map", age.treshold = 8000)
+fc_draw_RoC(tibble_Europe_Roc,type = "map", age.treshold = 8000, Signif.value = "Peak")
 ggsave("RoC_map_Europe.pdf",dpi= 600)
 
 # ----------------------------------------------

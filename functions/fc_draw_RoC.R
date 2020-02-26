@@ -1,4 +1,5 @@
-fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.treshold=5, dataset.N="")
+fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, 
+                         Roc.treshold=5, dataset.N="", Signif.value="Peak")
 {
   
   res.df.plot <- data.source %>%
@@ -16,7 +17,7 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
       coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold))+
       geom_ribbon(aes(ymin=DF.RoC.05q, ymax=DF.RoC.95q), alpha=1/5)+
       geom_line(alpha=1, size=1)+
-      geom_point(data = res.df.plot[res.df.plot$Peak==T,],color="blue", alpha=1, size=1)+
+      geom_point(data = res.df.plot %>%  filter(get(noquote(Signif.value))==T) , color="blue", size=1)+
       geom_hline(yintercept = 0, color="red")+
       facet_wrap(~ dataset.id)+
       xlab("Age")+ylab("Rate of Change")
@@ -47,7 +48,7 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
     
     RoC_summary_p2 <- res.df.plot %>%
       filter (DF.Newage < age.treshold) %>%
-      filter(Peak==T) %>%
+      filter(get(noquote(Signif.value))==T) %>%
       ggplot(aes( y=DF.RoC, 
                   x= DF.Newage))+
       theme_classic()+
@@ -62,7 +63,7 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
 
     RoC_summary_p2b <- res.df.plot %>%
       filter (DF.Newage < age.treshold) %>%
-      filter (Peak==T) %>%
+      filter(get(noquote(Signif.value))==T) %>%
       ggplot(aes( x= DF.Newage))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
@@ -70,9 +71,10 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
       geom_density(fill="gray")+
       xlab("")+ylab("Density of Peak-points")
     
+    
     p.fin <- ggarrange(RoC_summary_p1,RoC_summary_p1b,
-                            RoC_summary_p2,RoC_summary_p2b,
-                            ncol = 4, labels = c("A","B","C","D"))
+                       RoC_summary_p2,RoC_summary_p2b,
+                       ncol = 4, labels = c("A","B","C","D"))
   }
   
   if (type=="map")
@@ -85,13 +87,13 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
         N.RoC.points = select(.,ROC) %>%
           pluck(.,1) %>% 
           map_dbl(.,.f=function(x) {
-            filter(x,DF.Age <= age.treshold) %>%
-            filter(.,Peak==T) %>%
+            filter(x,DF.Newage <= age.treshold) %>%
+              filter(.,get(noquote(Signif.value))==T) %>%
               nrow() }),
         N.Samples = select(.,ROC) %>%
           pluck(.,1) %>% 
           map_dbl(.,.f=function(x) {
-            filter(x,DF.Age <= age.treshold) %>%
+            filter(x,DF.Newage <= age.treshold) %>%
             nrow(.) }),
         Ratio = N.RoC.points/N.Samples
       ) %>% 

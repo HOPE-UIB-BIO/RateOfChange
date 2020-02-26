@@ -233,6 +233,8 @@ fc_ratepol <- function (data.source.pollen,
   # treshold for RoC peaks is set as median of all RoC in dataset
   r.treshold <- median(r.m.full$DF.RoC)
   
+  # mark point which are above median
+  r.m.full$soft.Peak <- r.m.full$DF.RoC > r.treshold
   
   # mark significant peaks
   r.m.full$Peak <- r.m.full$DF.RoC.05q>r.treshold  #r.m$RoC.p < 0.05

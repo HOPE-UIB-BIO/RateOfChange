@@ -1,9 +1,12 @@
-dataset.N <- 130
+which(tibble_Europe2$dataset.id %in%  45117 )
+
+
+dataset.N <- 122
 data.source.pollen <- tibble_Europe2$filtered.counts[[dataset.N]]
 data.source.age <- tibble_Europe2$list_ages[[dataset.N]]
 rand = 10
 interest.treshold = 8000
-intrapolate = T
+intrapolate = F
 BIN = 250
 standardise = T
 S.value = 150
@@ -19,24 +22,13 @@ data.source.extrap <- data.bin
 data.source.pollen.extract <- data.source.pollen
 data.source.age.extract <- data.source.age
 
-
 data.source.pollen.check <- data.source.pollen
 data.source.age.check <- data.source.age
-proportion = F
-Debug=F
-
-
-tibble_Europe_Roc$ROC[[1]]
-
-
-which(tibble_Europe2$dataset.id %in%  22936 )
-
-dataset.N <- 130
 
 
 test <- fc_ratepol( data.source.pollen =  tibble_Europe2$filtered.counts[[dataset.N]],
                     data.source.age = tibble_Europe2$list_ages[[dataset.N]],
-                    rand = 10,
+                    rand = 1000,
                     interest.treshold = 8000,
                     intrapolate = F,
                     BIN = 250,
@@ -56,26 +48,41 @@ test %>% ggplot(aes( y=DF.RoC,
   geom_ribbon(aes(ymin=DF.RoC.05q, ymax=DF.RoC.95q), color="gray", alpha=1/5)+
   #geom_point(alpha=1/5)+
   geom_line(size=1)+
+  geom_point(data = test[test$soft.Peak==T,], color="orange", size=3)+
   geom_point(data = test[test$Peak==T,], color="blue", size=3)+
   #geom_hline(yintercept = mean(test$RoC.median), color="green")+
   geom_hline(yintercept = median(test$DF.RoC), color="blue")+
   geom_hline(yintercept = 0, color="red")+
   xlab("Age")+ylab("Rate of Change")+
-  coord_flip(xlim=c(0,8000), ylim=c(0,5))
+  coord_flip(xlim=c(0,8000), ylim=c(0,3))
 
 
-data.sd <- fc_standar(data.work, S.value, Debug=Debug)
-data.sd.check <- fc_check(data.sd, proportion = T, Debug=Debug)
 
-data.sd.t <- fc_standar(data.work.t, S.value, Debug=Debug)
-data.sd.check.t <- fc_check(data.sd.t, proportion = T, Debug=Debug)
+s.time <- Sys.time()
 
+tibble_Europe_Roc <-  tibble_Europe2[1:20,] %>%
+  mutate(., ROC = map2(filtered.counts,list_ages,
+                       .f = function(.x,.y)
+                       {res <- fc_ratepol(
+                         data.source.pollen = .x,
+                         data.source.age = .y,
+                         interest.treshold = 8000,
+                         rand = 10,
+                         intrapolate = F,
+                         BIN = 250,
+                         standardise = T, 
+                         S.value = 150, 
+                         sm.type = "grim", 
+                         N.points = 5, 
+                         range.age.max = 500, 
+                         grim.N.max = 9,
+                         DC = "chisq",
+                         Debug = F
+                       )} ))
 
-data.sd.check$Age$newage
-data.sd.check.t$Age$newage
-
-data.sd.check$Pollen %>% colSums()
-data.sd.check.t$Pollen %>% colSums()
+f.time <- Sys.time()
+tot.time <- f.time - s.time
+tot.time
 
 
 r.m.full %>% ggplot(aes( y=DF.RoC, 
@@ -90,13 +97,8 @@ r.m.full %>% ggplot(aes( y=DF.RoC,
   geom_hline(yintercept = median(r.m.full$DF.RoC), color="blue")+
   geom_hline(yintercept = 0, color="red")+
   xlab("Age")+ylab("Rate of Change")+
-  coord_flip(xlim=c(0,8000), ylim=c(0,5)) 
+  coord_flip(xlim=c(0,8000), ylim=c(0,3)) 
 
-
-
-
-
-data.sub<-tibble_Europe2[c(1:10),]
 
 
 data.frame(POLLEN=reshape2::melt(tibble_Europe2$filtered.counts[[dataset.N]]), 
@@ -213,90 +215,10 @@ microbenchmark(
   test3[15]
 )
 
+abe <- c(1:10)
 
+t <- "abe"
 
+get(noquote(t))
 
-DF.size <- data.frame(matrix(nrow=nrow(data.sub),ncol=3))
-names(DF.size) <- c("order","ID","size")
-DF.size$order <- 1:nrow(DF.size)
-
-for(i in 1:nrow(DF.size))
-{
-  DF.size$ID[i] <- data.sub$dataset.id[[i]]
-  DF.size$size[i] <- nrow(data.sub$filtered.counts[[i]])
-}
-
-DF.size[order(DF.size$size),]
-
-
-test<-  tibble_Europe2 %>%
-  mutate( 
-    MAT = map(list_ages, .f = function(x) {
-       pluck(x,"age_position")
-    }),
-    MAT.ed = map(MAT, .f = function(x) {
-      x[,8:ncol(x)]
-    }),
-    HasZero = map(MAT.ed, .f = function(x) {
-      ifelse(any(x==0),T,F)
-    })
-  ) %>%
-  select(c("dataset.id","HasZero"))
-
-rm(test)
-
-
-test2 <- test$HasZero %>% unlist()
-
-c(1:length(test2))[test2]
-
-N <- 238
-
-tibble_Europe2$list_ages[[N]]$age_position %>%
-  apply(., 2, FUN= function(x) {any(x==0)})
-
-
-tibble_Europe2$list_ages[[N]]$age_quantile %>%
-  t()
-
-tibble_Europe2$list_ages[[N]]$age_position[,10]
-  
-tibble_Europe2$list_ages[[N]]$age_position %>%
-  as.data.frame() %>%
-  select(.,"Pos14")
-
-
-tibble_Europe2[214,]$dataset.id
-
-
-
-s.time <- Sys.time()
-
-tibble_Europe_Roc <-  tibble_Europe2[1:5,] %>%
-  mutate(., ROC = map2(filtered.counts,list_ages,
-                       .f = function(.x,.y)
-                       {res <- fc_ratepol(
-                         data.source.pollen = .x,
-                         data.source.age = .y,
-                         interest.treshold = 8000,
-                         rand = 1000,
-                         standardise = T, 
-                         S.value = 150, 
-                         sm.type = "grim", 
-                         N.points = 5, 
-                         range.age.max = 500, 
-                         grim.N.max = 9,
-                         DC = "chisq",
-                         Debug = F
-                       )} ))
-
-f.time <- Sys.time()
-tot.time <- f.time - s.time
-tot.time
-
-
-tibble_Europe2$list_ages[[1]]$age_position %>% apply(.,1, FUN= is.unsorted) 
-
-tibble_Europe2$list_ages[[1]]$age_position[1,]
-
-
+noquote(t)
