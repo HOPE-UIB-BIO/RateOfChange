@@ -1,21 +1,20 @@
-fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.treshold=5, dataset.N="" )
+fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.treshold=5, dataset.N="")
 {
   
   res.df.plot <- data.source %>%
     select(dataset.id, collection.handle, long, lat, ROC) %>%
-    unnest(cols = c(ROC)) %>%
-    select(.,-c(newage))
+    unnest(cols = c(ROC))
   
   if (type=="perplot")
   {
     p.fin<- res.df.plot %>%
-      filter(age <= age.treshold) %>%
-      ggplot(aes( y=RoC, 
-                  x= age))+
+      filter(DF.Age <= age.treshold) %>%
+      ggplot(aes( y=DF.RoC, 
+                  x= DF.Age))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
       coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold))+
-      geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), alpha=1/5)+
+      geom_ribbon(aes(ymin=DF.RoC.05q, ymax=DF.RoC.95q), alpha=1/5)+
       geom_line(alpha=1, size=1)+
       geom_point(data = res.df.plot[res.df.plot$Peak==T,],color="blue", alpha=1, size=1)+
       geom_hline(yintercept = 0, color="red")+
@@ -26,9 +25,9 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
   if( type=="summary")
   {
     RoC_summary_p1 <- res.df.plot %>%
-      filter (age <= age.treshold) %>%
-      ggplot(aes( y=RoC, 
-                  x= age))+
+      filter (DF.Age <= age.treshold) %>%
+      ggplot(aes( y=DF.RoC, 
+                  x= DF.Age))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
       coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold))+
@@ -38,8 +37,8 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
       xlab("Age")+ylab("Rate of Change")
 
     RoC_summary_p1b <-res.df.plot %>%
-      filter (age < age.treshold) %>%
-      ggplot(aes(x=age))+
+      filter (DF.Age < age.treshold) %>%
+      ggplot(aes(x=DF.Age))+
       geom_density(fill="gray")+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
@@ -47,31 +46,29 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
       xlab("")+ylab("Density of the samples")
     
     RoC_summary_p2 <- res.df.plot %>%
-      filter (age < age.treshold) %>%
+      filter (DF.Age < age.treshold) %>%
       filter(Peak==T) %>%
-      ggplot(aes( y=RoC, 
-                  x= age))+
+      ggplot(aes( y=DF.RoC, 
+                  x= DF.Age))+
       theme_classic()+
       scale_color_gradient2(low="white",mid="darkblue",high="black", midpoint = 4)+
       scale_x_continuous(trans = "reverse")+
       coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold))+
-      geom_point(aes(color=RoC), alpha=1/10, size=3)+
+      geom_point(color="blue", alpha=1/5, size=3)+ #aes(color=DF.RoC),
       geom_hline(yintercept = 0, color="red")+
       geom_smooth(color="orange", method = "loess", se=F)+
       xlab("")+ylab("Rate of Change")+
       theme(legend.position = "none")
 
     RoC_summary_p2b <- res.df.plot %>%
-      filter (age < age.treshold) %>%
+      filter (DF.Age < age.treshold) %>%
       filter (Peak==T) %>%
-      ggplot(aes( x= age))+
+      ggplot(aes( x= DF.Age))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
       coord_flip(xlim=c(0,age.treshold))+
       geom_density(fill="gray")+
       xlab("")+ylab("Density of Peak-points")
-    
-    
     
     p.fin <- ggarrange(RoC_summary_p1,RoC_summary_p1b,
                             RoC_summary_p2,RoC_summary_p2b,
@@ -88,13 +85,13 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
         N.RoC.points = select(.,ROC) %>%
           pluck(.,1) %>% 
           map_dbl(.,.f=function(x) {
-            filter(x,age <= age.treshold) %>%
+            filter(x,DF.Age <= age.treshold) %>%
             filter(.,Peak==T) %>%
               nrow() }),
         N.Samples = select(.,ROC) %>%
           pluck(.,1) %>% 
           map_dbl(.,.f=function(x) {
-            filter(x,age <= age.treshold) %>%
+            filter(x,DF.Age <= age.treshold) %>%
             nrow(.) }),
         Ratio = N.RoC.points/N.Samples
       ) %>% 
