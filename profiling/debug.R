@@ -3,6 +3,7 @@ data.source.pollen <- tibble_Europe2$filtered.counts[[dataset.N]]
 data.source.age <- tibble_Europe2$list_ages[[dataset.N]]
 rand = 10
 interest.treshold = 8000
+intrapolate = T
 BIN = 250
 standardise = T
 S.value = 150
@@ -13,6 +14,7 @@ grim.N.max = 9
 DC = "chisq"
 Debug = F
 
+data.source.extrap <- data.bin
 
 data.source.pollen.extract <- data.source.pollen
 data.source.age.extract <- data.source.age
@@ -34,9 +36,10 @@ dataset.N <- 130
 
 test <- fc_ratepol( data.source.pollen =  tibble_Europe2$filtered.counts[[dataset.N]],
                     data.source.age = tibble_Europe2$list_ages[[dataset.N]],
-                    rand = 100,
+                    rand = 10,
                     interest.treshold = 8000,
-                    BIN = 150,
+                    intrapolate = F,
+                    BIN = 250,
                     standardise = T, 
                     S.value = 150, 
                     sm.type = "grim", 
