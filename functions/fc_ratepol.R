@@ -2,6 +2,7 @@ fc_ratepol <- function (data.source.pollen,
                         data.source.age,
                         rand = 1000,
                         interest.treshold = F,
+                        intrapolate = F,
                         BIN = F,
                         standardise = T, 
                         S.value = 150, 
@@ -73,7 +74,8 @@ fc_ratepol <- function (data.source.pollen,
   registerDoSNOW(cl)
   
   # add all functions to the cluster
-  clusterExport(cl, c("fc_standar","fc_check","fc_smooth","fc_calDC","fc_bin","filter"))
+  clusterExport(cl, c("fc_standar","fc_check","fc_smooth","fc_calDC","fc_bin","fc_extrap",
+                      "filter","distinct","left_join"))
   
   # create progress bar based os the number of replication
   pb <- txtProgressBar(max = rand, style = 3)
@@ -110,14 +112,14 @@ fc_ratepol <- function (data.source.pollen,
     data.bin <- data.smooth.check
     
     # sum data into bins of selected size 
-    if (is.numeric(BIN)==T)
+    if (intrapolate==F & is.numeric(BIN)==T)
     {
       data.bin<- fc_bin(data.bin,BIN, Debug=Debug)  
     }
     
-    if(BIN=="extrap")
+    if(intrapolate==T & is.numeric(BIN)==T)
     {
-      data.bin<- fc_extrap(data.bin, Debug=Debug)
+      data.bin<- fc_extrap(data.bin,BIN, Debug=Debug)
     }
     
     # ----------------------------------------------
@@ -200,6 +202,7 @@ fc_ratepol <- function (data.source.pollen,
   # create new dataframe with summary of randomisation results
   extract.res <- function (x,sel.var) 
   {
+    
     r<- reshape2::dcast(x, DF.sample.id~ID, value.var = sel.var)
     r.small <- r[,-1]
     
@@ -212,14 +215,12 @@ fc_ratepol <- function (data.source.pollen,
     
     return(r.m)
   }
+
   # match the samples by the sample ID
-  r.m.full.a <- right_join(extract.res(result.tibble,"DF.RoC"),
-                         extract.res(result.tibble,"DF.Age"),
-                         by="sample.id")
-  r.m.full <- right_join(r.m.full.a,
+  r.m.full <- right_join(extract.res(result.tibble,"DF.RoC"),
                          extract.res(result.tibble,"DF.Newage"),
                          by="sample.id")
-  
+                        
   
   # reduce results by the focus age time
   if (interest.treshold!=F)

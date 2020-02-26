@@ -8,9 +8,9 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
   if (type=="perplot")
   {
     p.fin<- res.df.plot %>%
-      filter(DF.Age <= age.treshold) %>%
+      filter(DF.Newage <= age.treshold) %>%
       ggplot(aes( y=DF.RoC, 
-                  x= DF.Age))+
+                  x= DF.Newage))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
       coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold))+
@@ -25,9 +25,9 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
   if( type=="summary")
   {
     RoC_summary_p1 <- res.df.plot %>%
-      filter (DF.Age <= age.treshold) %>%
+      filter (DF.Newage <= age.treshold) %>%
       ggplot(aes( y=DF.RoC, 
-                  x= DF.Age))+
+                  x= DF.Newage))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
       coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold))+
@@ -37,8 +37,8 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
       xlab("Age")+ylab("Rate of Change")
 
     RoC_summary_p1b <-res.df.plot %>%
-      filter (DF.Age < age.treshold) %>%
-      ggplot(aes(x=DF.Age))+
+      filter (DF.Newage < age.treshold) %>%
+      ggplot(aes(x=DF.Newage))+
       geom_density(fill="gray")+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
@@ -46,10 +46,10 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
       xlab("")+ylab("Density of the samples")
     
     RoC_summary_p2 <- res.df.plot %>%
-      filter (DF.Age < age.treshold) %>%
+      filter (DF.Newage < age.treshold) %>%
       filter(Peak==T) %>%
       ggplot(aes( y=DF.RoC, 
-                  x= DF.Age))+
+                  x= DF.Newage))+
       theme_classic()+
       scale_color_gradient2(low="white",mid="darkblue",high="black", midpoint = 4)+
       scale_x_continuous(trans = "reverse")+
@@ -61,9 +61,9 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
       theme(legend.position = "none")
 
     RoC_summary_p2b <- res.df.plot %>%
-      filter (DF.Age < age.treshold) %>%
+      filter (DF.Newage < age.treshold) %>%
       filter (Peak==T) %>%
-      ggplot(aes( x= DF.Age))+
+      ggplot(aes( x= DF.Newage))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
       coord_flip(xlim=c(0,age.treshold))+
@@ -116,16 +116,16 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000, Roc.tres
       unnest(cols = ROC)
     
     p.fin <- single.plot %>%
-      filter(age <= age.treshold) %>%
-      ggplot(aes( y=RoC, 
-                  x= age)) +
+      filter(DF.Newage <= age.treshold) %>%
+      ggplot(aes( y=DF.RoC, 
+                  x= DF.Newage)) +
       theme_classic() +
       scale_x_continuous(trans = "reverse") +
       coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold)) +
-      geom_ribbon(aes(ymin=RoC.05q, ymax=RoC.95q), alpha=1/5) +
+      geom_ribbon(aes(ymin=DF.RoC.05q, ymax=DF.RoC.95q), alpha=1/5) +
       geom_line(alpha=1, size=2) +
       geom_point(data = . %>% filter(Peak==T),color="blue", alpha=1, size=3) +
-      geom_hline(yintercept = single.plot$RoC %>%
+      geom_hline(yintercept = single.plot$DF.RoC %>%
                    median(), color="blue") +
       geom_hline(yintercept = 0, color="red") +
       xlab("Age")+ylab("Rate of Change")+

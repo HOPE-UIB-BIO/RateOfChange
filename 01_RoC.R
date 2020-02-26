@@ -72,6 +72,7 @@ tibble_Europe_Roc <-  tibble_Europe2 %>%
                            data.source.age = .y,
                            interest.treshold = 8000,
                            rand = 1000,
+                           extrapolate = F,
                            BIN = 250,
                            standardise = T, 
                            S.value = 150, 
