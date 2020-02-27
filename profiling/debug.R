@@ -1,18 +1,18 @@
 which(tibble_Europe2$dataset.id %in%  45117 )
 
 
-dataset.N <- 122
+dataset.N <- 130
 data.source.pollen <- tibble_Europe2$filtered.counts[[dataset.N]]
 data.source.age <- tibble_Europe2$list_ages[[dataset.N]]
-rand = 10
+rand = 100
 interest.treshold = 8000
-intrapolate = F
+intrapolate = T
 BIN = 250
 standardise = T
 S.value = 150
 sm.type = "grim" 
 N.points = 5
-range.age.max = 300
+range.age.max = 500
 grim.N.max = 9
 DC = "chisq"
 Debug = F
@@ -28,15 +28,15 @@ data.source.age.check <- data.source.age
 
 test <- fc_ratepol( data.source.pollen =  tibble_Europe2$filtered.counts[[dataset.N]],
                     data.source.age = tibble_Europe2$list_ages[[dataset.N]],
-                    rand = 1000,
+                    rand = 100,
                     interest.treshold = 8000,
-                    intrapolate = F,
+                    intrapolate = T,
                     BIN = 250,
                     standardise = T, 
                     S.value = 150, 
                     sm.type = "grim", 
                     N.points = 5, 
-                    range.age.max = 300, 
+                    range.age.max = 500, 
                     grim.N.max = 9,
                     DC = "chisq",
                     Debug = F)
@@ -54,7 +54,71 @@ test %>% ggplot(aes( y=DF.RoC,
   geom_hline(yintercept = median(test$DF.RoC), color="blue")+
   geom_hline(yintercept = 0, color="red")+
   xlab("Age")+ylab("Rate of Change")+
-  coord_flip(xlim=c(0,8000), ylim=c(0,3))
+  coord_flip(xlim=c(0,8000), ylim=c(0,5))
+
+
+
+
+example <- fc_extract(tibble_Europe2$filtered.counts[[dataset.N]],
+           tibble_Europe2$list_ages[[dataset.N]],
+           Debug=F) %>%
+  fc_smooth(., 
+            sm.type = "grim", 
+            N.points = 5,
+            range.age.max = 500,
+            grim.N.max = 9,
+            Debug=F) %>%
+  fc_check(.,proportion = F) %>%
+  fc_bin(.,BIN=250, Debug = F) %>%
+  fc_standar(.,150) %>%
+  fc_check(.,proportion = T,Debug = F)
+  
+
+
+N.taxa <- 10
+
+Common.list <- example$Pollen %>%
+  colSums() %>% 
+  sort(decreasing = T) %>%
+  .subset(.,1:N.taxa) %>%
+  names()
+
+
+data.frame(POLLEN=example$Pollen %>%
+             select(.,Common.list) %>%
+             reshape2::melt() , 
+           AGE=rep(example$Age$newage, N.taxa))  %>%
+  ggplot(aes( y=POLLEN.value, 
+              x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  geom_ribbon(aes(ymin=rep(0,length(POLLEN.value)),ymax=POLLEN.value), color="gray20", fill="gray80")+
+  #geom_smooth(method = "loess",color="blue",se=F)+
+  facet_wrap(~POLLEN.variable)+
+  xlab("Age")+ylab("Pollen")+
+  coord_flip(xlim=c(0,8000), ylim = c(0,1))
+
+
+Common.list <- tibble_Europe2$filtered.counts[[dataset.N]] %>%
+  colSums() %>% 
+  sort(decreasing = T) %>%
+  .subset(.,1:N.taxa) %>%
+  names()
+
+
+data.frame(POLLEN=tibble_Europe2$filtered.counts[[dataset.N]] %>%
+                 select(.,Common.list) %>%
+                 reshape2::melt() , 
+               AGE=rep(tibble_Europe2$list_ages[[dataset.N]]$ages$age, N.taxa)) %>%
+  ggplot(aes( y=POLLEN.value, 
+              x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  geom_ribbon(aes(ymin=rep(0,length(POLLEN.value)),ymax=POLLEN.value), color="gray20", fill="gray80")+
+  facet_wrap(~POLLEN.variable)+
+  xlab("Age")+ylab("Pollen")+
+  coord_flip(xlim=c(0,8000), ylim = c(0,1000))
+
 
 
 

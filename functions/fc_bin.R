@@ -1,4 +1,4 @@
-fc_bin <- function(data.source.bin,BIN, Debug=Debug)
+fc_bin <- function(data.source.bin,BIN, Debug=F)
 {
 # BIN size determination
 b.size <- BIN*2  
