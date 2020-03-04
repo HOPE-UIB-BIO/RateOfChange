@@ -6,10 +6,10 @@ fc_standar <- function (data.source, fc_standar.S.value, Debug=F)
   if(Debug==T){cat(paste("Data standardization started",Sys.time()), fill=T)}
   
   # pollen randomization
+  Samples <- 1:nrow(data.source$Pollen) 
+  Samples<- Samples[!is.na(data.source$Age$sample.id)]
   
-  data.pol.l <- nrow(data.source$Pollen) # number of samples
-  
-  for(i in 1: data.pol.l)  # for each row(sample)
+  for(i in Samples)  # for each row(sample)
   {
     select.row <- data.source$Pollen[i,] # selected row
     

@@ -6,8 +6,8 @@ data.source.pollen <- tibble_Europe2$filtered.counts[[dataset.N]]
 data.source.age <- tibble_Europe2$list_ages[[dataset.N]]
 rand = 100
 interest.treshold = 8000
-intrapolate = T
-BIN = 250
+intrapolate = F
+BIN = F
 standardise = T
 S.value = 150
 sm.type = "grim" 
@@ -18,6 +18,17 @@ DC = "chisq"
 Debug = F
 
 data.source.extrap <- data.bin
+
+
+data.source <- data.sd
+
+data.subset<- data.work
+BINS <- SELECTED.BINS
+
+data.source.bin<- data.smooth.check
+
+data.source.check <- list.res
+
 
 data.source.pollen.extract <- data.source.pollen
 data.source.age.extract <- data.source.age

@@ -31,7 +31,7 @@ fc_extract <-  function (data.source.pollen.extract,
   names(dim.val) <- c("N Species","N samples pollen","N samples Age")
   
   # cretae list of 3 variables POllen, age, dim.val
-  dat.merge <- list(Pollen=p.counts, Age=age, Dim.val = dim.val, Age.un = age.un)
+  dat.merge <- list(Pollen=p.counts, Age=age, Age.un = age.un, Dim.val = dim.val)
   
   # perform check = cound number of species and samples and exclude "empty" ones
   dat.merge <- fc_check(dat.merge, proportion = F, Debug = Debug)

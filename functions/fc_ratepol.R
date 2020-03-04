@@ -2,8 +2,8 @@ fc_ratepol <- function (data.source.pollen,
                         data.source.age,
                         rand = 1000,
                         interest.treshold = F,
-                        intrapolate = F,
-                        BIN = F,
+                        shift.value = 100,
+                        N.shifts = 5,
                         standardise = T, 
                         S.value = 150, 
                         sm.type = "grim", 
@@ -60,7 +60,29 @@ fc_ratepol <- function (data.source.pollen,
   # cat(paste("Data set ID",dataset.ID), fill = T)
   
   # already include data check
-  data.work <- fc_extract(data.source.pollen,data.source.age, Debug=Debug) 
+  data.extract <- fc_extract(data.source.pollen,data.source.age, Debug=Debug) 
+  
+  # ----------------------------------------------
+  #               POLLEN SMOOTHING
+  # ----------------------------------------------
+  data.smooth <- data.extract 
+  
+  # smooth pollen data by selected smoothing type
+  data.smooth <- fc_smooth(data.smooth, 
+                           sm.type = sm.type, 
+                           N.points = N.points,
+                           grim.N.max = grim.N.max, 
+                           range.age.max = range.age.max,
+                           Debug=Debug)
+  
+  #data check (with proportioning ???)
+  data.work <- fc_check(data.smooth, proportion = F, Debug=Debug)
+  
+  # ----------------------------------------------
+  #               BIN creattion
+  # ----------------------------------------------
+  BIN.sizes <- fc_create_BINs(data.work,shift.value = shift.value, N.shifts = N.shifts)
+  
   
   # ----------------------------------------------
   #             RANDOMOMIZATION
@@ -86,58 +108,52 @@ fc_ratepol <- function (data.source.pollen,
   # repeat the calculation X times, whrere X is the number of randomisation
   result.tibble <- foreach(l=1:rand,.combine = rbind, .options.snow=opts) %dopar% {
     
-    # ----------------------------------------------
-    #               POLLEN SMOOTHING
-    # ----------------------------------------------
-    data.smooth <- data.work 
-    
     # TIME SAMPLING
     # sample random time sequence from time uncern.
-    data.smooth$Age$newage <- as.numeric(data.smooth$Age.un[sample(c(1:nrow(data.smooth$Age.un)),1),])
+    data.work$Age$newage <- as.numeric(data.work$Age.un[sample(c(1:nrow(data.work$Age.un)),1),])
     
-    # smooth pollen data by selected smoothing type
-    data.smooth <- fc_smooth(data.smooth, 
-                             sm.type = sm.type, 
-                             N.points = N.points,
-                             grim.N.max = grim.N.max, 
-                             range.age.max = range.age.max,
-                             Debug=Debug)
     
-    #data check (with proportioning ???)
-    data.smooth.check <- fc_check(data.smooth, proportion = F, Debug=Debug)
-    
-    # ----------------------------------------------
-    #             DATA BINNING
-    # ----------------------------------------------
-    data.bin <- data.smooth.check
-    
-    # sum data into bins of selected size 
-    if (intrapolate==F & is.numeric(BIN)==T)
+    # repeat for number of shifts
+    for(i in 1: N.shifts)
     {
-      data.bin<- fc_bin(data.bin,BIN, Debug=Debug)  
-    }
-    
-    if(intrapolate==T & is.numeric(BIN)==T)
-    {
-      data.bin<- fc_extrap(data.bin,BIN, Debug=Debug)
-    }
-    
-    # ----------------------------------------------
-    #         DATA STANDARDISATION
-    # ----------------------------------------------
-    data.sd <-data.bin
-    
-    # standardisation of pollen data to X(S.value) number of pollen grains 
-    if(standardise==T) # 
-    {
-      data.sd <- fc_standar(data.sd, S.value, Debug=Debug)
+      # ----------------------------------------------
+      #             DATA SUBSETTING
+      # ----------------------------------------------
+      SELECTED.BINS <- BIN.sizes[BIN.sizes$SHIFT==i,]
       
-      if(any(rowSums(data.sd$Pollen)!=S.value))
-        stop("standardisation was unsuccesfull")
+      data.subset <- fc_subset_samples(data.work,SELECTED.BINS)
+      
+      # ----------------------------------------------
+      #         DATA STANDARDISATION
+      # ----------------------------------------------
+      data.sd <-data.subset
+      
+      # standardisation of pollen data to X(S.value) number of pollen grains 
+      if(standardise==T) # 
+      {
+        data.sd <- fc_standar(data.sd, S.value, Debug=Debug)
+        
+        if(any(rowSums(data.sd$Pollen, na.rm = T)!=S.value & rowSums(data.sd$Pollen, na.rm = T)!=0))
+          stop("standardisation was unsuccesfull")
+      }
+      
+      # data check with proportioning
+      data.sd.check <- fc_check(data.sd, proportion = T, Samples = F, Debug=Debug)
+      
+      
+      
+      
+      
+      
     }
     
-    # data check with proportioning
-    data.sd.check <- fc_check(data.sd, proportion = T, Debug=Debug)
+    
+    
+    
+    
+    
+    
+    
     
     # ----------------------------------------------
     #               DC CALCULATION
@@ -202,20 +218,20 @@ fc_ratepol <- function (data.source.pollen,
   # create new dataframe with summary of randomisation results
   extract.res <- function (x,sel.var) 
   {
-    
-    r<- reshape2::dcast(x, DF.sample.id~ID, value.var = sel.var)
-    r.small <- r[,-1]
-    
-    r.m <- data.frame(matrix(nrow = nrow(r),ncol = 4))
-    names(r.m) <- c("sample.id",sel.var,paste0(sel.var,".05q"),paste0(sel.var,".95q"))
-    r.m$sample.id <- r$DF.sample.id
-    r.m[,2]<- apply(r.small,1, FUN = function(x) na.omit(x) %>% median(.))
-    r.m[,3]<- apply(r.small,1, FUN= function(x) na.omit(x) %>% quantile(.,0.025))
-    r.m[,4]<- apply(r.small,1, FUN= function(x) na.omit(x) %>% quantile(.,0.975))
+  r.m<-  select(x,c("ID","DF.sample.id",sel.var)) %>%
+      pivot_wider(names_from = ID, values_from = sel.var) %>%
+      mutate(
+        sample.id = DF.sample.id, 
+        !!sel.var := select(.,-c("DF.sample.id")) %>% apply(.,1, FUN = function(x) median(x, na.rm = T)),
+        !!paste0(sel.var,".05q") := select(.,-c("DF.sample.id")) %>% apply(.,1, FUN = function(x) quantile(x,0.025, na.rm = T)),
+        !!paste0(sel.var,".95q") := select(.,-c("DF.sample.id")) %>% apply(.,1, FUN = function(x) quantile(x,0.975, na.rm = T))
+      ) %>%
+    select(sample.id, sel.var, paste0(sel.var,".05q"), paste0(sel.var,".95q"))
     
     return(r.m)
   }
 
+  
   # match the samples by the sample ID
   r.m.full <- right_join(extract.res(result.tibble,"DF.RoC"),
                          extract.res(result.tibble,"DF.Newage"),
