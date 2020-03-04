@@ -36,13 +36,6 @@ fc_standar <- function (data.source, fc_standar.S.value, Debug=F)
     
   }
   
-  # age randomization 
-  
-  #data.source$Age$newage <- apply(data.source$Age.un, 2, FUN= function(x) sample(x,1))
-  data.source$Age$newage <- as.numeric(data.source$Age.un[sample(c(1:nrow(data.source$Age.un)),1),])
-    
-  
-  
   if(Debug==T){cat(paste("Data standardization finished",Sys.time()),fill=T)}
   
   return (data.source) 

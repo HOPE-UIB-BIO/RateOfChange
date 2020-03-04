@@ -70,13 +70,15 @@ tibble_Europe_Roc <-  tibble_Europe2 %>%
                          {res <- fc_ratepol(
                            data.source.pollen = .x,
                            data.source.age = .y,
-                           interest.treshold = 10000,
-                           rand = 999,
+                           interest.treshold = 8000,
+                           rand = 1000,
+                           extrapolate = F,
+                           BIN = 250,
                            standardise = T, 
                            S.value = 150, 
                            sm.type = "grim", 
                            N.points = 5, 
-                           range.age.max = 300, 
+                           range.age.max = 500, 
                            grim.N.max = 9,
                            DC = "chisq",
                            Debug = F
@@ -93,25 +95,24 @@ tot.time
 tibble_Europe_Roc %>%
   select(dataset.id, collection.handle, long, lat, ROC) %>%
   unnest(cols = c(ROC)) %>%
-  select(.,-c(newage)) %>%
-  write.csv(.,"results20202020.csv")
+  write.csv(.,"results20202026.csv")
 
-# save.image("~/HOPE/GITHUB/RateOfChange/ENV20200220.RData")
-# load("~/HOPE/GITHUB/RateOfChange/ENV20200220.RData")
+# save.image("~/HOPE/GITHUB/RateOfChange/ENV20200226.RData")
+# load("~/HOPE/GITHUB/RateOfChange/ENV20200226.RData")
 
 # ----------------------------------------------
 #               PLOT RESULTS 
 # ----------------------------------------------
 
-fc_draw_RoC(tibble_Europe_Roc,type = "perplot", age.treshold = 8000)
+fc_draw_RoC(tibble_Europe_Roc,type = "perplot", age.treshold = 8000, Roc.treshold = 3,Signif.value = "Peak")
 ggsave("PerPlot.pdf",width = 50, height = 30, units= "cm", dpi= 600)
 
 fc_draw_RoC(tibble_Europe_Roc,type = "singleplot", dataset.N = 22352, age.treshold = 8000)
 
-fc_draw_RoC(tibble_Europe_Roc,type = "summary", age.treshold = 8000)
+fc_draw_RoC(tibble_Europe_Roc,type = "summary", age.treshold = 8000, Roc.treshold = 3, Signif.value = "Peak")
 ggsave("Summary.pdf",dpi= 600)
 
-fc_draw_RoC(tibble_Europe_Roc,type = "map", age.treshold = 8000)
+fc_draw_RoC(tibble_Europe_Roc,type = "map", age.treshold = 8000, Signif.value = "Peak")
 ggsave("RoC_map_Europe.pdf",dpi= 600)
 
 # ----------------------------------------------
