@@ -36,6 +36,9 @@ fc_extract <-  function (data.source.pollen.extract,
   # perform check = cound number of species and samples and exclude "empty" ones
   dat.merge <- fc_check(dat.merge, proportion = F, Debug = Debug)
   
+  row.names(dat.merge$Age) <- dat.merge$Age$sample.id
+  row.names(dat.merge$Pollen) <- dat.merge$Age$sample.id
+    
   if (dat.merge$Dim.val[3]!=dat.merge$Dim.val[2]) # check number of rows
     stop("Pollen and Age data have different number of samples")
   
