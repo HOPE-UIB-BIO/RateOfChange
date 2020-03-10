@@ -1,7 +1,7 @@
-which(tibble_Europe2$dataset.id %in%  45117 )
+which(tibble_Europe2$dataset.id %in%  1435 )
 
 
-dataset.N <- 122
+dataset.N <- 4
 data.source.pollen <- tibble_Europe2$filtered.counts[[dataset.N]]
 data.source.age <- tibble_Europe2$list_ages[[dataset.N]]
 sm.type = "grim" 
@@ -13,7 +13,7 @@ BIN.size = 500
 Shiftbin = F
 shift.value = 100
 N.shifts = 5
-rand = 100
+rand = 10
 standardise = T 
 S.value = 150 
 DC = "chisq"
@@ -45,15 +45,15 @@ rm(test)
 
 test <- fc_ratepol( data.source.pollen =  tibble_Europe2$filtered.counts[[dataset.N]],
                     data.source.age = tibble_Europe2$list_ages[[dataset.N]],
-                    sm.type = "grim" ,
+                    sm.type = "age.w" ,
                     N.points = 5,
                     range.age.max = 500, 
                     grim.N.max = 9,
                     BIN = T,
                     BIN.size = 500,
                     Shiftbin = T,
-                    N.shifts = 10,
-                    rand = 100,
+                    N.shifts = 3,
+                    rand = 1000,
                     standardise = T, 
                     S.value = 150 ,
                     DC = "chisq",
@@ -70,17 +70,15 @@ test %>% ggplot(aes( y=RUN.RoC,
   geom_line(data=data.frame(RUN.RoC = predict.gam(gam(RUN.RoC~s(RUN.Age.Pos), data = test)),
                             RUN.Age.Pos = test$RUN.Age.Pos),
             color="blue", size=1)+
+  geom_point(data = test[test$soft.Peak==T,], color="yellow", size=1)+
+  geom_point(data = test[test$Peak==T,], color="orange", size=2)+
   geom_point(data = test[test$Peak.gam==T,], color="red", size=3)+
   geom_hline(yintercept = 0, color="red")+
   xlab("Age")+ylab("Rate of Change")+
   coord_flip(xlim=c(0,8000), ylim=c(0,5))
 
+ggsave("")
 
-test %>% ggplot(aes(x= RUN.Age.Pos))+
-  theme_classic()+
-  coord_flip(xlim=c(0,8000))+
-  scale_x_continuous(trans = "reverse")+
-  geom_density(fill="gray80")
 
 
 
@@ -104,10 +102,10 @@ example <- fc_extract(tibble_Europe2$filtered.counts[[dataset.N]],
            tibble_Europe2$list_ages[[dataset.N]],
            Debug=F) %>%
   fc_smooth(., 
-            sm.type = sm.type, 
-            N.points = N.points,
-            range.age.max = range.age.max,
-            grim.N.max = grim.N.max,
+            sm.type = "age.w", 
+            N.points = 5,
+            range.age.max = 500,
+            grim.N.max = 9,
             Debug=F) %>%
   fc_check(.,proportion = T)
 
@@ -130,11 +128,14 @@ data.frame(POLLEN=example$Pollen %>%
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   geom_ribbon(aes(ymin=rep(0,length(POLLEN.value)),ymax=POLLEN.value, fill=POLLEN.variable), 
-              color="gray20", alpha=1/5)+
+              color="gray20", alpha=1/5, size=0.1)+
   #geom_smooth(method = "loess",color="blue",se=F)+
   #facet_wrap(~POLLEN.variable, ncol = N.taxa)+
   xlab("Age")+ylab("Pollen")+
   coord_flip(xlim=c(0,8000), ylim = c(0,1))
+
+ggsave("smooth_shep.png")
+
 
 
 Common.list <- tibble_Europe2$filtered.counts[[dataset.N]] %>%
@@ -159,32 +160,34 @@ data.frame(POLLEN=tibble_Europe2$filtered.counts[[dataset.N]] %>%
 
 
 
-
 s.time <- Sys.time()
 
-tibble_Europe_Roc <-  tibble_Europe2[1:20,] %>%
+tibble_Europe_Roc <-  tibble_Europe2[1:5,] %>%
   mutate(., ROC = map2(filtered.counts,list_ages,
                        .f = function(.x,.y)
                        {res <- fc_ratepol(
                          data.source.pollen = .x,
                          data.source.age = .y,
-                         interest.treshold = 8000,
-                         rand = 10,
-                         intrapolate = F,
-                         BIN = 250,
-                         standardise = T, 
-                         S.value = 150, 
-                         sm.type = "grim", 
+                         sm.type = "age.w", 
                          N.points = 5, 
                          range.age.max = 500, 
                          grim.N.max = 9,
+                         BIN = T,
+                         BIN.size = 500,
+                         Shiftbin = T,
+                         N.shifts = 5,
+                         rand = 1000,
+                         standardise = T, 
+                         S.value = 150, 
                          DC = "chisq",
+                         interest.treshold = 8000,
                          Debug = F
                        )} ))
 
 f.time <- Sys.time()
 tot.time <- f.time - s.time
 tot.time
+
 
 
 r.m.full %>% ggplot(aes( y=RUN.RoC, 
