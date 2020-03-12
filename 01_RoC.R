@@ -98,10 +98,10 @@ tot.time
 tibble_Europe_Roc %>%
   select(dataset.id, collection.handle, long, lat, ROC) %>%
   unnest(cols = c(ROC)) %>%
-  write.csv(.,"results20202026.csv")
+  write.csv(.,"results20200311.csv")
 
-# save.image("~/HOPE/GITHUB/RateOfChange/ENV20200226.RData")
-# load("~/HOPE/GITHUB/RateOfChange/ENV20200226.RData")
+# save.image("~/HOPE/GITHUB/RateOfChange/ENV20200311.RData")
+# load("~/HOPE/GITHUB/RateOfChange/ENV20200311.RData")
 
 # ----------------------------------------------
 #               PLOT RESULTS 
@@ -112,7 +112,7 @@ ggsave("PerPlot.pdf",width = 50, height = 30, units= "cm", dpi= 600)
 
 fc_draw_RoC(tibble_Europe_Roc,type = "singleplot", dataset.N = 1435, age.treshold = 8000)
 
-fc_draw_RoC(tibble_Europe_Roc,type = "summary", age.treshold = 8000, Roc.treshold = 3, Signif.value = "Peak.gam")
+fc_draw_RoC(tibble_Europe_Roc,type = "summary", age.treshold = 8000, Roc.treshold = 3, Signif.value = "Peak")
 ggsave("Summary.pdf",dpi= 600)
 
 fc_draw_RoC(tibble_Europe_Roc,type = "map", age.treshold = 8000, Signif.value = "Peak.gam")
