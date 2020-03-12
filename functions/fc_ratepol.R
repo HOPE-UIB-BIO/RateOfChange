@@ -1,51 +1,76 @@
 fc_ratepol <- function (data.source.pollen,
                         data.source.age,
-                        rand = 1000,
-                        interest.treshold = F,
-                        intrapolate = F,
-                        BIN = F,
-                        standardise = T, 
-                        S.value = 150, 
                         sm.type = "grim", 
                         N.points = 5, 
                         range.age.max = 500, 
                         grim.N.max = 9,
+                        BIN = F,
+                        BIN.size = 500,
+                        Shiftbin = F,
+                        N.shifts = 5,
+                        rand = 1000,
+                        standardise = T, 
+                        S.value = 150, 
                         DC = "chisq",
+                        interest.treshold = F,
                         Debug = F)
 {
   # data.source = data in format of one dataset from tibble
-  # 
-  # rand = number of randomization for time and pollen subsample
   #
-  # interest.treshold = date after wchich the data is reduced after calucaltion of RoC 
-  #     but before calculation of Threshold
-  #
-  # BIN =
-  #
-  # standardise = aparameter if the polen data shoudle be standardise to cetrain number of pollen grains
-  # 
-  # S.value = Number of grain to perform standardisation
-  #
-  # sm.type = type of smoothing applied smooting 
+  # smoothing of the pollen data
+  # sm.type = type of smoothing applied for the each of the pollen type 
   #     "none"    = data will not be smoothed 
   #     "m.avg"   = moving average
   #     "grim"    = Grimm smoothing
   #     "age.w"   = age weithed 
   #     "shep"    = Shepard's 5-term filter
-  #
   # N.points = Number of points for (need to be an odd number). Used for moving average, Grimm and Age-Weighted
   # grim.N.max = maximal number of samples to look in Grimm smoothing
   # range.age.max = maximal age range for both Grimm and Age-weight smoothing
   #
-  # DC = disimilarity coeficient
+  # BIN [T/F] =  subsert the data into bins of various size. In each bin, one sample is selected (closest to the starting point of the bin),
+  #                 rest is discardet. Bins without any samples are also dicarded.
+  # BIN.size = size of the bin (in years)
+  #
+  # Shiftbin [T/F] = setting allowing subseting the BIN into number of Shifts. Anaylsis is rerun with same BIN size
+  #                     but the begining of each BIN is moved by BIN.size/N.shifts. 
+  # N.shifts = value determining the number of shifts in BIN
+  #
+  # rand = number of randomization. Age sequence is randomly sampled from age-depth model uncertainties at the begining of each run. 
+  #
+  # standardise [T/F] = standardise each sample/BIN to cetrain number of pollen grains (random resampling without repetition)
+  # S.value = Number of grain to perform standardisation
+  #
+  # DC = disimilarity coeficient. Type of calculation of differences between samples/BINs
   #   "euc"     = Euclidan distance
   #   "euc.sd"  = standardised Euclidan distance
   #   "chord"   = chord distance
   #   "chisq    = chi-squared coeficient
   #
-  # Debug = show internal messages from program ? [T/F]
-
+  # Comment 1:
+  # Note that DC is calculated between each subsequent samples/BINs and then standardise by the time difference between samples/BINs. Age of each RoC values
+  #   is determined as mean between values from samples/BINs the RoC was calculated.
+  #
+  # Comment 2:
+  # Due to randomisation, there is a chanche than there will be different combination of samples in each run (some samples/BINs might "fallout" due to 
+  #     random time sampling and pollen subsapling). Each Sample-Sample (or BIN-BIN) combination will be saved and the point (combination) is included only if
+  #     there was at least 0.1*rand number (10%) of results for that point (combination). RoC and time for each point (combination) is calculated as
+  #     median of all results from randomisations
+  #
+  # interest.treshold [T/F] = age after which is the data reduced after calucaltion of RoC 
+  # 
+  # Debug [T/F] = show messages from internal processes
+  # 
+  # 
+  # Significance Comment:
+  # Each RoC point is validated in three ways:
+  #     1) soft Peaks = Treshold value is set for whole dataset (after subseting for interest.treshold) as median of all RoC values.
+  #                     Point is consider significat if it is higher than Treshold
+  #     2) Peaks      = Treshold is set same as in 1). Peak is  consider significant if 95% quantile (gain from randomisation) is higher than treshold
+  #     3) GAM        = Gam model is fitted with RoC and Age. Differences between GAM and each point is calculated. SD is calculated from all the differences
+  #                     Peak is considered significat if it is 2SD higher than GAM. 
   
+  # CODE
   start.time <- Sys.time()
   
   cat(paste("RATEPOL started", start.time), fill=T)
@@ -55,12 +80,50 @@ fc_ratepol <- function (data.source.pollen,
   #               DATA EXTRACTION
   # ----------------------------------------------
   
-  # dataset.ID <- data.source$dataset.id
-  
-  # cat(paste("Data set ID",dataset.ID), fill = T)
-  
+  # extract data into working format
   # already include data check
-  data.work <- fc_extract(data.source.pollen,data.source.age, Debug=Debug) 
+  data.extract <- fc_extract(data.source.pollen,data.source.age, Debug=Debug) 
+  
+  # ----------------------------------------------
+  #               POLLEN SMOOTHING
+  # ----------------------------------------------
+  data.smooth <- data.extract 
+  
+  # smooth pollen data by selected smoothing type
+  data.smooth <- fc_smooth(data.smooth, 
+                           sm.type = sm.type, 
+                           N.points = N.points,
+                           grim.N.max = grim.N.max, 
+                           range.age.max = range.age.max,
+                           Debug=Debug)
+  
+  #check data and reduce data dimentions  
+  data.work <- fc_check(data.smooth, proportion = F, Debug=Debug)
+  
+  # ----------------------------------------------
+  #               BIN creattion
+  # ----------------------------------------------
+
+  # series of checks for BIN setting
+  if (BIN == F) # do not run Shifts if BIN is FALSE
+  {
+    Shiftbin <- F
+    N.shifts <- 1
+  }
+  
+  # create a list of BINs 
+  if (BIN == T & Shiftbin == F)
+  {
+    N.shifts <- 1
+    BIN.sizes <- fc_create_BINs(data.work,shift.value = BIN.size, N.shifts = 1)
+  }
+  
+  # Calculate the shift value from BIN and N.shifts and then calculate ALL BINs (including shift)
+  if (BIN == T & Shiftbin == T)
+  {
+    shift.value <- BIN.size/N.shifts
+    BIN.sizes <- fc_create_BINs(data.work,shift.value = shift.value, N.shifts = N.shifts)
+  }
   
   # ----------------------------------------------
   #             RANDOMOMIZATION
@@ -74,8 +137,7 @@ fc_ratepol <- function (data.source.pollen,
   registerDoSNOW(cl)
   
   # add all functions to the cluster
-  clusterExport(cl, c("fc_standar","fc_check","fc_smooth","fc_calDC","fc_bin","fc_extrap",
-                      "filter","distinct","left_join"))
+  clusterExport(cl, c("fc_subset_samples","fc_standar","fc_check","fc_calDC","tibble"))
   
   # create progress bar based os the number of replication
   pb <- txtProgressBar(max = rand, style = 3)
@@ -86,107 +148,117 @@ fc_ratepol <- function (data.source.pollen,
   # repeat the calculation X times, whrere X is the number of randomisation
   result.tibble <- foreach(l=1:rand,.combine = rbind, .options.snow=opts) %dopar% {
     
-    # ----------------------------------------------
-    #               POLLEN SMOOTHING
-    # ----------------------------------------------
-    data.smooth <- data.work 
-    
     # TIME SAMPLING
     # sample random time sequence from time uncern.
-    data.smooth$Age$newage <- as.numeric(data.smooth$Age.un[sample(c(1:nrow(data.smooth$Age.un)),1),])
+    data.work$Age$newage <- as.numeric(data.work$Age.un[sample(c(1:nrow(data.work$Age.un)),1),])
     
-    # smooth pollen data by selected smoothing type
-    data.smooth <- fc_smooth(data.smooth, 
-                             sm.type = sm.type, 
-                             N.points = N.points,
-                             grim.N.max = grim.N.max, 
-                             range.age.max = range.age.max,
-                             Debug=Debug)
+    # create result tible
+    SHIFT.tibble <- tibble()
     
-    #data check (with proportioning ???)
-    data.smooth.check <- fc_check(data.smooth, proportion = F, Debug=Debug)
-    
-    # ----------------------------------------------
-    #             DATA BINNING
-    # ----------------------------------------------
-    data.bin <- data.smooth.check
-    
-    # sum data into bins of selected size 
-    if (intrapolate==F & is.numeric(BIN)==T)
+    # repeat for number of shifts
+    for(k in 1: N.shifts)
     {
-      data.bin<- fc_bin(data.bin,BIN, Debug=Debug)  
-    }
-    
-    if(intrapolate==T & is.numeric(BIN)==T)
-    {
-      data.bin<- fc_extrap(data.bin,BIN, Debug=Debug)
-    }
-    
-    # ----------------------------------------------
-    #         DATA STANDARDISATION
-    # ----------------------------------------------
-    data.sd <-data.bin
-    
-    # standardisation of pollen data to X(S.value) number of pollen grains 
-    if(standardise==T) # 
-    {
-      data.sd <- fc_standar(data.sd, S.value, Debug=Debug)
+      # ----------------------------------------------
+      #             DATA SUBSETTING
+      # ----------------------------------------------
+      data.subset <- data.work
+     
+      # select one sample for each bin based on the age of the samples. Sample is chones if it is the closes one to the upper end of the BIN 
+      if (BIN == T)
+      {
+        # select BIN for this shift
+        SELECTED.BINS <- BIN.sizes[BIN.sizes$SHIFT==k,]
+        
+        
+        #subset data
+        data.subset <- fc_subset_samples(data.subset,SELECTED.BINS)  
+      }
       
-      if(any(rowSums(data.sd$Pollen)!=S.value))
-        stop("standardisation was unsuccesfull")
-    }
-    
-    # data check with proportioning
-    data.sd.check <- fc_check(data.sd, proportion = T, Debug=Debug)
-    
-    # ----------------------------------------------
-    #               DC CALCULATION
-    # ----------------------------------------------
-    # calculate DC for each sample
-    DC.res <- fc_calDC(data.sd.check,DC=DC, Debug=Debug)
-    
-    # ----------------------------------------------
-    #             AGE STANDARDISATION
-    # ----------------------------------------------
-    
-    sample.size.work <- data.sd.check$Dim.val[2]-1 
-    
-    age.diff <- vector(mode = "numeric", length = sample.size.work )
-    
-    for (i in 1:sample.size.work)
-    {
-      age.diff[i] <- data.sd.check$Age$newage[i+1]-data.sd.check$Age$newage[i] 
-      # temporary fix for errors in age data where age difference between samples is 0
-      if(age.diff[i]<1)
-      {age.diff[i]<-1}
-    }
-    
-    if (Debug ==T)
-    {
-      cat("", fill=T)
-      cat(paste("The time standardisation unit (TSU) is",round(mean(age.diff),2)), fill=T)  
-    }
-    
-    DC.res.s <- vector(mode = "numeric", length = sample.size.work)
-    for (j in 1:sample.size.work)
-    {
-      DC.res.s[j] <- (DC.res[j]*mean(age.diff))/age.diff[j]
+      # ----------------------------------------------
+      #         DATA STANDARDISATION
+      # ----------------------------------------------
+      data.sd <-data.subset
+      
+      # standardisation of pollen data to X(S.value) number of pollen grains 
+      if(standardise==T) # 
+      {
+        data.sd <- fc_standar(data.sd, S.value, Debug=Debug)
+        
+        if(any(rowSums(data.sd$Pollen, na.rm = T)!=S.value))
+          stop("standardisation was unsuccesfull")
+      }
+      
+      # data check with proportioning
+      data.sd.check <- fc_check(data.sd, proportion = T, Samples = F, Debug=Debug)
+      
+      # ----------------------------------------------
+      #               DC CALCULATION
+      # ----------------------------------------------
+      
+      # calculate DC between each subsequent samples/BINs
+      DC.res <- fc_calDC(data.sd.check,DC=DC, Debug=Debug)
+      
+      # ----------------------------------------------
+      #             AGE STANDARDISATION
+      # ----------------------------------------------
+      
+      # create empty vector with size = numeber of samples-1
+      sample.size.work <- data.sd.check$Dim.val[2]-1 
+      
+      # create empty vectors for age difference calcualtion
+      age.diff <- vector(mode = "numeric", length = sample.size.work )
+      age.diff.names <- vector(mode = "character", length = sample.size.work )
+      age.mean <- age.diff
+      
+      for (i in 1:sample.size.work) # for each RoC
+      {
+        # calcualte the age difference between subsequesnt samples
+        age.diff[i] <- data.sd.check$Age$newage[i+1]-data.sd.check$Age$newage[i] 
+        
+        # Set age difference as 1, if age difference between samples is smaller than 1
+        if(age.diff[i]<1)
+        {age.diff[i]<-1}
+        
+        #calculate the average position of RoC
+        age.mean[i] <- mean(c(data.sd.check$Age$newage[i+1],data.sd.check$Age$newage[i]))
+        
+        # create vector with bin names
+        age.diff.names[i] <- paste(row.names(data.sd.check$Age)[i],"-",row.names(data.sd.check$Age)[i+1])
+      }
+      
+      if (Debug ==T)
+      {
+        cat("", fill=T)
+        cat(paste("The time standardisation unit (TSU) is",round(mean(age.diff),2)), fill=T)  
+      }
+      
+      #  calculate DC standardise by time
+      DC.res.s <- vector(mode = "numeric", length = sample.size.work)
+      DC.res.s <- (DC.res*mean(age.diff))/age.diff
+      
+      # ----------------------------------------------
+      #             Result of single SHIFT
+      # ----------------------------------------------
+      
+      # add the results from this shift into the result tibble
+      SHIFT.tibble <- rbind(SHIFT.tibble,
+                            data.frame(BIN= age.diff.names,
+                                     DC = DC.res,
+                                     Age.Pos = age.mean,
+                                     Age.Diff = age.diff,
+                                     RoC = DC.res.s,
+                                     SHIFT = rep(k,sample.size.work))
+                            )
     }
     
     # ----------------------------------------------
     #         RESULT OF SINGLE RAND RUN
     # ----------------------------------------------
-    
-      data.result <- data.frame(sample.id=data.sd.check$Age$sample.id[1:sample.size.work],
-                                Age = data.sd.check$Age$age[1:sample.size.work],
-                                Newage = data.sd.check$Age$newage[1:sample.size.work],
-                                #Age=data.smooth.check$Age$newage[1:sample.size.work],
-                                RoC=DC.res.s)
       
-      data.result.temp <- as.data.frame(list(ID=l,DF=data.result)) 
+      # save result from single randomisation into data.frame with number of randomisation as ID.
+      data.result.temp <- as.data.frame(list(ID=l,RUN=SHIFT.tibble)) 
       
       return(data.result.temp)
-      # result.tibble <- rbind(result.tibble,data.result.temp)
        close(pb) # close progress bar
   }# end of the randomization
   
@@ -200,25 +272,44 @@ fc_ratepol <- function (data.source.pollen,
   # ----------------------------------------------
   
   # create new dataframe with summary of randomisation results
+  
+  #function for extracting results 
   extract.res <- function (x,sel.var) 
   {
+  
+  # cretae pivot table randomisation ID by BIN code and order it by BIN codes  
+  r.m<-  select(x,c("ID","RUN.BIN",sel.var)) %>% 
+      pivot_wider(names_from = "ID", values_from = sel.var) %>%
+    mutate(BIN = sub(" -.*","",RUN.BIN) %>% as.numeric()) %>%
+    arrange(.,BIN) %>%
+    select(-c(BIN))
+  
+  # calculate number of NOT NA values for each BIN code
+  N.notNA<-  r.m  %>% select(-c(RUN.BIN)) %>%
+    apply(.,1, FUN = function(x){
+      y<- is.na(x) %>% table ()
+      return(y[1]) 
+    }) 
+  
+  # include only bin codes if they have ast least 10% of number of randomisation 
+  r.m.sel <- r.m[N.notNA>0.1*rand,]
+
+  # calculate median and 95% quantile for selected variable for each sample (BIN)
+  r.m.sum <- r.m.sel %>% 
+    mutate(
+        sample.id = RUN.BIN, 
+        !!sel.var := select(.,-c("RUN.BIN")) %>% apply(.,1, FUN = function(x) median(x, na.rm = T)),
+        !!paste0(sel.var,".05q") := select(.,-c("RUN.BIN")) %>% apply(.,1, FUN = function(x) quantile(x,0.025, na.rm = T)),
+        !!paste0(sel.var,".95q") := select(.,-c("RUN.BIN")) %>% apply(.,1, FUN = function(x) quantile(x,0.975, na.rm = T))
+      ) %>%
+    select(sample.id, sel.var, paste0(sel.var,".05q"), paste0(sel.var,".95q"))
     
-    r<- reshape2::dcast(x, DF.sample.id~ID, value.var = sel.var)
-    r.small <- r[,-1]
-    
-    r.m <- data.frame(matrix(nrow = nrow(r),ncol = 4))
-    names(r.m) <- c("sample.id",sel.var,paste0(sel.var,".05q"),paste0(sel.var,".95q"))
-    r.m$sample.id <- r$DF.sample.id
-    r.m[,2]<- apply(r.small,1, FUN = function(x) na.omit(x) %>% median(.))
-    r.m[,3]<- apply(r.small,1, FUN= function(x) na.omit(x) %>% quantile(.,0.025))
-    r.m[,4]<- apply(r.small,1, FUN= function(x) na.omit(x) %>% quantile(.,0.975))
-    
-    return(r.m)
+    return(r.m.sum)
   }
 
-  # match the samples by the sample ID
-  r.m.full <- right_join(extract.res(result.tibble,"DF.RoC"),
-                         extract.res(result.tibble,"DF.Newage"),
+  # extract results and match them by BIN
+  r.m.full <- right_join(extract.res(result.tibble,"RUN.RoC"),
+                         extract.res(result.tibble,"RUN.Age.Pos"),
                          by="sample.id")
                         
   
@@ -226,19 +317,23 @@ fc_ratepol <- function (data.source.pollen,
   if (interest.treshold!=F)
   {
     r.m.full <- r.m.full %>%
-      filter(DF.Newage<=interest.treshold)
+      filter(RUN.Age.Pos<=interest.treshold)
   }
     
 
   # treshold for RoC peaks is set as median of all RoC in dataset
-  r.treshold <- median(r.m.full$DF.RoC)
+  r.treshold <- median(r.m.full$RUN.RoC)
   
-  # mark point which are above median
-  r.m.full$soft.Peak <- r.m.full$DF.RoC > r.treshold
+  # mark point which are above the treshold as Soft.Peaks
+  r.m.full$soft.Peak <- r.m.full$RUN.RoC > r.treshold
   
-  # mark significant peaks
-  r.m.full$Peak <- r.m.full$DF.RoC.05q>r.treshold  #r.m$RoC.p < 0.05
+  # mark peaks which have 95% quantile above the treshold as Peaks
+  r.m.full$Peak <- r.m.full$RUN.RoC.05q>r.treshold  
 
+  # mark points that are abowe the GAM model (exactly 2*SD higher than GAM prediction)
+  pred.gam <-  predict.gam(gam(RUN.RoC~s(RUN.Age.Pos), data = r.m.full))
+  pred.gam.diff <- r.m.full$RUN.RoC - pred.gam
+  r.m.full$Peak.gam <- pred.gam.diff > 2*sd(pred.gam.diff)
   
   # outro
  
@@ -250,3 +345,4 @@ fc_ratepol <- function (data.source.pollen,
  return(r.m.full)
  
 }
+#end of CODE

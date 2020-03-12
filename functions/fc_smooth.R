@@ -35,7 +35,7 @@ fc_smooth <- function(data.source,
   {
     if (Debug==T){cat("data will not be smoothed",fill=T)}
     
-    return(list(Pollen=p.counts, Age=age, Dim.val= data.source$Dim.val))
+    return(list(Pollen=p.counts, Age=age, Age.un=data.source$Age.un, Dim.val= data.source$Dim.val))
   }
   
   
@@ -68,7 +68,8 @@ fc_smooth <- function(data.source,
     }
     p.counts.small <- p.counts[N.first:N.last,]
     age.small <-age[N.first:N.last,] 
-    return(list(Pollen=p.counts.small, Age=age.small, Dim.val= data.source$Dim.val))
+    Age.un.small <- data.source$Age.un[,N.first:N.last]
+    return(list(Pollen=p.counts.small, Age=age.small, Age.un=Age.un.small, Dim.val= data.source$Dim.val))
   }
   
   
@@ -148,7 +149,8 @@ fc_smooth <- function(data.source,
     }
     p.counts.small <- p.counts[N.first:N.last,]
     age.small <-age[N.first:N.last,] 
-    return(list(Pollen=p.counts.small, Age=age.small, Dim.val= data.source$Dim.val))
+    Age.un.small <- data.source$Age.un[,N.first:N.last]
+    return(list(Pollen=p.counts.small, Age=age.small, Age.un=Age.un.small, Dim.val= data.source$Dim.val))
   }
   
   # ----------------------------------------------
@@ -197,7 +199,8 @@ fc_smooth <- function(data.source,
     }
     p.counts.small <- p.counts[c(N.first:N.last),]
     age.small <-age[c(N.first:N.last),] 
-    return(list(Pollen=p.counts.small, Age=age.small, Dim.val= data.source$Dim.val))
+    Age.un.small <- data.source$Age.un[,N.first:N.last]
+    return(list(Pollen=p.counts.small, Age=age.small, Age.un=Age.un.small, Dim.val= data.source$Dim.val))
   }
   
   
@@ -233,7 +236,8 @@ fc_smooth <- function(data.source,
     }
     p.counts.small <- p.counts[N.first:N.last,]
     age.small <-age[N.first:N.last,] 
-    return(list(Pollen=p.counts.small, Age=age.small, Dim.val= data.source$Dim.val))
+    Age.un.small <- data.source$Age.un[,N.first:N.last]
+    return(list(Pollen=p.counts.small, Age=age.small, Age.un=Age.un.small, Dim.val= data.source$Dim.val))
   }
   
 }
