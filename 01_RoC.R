@@ -11,17 +11,17 @@
 # ------------------------------------------------------------------------------
 
 #   outline:
-#   1) standardization to 150 pollen
-#   2) smoothing
-#   3) data transformation
-#   4) DC calculation
+#   1) POllen data smoothing (4 types of smoothing)
+#   2) (optional) Creation of BINs
+#   3) Random time sequence sampling from age-depth model
+#   4) (optional) Subsetting samples in each BIN 
+#   5) (optional) standardization of each sample (150 pollen)
+#   4) DC calculation (4 types of DC calc.)
 #   5) Age standardization of DC
-#   6) result save
-
-# Comments from 28.01.2020:
-# standardization to 150 pollen
-# We will not BIN the data and use between sample DC instead. 
-
+#   6) (optional) Repetition of calculation for BIN shift 
+#   7) Repetition of calclulation for X amount of runs
+#   8) Summarisation of results from all runs 
+#   9) Testing siginificance of each peak points (3 types of tests)
 
 # ----------------------------------------------
 #                     SETUP
