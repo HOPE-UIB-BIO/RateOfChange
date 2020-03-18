@@ -19,13 +19,16 @@ fc_smooth <- function(data.source,
   # range.age.max = maximal age range for both Grimm and Age-weight smoothing
   #
   
+  
+  # ----------------------------------------------
+  #                     SETUP 
+  # ----------------------------------------------
   # split data into 2 datasets
   p.counts <-  as.data.frame(data.source$Pollen)
   age <- as.data.frame(data.source$Age)   
+  focus.par <- matrix(data=NA,nrow=nrow(age),ncol=2)
   
-  # check if N.points is and odd number
-  if(N.points%%2 ==0)
-    stop("N.points has to be an odd number")
+  
   
   # ----------------------------------------------
   #               NONE SMOOTHING 
@@ -33,211 +36,173 @@ fc_smooth <- function(data.source,
   
   if(sm.type=="none")
   {
-    if (Debug==T){cat("data will not be smoothed",fill=T)}
-    
     return(list(Pollen=p.counts, Age=age, Age.un=data.source$Age.un, Dim.val= data.source$Dim.val))
   }
   
-  
   # ----------------------------------------------
-  #           MOVING AVERAGE SMOOTHING 
+  #                 SMOOTHING 
   # ----------------------------------------------
   
-  if(sm.type=="m.avg")
-  {
-    if(Debug==T){cat(paste("data will be smoothed by moving average over",N.points,"points"),fill=T)}
-    
-    N.offset <- floor(N.points/2)
-    N.first <- N.offset+1
-    N.last <- nrow(p.counts)-N.offset
-    
-    for(j in 1:ncol(p.counts)) # for every species
+  # check if N.points is and odd number
+  if(N.points%%2 ==0)
+    stop("N.points has to be an odd number")
+  
+  # check if grim.N.max is an odd numbers
+  if(grim.N.max%%2 ==0)
+    stop("grim.N.max has to be an odd number")
+  
+  # Check if miminal number of points in not gigger than maximum
+  if(N.points>grim.N.max)
+    stop("grim.N.max has to be biger than N.points")
+  
+  
+  if (Debug==T & sm.type == "none")
+    {cat("data will not be smoothed",fill=T)}
+  if(Debug==T & sm.type == "m.avg")
+    {cat(paste("data will be smoothed by moving average over",N.points,"points"),fill=T)}
+  if (Debug==T & sm.type == "grim")
+    {print(cat("data will be smoothed by Grimm method with min samples",N.points,
+              "max samples",grim.N.max,"and max age range of",range.age.max),fill=T)}
+  if(Debug==T & sm.type == "age.w")
+  {cat(paste("data will be smoothed by age-weighed average over",N.points,"points"),fill=T)}
+  if(Debug==T & sm.type == "shep"){cat(paste("data will be smoothed by Shepard's 5-term filter"),fill=T)}
+  
+  # crete support fucntion for GRIMM smoothing
+  search.parameter <- function(A, B, range.age.max)
     {
-      col.work<- .subset2(p.counts,j) # select the species
-      col.res <- rep(0,length(col.work)) # create empty vector of same lengt for values to be saved
+      # test if this increase does not invalidate rules.
+      # 1) seach parameter cannot go outside of the sample size (up or down)
+      # 2) seach parameter cannot be biger than selected maximum sample sizes  
+      # 3) the age diference between samples selected by the seach paramated cannot be higher than 
+      #  defined max age range
+      # if all of those ARE TRUE then increase the real search parameter
       
-      for(i in N.first:N.last)
+      
+      for (k in 1:(grim.N.max-N.points))  
       {
-        F.low <- i-N.offset # min position to look for averaging in each step
-        F.high <- i+N.offset # max position to look for averaging in each step
-        col.res[i]<-mean(.subset(col.work,c(F.low:F.high)))
-      }
-      
-      p.counts[,j]<-col.res
-      
-    }
-    p.counts.small <- p.counts[N.first:N.last,]
-    age.small <-age[N.first:N.last,] 
-    Age.un.small <- data.source$Age.un[,N.first:N.last]
-    return(list(Pollen=p.counts.small, Age=age.small, Age.un=Age.un.small, Dim.val= data.source$Dim.val))
-  }
-  
-  
-  # ----------------------------------------------
-  #               GRIMm SMOOTHING 
-  # ----------------------------------------------
-  
-  if(sm.type == "grim")
-  {
-    # check if grim.N.max is an odd numbers
-    if(grim.N.max%%2 ==0)
-      stop("grim.N.max has to be an odd number")
-    
-    # Check if miminal number of points in not gigger than maximum
-    if(N.points>grim.N.max)
-      stop("grim.N.max has to be biger than N.points")
-    
-    if (Debug==T)
-      {
-      print(cat("data will be smoothed by Grimm method with min samples",N.points,
-                  "max samples",grim.N.max,"and max age range of",range.age.max),fill=T)
-      }
-        
-    # halve the number of points rounded down
-    N.N.points <- floor(N.points/2) 
-    N.grim.N.max <- floor(grim.N.max/2)
-    
-    N.first <- N.N.points+1 # first posible value to look
-    N.last <- nrow(p.counts)-N.N.points # last posible values to look
-    
-    for(j in 1:ncol(p.counts)) # for every species
-    {
-      col.work<- .subset2(p.counts,j) # select the species
-      col.res <- rep(0,length(col.work)) # create empty vector of same lengt for values to be saved
-      
-      for(i in N.first:N.last) # for each point between min and max
-      {
-        F.low <- i-N.N.points # min position to look for averaging in each step
-        F.high <- i+N.N.points # max position to look for averaging in each step
-        
-        N.active <- N.N.points # length of the seach parameter (set as half of the minimal samples in teh begining)
-        
-        # start for serch parametr 1 and continue until distance between
-        # min sample size and max sample size (both halved)
-        for (k in 1:(N.grim.N.max-N.N.points))  
-        {
-          # create new search parameter that higher by 1
-          N.active.test <- N.active+1
-          
-          # test if this increase does not invalidate rules.
-          # 1) seach parameter cannot go outside of the sample size (up or down)
-          # 2) seach parameter cannot be biger than selected maximum sample sizes  
-          # 3) the age diference between samples selected by the seach paramated cannot be higher than 
-          #  defined max age range
-          # if all of those ARE TRUE then increase the real search parameter
-          
-          if( i-N.active.test > 0 & 
-              i+N.active.test < nrow(p.counts) & 
-              N.active.test<N.grim.N.max)
-            { if (abs(age$newage[i-N.active.test]-age$newage[i-N.active.test])<range.age.max)
-              {N.active <- N.active+1}
-            }
-          
-          # adjust the points by the new seach parameters
-          F.low <- i-N.active  
-          F.high <- i+N.active
-          
-        }
-        # save mean of all points in seach parameter
-        col.res[i]<-mean(.subset(col.work,c(F.low:F.high)))
-        
-      }
-      
-      # update polen values
-      p.counts[,j]<-col.res
-      
-    }
-    p.counts.small <- p.counts[N.first:N.last,]
-    age.small <-age[N.first:N.last,] 
-    Age.un.small <- data.source$Age.un[,N.first:N.last]
-    return(list(Pollen=p.counts.small, Age=age.small, Age.un=Age.un.small, Dim.val= data.source$Dim.val))
-  }
-  
-  # ----------------------------------------------
-  #           AGE-WEIGHTED SMOOTHING 
-  # ----------------------------------------------
-  
-  if(sm.type=="age.w")
-  {
-    if(Debug==T){cat(paste("data will be smoothed by age-weighed average over",N.points,"points"),fill=T)}
-    
-    N.offset <- floor(N.points/2)
-    N.first <- N.offset+1
-    N.last <- nrow(p.counts)-N.offset
-    
-    for(j in 1:ncol(p.counts)) # for every species
-    {
-      col.work<- .subset2(p.counts,j) # select the species
-      col.res <- rep(0,length(col.work)) # create empty vector of same lengt for values to be saved
-      
-      for(i in N.first:N.last)
-      {
-        F.low <- i-N.offset # min position to look for averaging in each step
-        F.high <- i+N.offset # max position to look for averaging in each step
-        
-        # create small df with values around observed sample (in range of offset)
-        df.work <-  data.frame(values= .subset(col.work,c(F.low:F.high)),
-                               age = .subset(age$newage,c(F.low:F.high)), 
-                               Weight=rep(1,N.points))
-        
-        for (k in 1:nrow(df.work))
-        {
-          F.age <- .subset(df.work$age,k) # age value for selected sample
-          F.age.sample <- .subset(age$newage,i) # age value of obserced sample
-          F.age.dist <- abs(F.age-F.age.sample) # distance between those ages
-  
-          # Weith of points is calculated as range.age.max / distance bewtween oldest and youngest points.
-          # If cannot be smaller than 1. Values very far away from the point 
-          df.work$Weight[k] <- min(c(range.age.max/F.age.dist,1))   
+        # create new search parameter that is lower by 1
+        A.test <- A-1
+        if( A.test > 0 &  B-A.test < grim.N.max) # i+N.active.test < nrow(p.counts) &
+        { if (abs(age$newage[A.test]-age$newage[B])<range.age.max)
+        {A <- A.test}
         }
         
-        col.res[i]<-weighted.mean(df.work$values,df.work$Weight)
+        # create new search parameter that higher by 1
+        B.test <- B+1
+        if( B.test < nrow(p.counts) &  B-A.test < grim.N.max) 
+        { if (abs(age$newage[A]-age$newage[B.test])<range.age.max)
+        {B <- B.test}
+        }
       }
-      
-      p.counts[,j] <- col.res 
-      
+      return(c(A,B))
     }
-    p.counts.small <- p.counts[c(N.first:N.last),]
-    age.small <-age[c(N.first:N.last),] 
-    Age.un.small <- data.source$Age.un[,N.first:N.last]
-    return(list(Pollen=p.counts.small, Age=age.small, Age.un=Age.un.small, Dim.val= data.source$Dim.val))
-  }
   
+ # ----------------------------------------------
+ #                   CALCULATION 
+ # ----------------------------------------------
   
-  # ----------------------------------------------
-  #             Shepard's 5-term filter 
-  # ----------------------------------------------
-  
-  if(sm.type=="shep")
+  for(j in 1:ncol(p.counts)) # for every species
   {
-    if(Debug==T){cat(paste("data will be smoothed by Shepard's 5-term filter"),fill=T)}
+    col.work <- .subset2(p.counts,j) # select the species
+    col.res <- rep(0,length(col.work)) # create empty vector of same lengt for values to be saved
     
-    N.points <- 5
-    N.offset <- floor(N.points/2)
-    N.first <- N.offset+1
-    N.last <- nrow(p.counts)-N.offset
-    
-    for(j in 1:ncol(p.counts)) # for every species
+    for(i in 1:nrow(p.counts)) # for each sample
     {
-      col.work <- .subset2(p.counts,j) # select the species
-      col.res <- rep(0,length(col.work)) # create empty vector of same lengt for values to be saved
       
-      for(i in N.first:N.last)
+      # ----------------------------------------------
+      #           MOVING AVERAGE SMOOTHING 
+      # ----------------------------------------------
+      if(sm.type=="m.avg")
       {
-        # calculate the Shepard number by equasion
-        w.value  <- (17*.subset(col.work,i) + 12*(.subset(col.work,i+1)+.subset(col.work,i-1)) - 3*(.subset(col.work,i+2)+.subset(col.work,i-2))) / 35
-      # there is posibility that the resut will be smaller than zero, if that is the case use 0 instead
-      if(w.value<0){w.value<-0}
-      col.res[i] <- w.value
+        if( i < round(0.5*(N.points))+1 ) {  # Samples near beginning (moving window truncated)
+          focus.par[i,] = c(1, ( i + round(0.5*(N.points)) ))
+        } else {
+          if( i > nrow(age)-round(0.5*(N.points)) ) { # Samples near end
+            focus.par[i,] = c( (i - round(0.5*(N.points))), nrow(age) )  
+          } else { 
+            focus.par[i,] = c( (i - round(0.5*(N.points))), (i+round(0.5*(N.points))) )
+          }
+        }
+        col.res[i]<- mean (col.work[focus.par[i,1]:focus.par[i,2]])
       }
       
-      p.counts[,j]<-col.res
+      
+      # ----------------------------------------------
+      #               GRIMm SMOOTHING 
+      # ----------------------------------------------
+      if(sm.type == "grim")
+      {
+        if( i < round(0.5*(grim.N.max))+1 ) {  # Samples near beginning (moving window truncated)
+          focus.par[i,1] <- 1 
+          focus.par[i,2] <- ( i + round(0.5*(N.points)) )
+          focus.par[i,] <- search.parameter(focus.par[i,1] ,focus.par[i,2], range.age.max  )
+        } else {
+          if( i > nrow(age)-round(0.5*(N.points)) ) { # Samples near end
+            focus.par[i,1] <- (i - round(0.5*(N.points)))
+            focus.par[i,2] <- nrow(age) 
+            focus.par[i,] <- search.parameter(focus.par[i,1] ,focus.par[i,2], range.age.max  )
+            
+          } else { 
+            focus.par[i,1] <- (i - round(0.5*(N.points))) 
+            focus.par[i,2] <- (i + round(0.5*(N.points)))
+            focus.par[i,] <- search.parameter(focus.par[i,1] ,focus.par[i,2], range.age.max  )
+          }
+        }
+        col.res[i]<- mean(col.work[focus.par[i,1]:focus.par[i,2]])
+      }
+      
+      # ----------------------------------------------
+      #           AGE-WEIGHTED SMOOTHING 
+      # ----------------------------------------------
+      if(sm.type=="age.w")
+      {
+        
+        if( i < round(0.5*(N.points))+1 ) {  # Samples near beginning (moving window truncated)
+          focus.par[i,] = c(1, ( i + round(0.5*(N.points)) ))
+        } else {
+          if( i > nrow(age)-round(0.5*(N.points)) ) { # Samples near end
+            focus.par[i,] = c( (i - round(0.5*(N.points))), nrow(age) )  
+          } else { 
+            focus.par[i,] = c( (i - round(0.5*(N.points))), (i+round(0.5*(N.points))) )
+          }
+        }
+        
+      # create small df with values around observed sample (in range of offset)
+      df.work <-  data.frame(values= col.work[focus.par[i,1]:focus.par[i,2]],
+                             age = age$newage[focus.par[i,1]:focus.par[i,2]], 
+                             Weight=1)
+      
+      # Weith of points is calculated as range.age.max / distance bewtween oldest and youngest points.
+      # If cannot be smaller than 1. Values very far away from the point 
+      F.age.dist <- abs(df.work$age-age$newage[i])
+      F.age.dist[F.age.dist<1] <- 1
+      df.work$Weight <- range.age.max/F.age.dist
+      
+      col.res[i]<-weighted.mean(df.work$values,df.work$Weight)
+      
+      }
+      
+      # ----------------------------------------------
+      #             Shepard's 5-term filter 
+      # ----------------------------------------------
+      if(sm.type=="shep")
+      {
+        if(i < round(0.5*(N.points))+1) {
+          col.res[i] <- col.work[i]
+        } else {
+          if (i > nrow(age)-round(0.5*(N.points)) ) {
+            col.res[i] <- col.work[i]
+          } else {
+            w.value  <- (17*.subset(col.work,i) + 12*(.subset(col.work,i+1)+.subset(col.work,i-1)) - 3*(.subset(col.work,i+2)+.subset(col.work,i-2))) / 35
+            if(w.value<0){w.value<-0}
+            col.res[i] <- w.value
+          }
+        }
+        
+      }
       
     }
-    p.counts.small <- p.counts[N.first:N.last,]
-    age.small <-age[N.first:N.last,] 
-    Age.un.small <- data.source$Age.un[,N.first:N.last]
-    return(list(Pollen=p.counts.small, Age=age.small, Age.un=Age.un.small, Dim.val= data.source$Dim.val))
+    p.counts[,j]<-col.res
   }
-  
+  return(list(Pollen=p.counts, Age=age, Age.un=data.source$Age.un, Dim.val= data.source$Dim.val))
 }

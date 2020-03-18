@@ -319,21 +319,34 @@ fc_ratepol <- function (data.source.pollen,
     r.m.full <- r.m.full %>%
       filter(RUN.Age.Pos<=interest.treshold)
   }
+  
+  # sort samples by age
+  r.m.full <- r.m.full %>%
+    arrange(RUN.Age.Pos)
     
-
+  # Median peak treshold
   # treshold for RoC peaks is set as median of all RoC in dataset
   r.treshold <- median(r.m.full$RUN.RoC)
-  
-  # mark point which are above the treshold as Soft.Peaks
-  r.m.full$soft.Peak <- r.m.full$RUN.RoC > r.treshold
-  
-  # mark peaks which have 95% quantile above the treshold as Peaks
-  r.m.full$Peak <- r.m.full$RUN.RoC.05q>r.treshold  
+  # mark point which are above the treshold as Peak.treshold
+  r.m.full$Peak.treshold <- r.m.full$RUN.RoC > r.treshold
+  # mark peaks which have 95% quantile above the treshold as Peak.treshold.95
+  r.m.full$Peak.treshold.95 <- r.m.full$RUN.RoC.05q>r.treshold  
 
-  # mark points that are abowe the GAM model (exactly 2*SD higher than GAM prediction)
+  # GAM
+  # mark points that are abowe the GAM model (exactly 1 SD higher than GAM prediction)
   pred.gam <-  predict.gam(gam(RUN.RoC~s(RUN.Age.Pos), data = r.m.full))
   pred.gam.diff <- r.m.full$RUN.RoC - pred.gam
-  r.m.full$Peak.gam <- pred.gam.diff > 2*sd(pred.gam.diff)
+  r.m.full$Peak.gam <- pred.gam.diff > 1*sd(pred.gam.diff)
+  
+  # SNI  
+  # set moving window of 5 times higher than average distance between samples
+  mean.age.window <- 5 * mean( diff(r.m.full$RUN.Age.Pos) )
+  # calculate SNI (singal to noise ratio)
+  SNI.calc <- CharSNI(data.frame(r.m.full$RUN.Age.Pos, r.m.full$RUN.RoC, pred.gam),mean.age.window)
+  # mark points with SNI higher than 3
+  r.m.full$Peak.SNI <- SNI.calc$SNI > 3 & r.m.full$RUN.RoC > pred.gam
+  
+  
   
   # outro
  

@@ -127,9 +127,12 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000,
       coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold)) +
       geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1/5) +
       geom_line(alpha=1, size=1) +
-      geom_point(data = . %>% filter(Peak==T),color="red", alpha=1, size=3) +
+      geom_point(color="gray30", alpha=1, size=1)+
+      geom_point(data = . %>% filter(soft.Peak==T),color="yellow", alpha=1, size=1)+
+      geom_point(data = . %>% filter(Peak==T),color="orange", alpha=1, size=2)+
+      geom_point(data = . %>% filter(Peak.gam==T),color="red", alpha=1, size=3) +
       geom_hline(yintercept = single.plot$RUN.RoC %>%
-                   median(), color="blue") +
+                   median(), color="green") +
       geom_line(data=data.frame(RUN.RoC = predict.gam(gam(RUN.RoC~s(RUN.Age.Pos), data = single.plot)),
                                 RUN.Age.Pos = single.plot$RUN.Age.Pos),
                 color="blue", size=1)+
