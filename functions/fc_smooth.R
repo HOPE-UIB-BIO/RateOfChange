@@ -175,8 +175,9 @@ fc_smooth <- function(data.source,
       # Weith of points is calculated as range.age.max / distance bewtween oldest and youngest points.
       # If cannot be smaller than 1. Values very far away from the point 
       F.age.dist <- abs(df.work$age-age$newage[i])
-      F.age.dist[F.age.dist<1] <- 1
-      df.work$Weight <- range.age.max/F.age.dist
+      const <-  range.age.max/F.age.dist
+      const[const>1] <- 1
+      df.work$Weight <- const
       
       col.res[i]<-weighted.mean(df.work$values,df.work$Weight)
       

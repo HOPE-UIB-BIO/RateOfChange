@@ -2,6 +2,19 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000,
                          Roc.treshold=5, dataset.N="", Signif.value="Peak.gam")
 {
   
+  if (type != "perplot" & type != "summary" & type != "singleplot" & type != "map")
+  {
+    stop("selected plot type must be one of the following: 'perplot','summary','singleplot','map'")
+  }
+  
+  if (Signif.value != "Peak.treshhold" & Signif.value != "Peak.treshold.95" & 
+      Signif.value != "Peak.gam" & Signif.value != "Peak.SNI")
+  {
+    stop("selected peak significance validation must be one of the following: 
+         'Peak.treshhold','Peak.treshold.95','Peak.gam','Peak.SNI'")
+  }
+  
+  
   res.df.plot <- data.source %>%
     select(dataset.id, collection.handle, long, lat, ROC) %>%
     unnest(cols = c(ROC))
@@ -128,9 +141,10 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000,
       geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1/5) +
       geom_line(alpha=1, size=1) +
       geom_point(color="gray30", alpha=1, size=1)+
-      geom_point(data = . %>% filter(soft.Peak==T),color="yellow", alpha=1, size=1)+
-      geom_point(data = . %>% filter(Peak==T),color="orange", alpha=1, size=2)+
+      geom_point(data = . %>% filter(Peak.treshold==T),color="yellow", alpha=1, size=1)+
+      geom_point(data = . %>% filter(Peak.treshold.95==T),color="orange", alpha=1, size=2)+
       geom_point(data = . %>% filter(Peak.gam==T),color="red", alpha=1, size=3) +
+      geom_point(data = . %>% filter(Peak.SNI==T),color="purple", alpha=1, size=3) +
       geom_hline(yintercept = single.plot$RUN.RoC %>%
                    median(), color="green") +
       geom_line(data=data.frame(RUN.RoC = predict.gam(gam(RUN.RoC~s(RUN.Age.Pos), data = single.plot)),

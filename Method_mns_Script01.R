@@ -66,10 +66,9 @@ plot.pollen <- function (data, sm.type, N.taxa, interest.treshold)
 
 plot.comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, interest.treshold)
 {
-  
-  performance.list.plot <- vector("list",length = 20)
-  performance.smooth <- c(rep("none",4),rep("m.avg",4),rep("grim",4),rep("age.w",4),rep("shep",4))
-  performance.DC <- c(rep(c("euc","euc.sd","chord","chisq"),5))
+  performance.list.plot <- vector("list",length = 20);
+  performance.smooth <- c(rep("none",4),rep("m.avg",4),rep("grim",4),rep("age.w",4),rep("shep",4));
+  performance.DC <- c(rep(c("euc","euc.sd","chord","chisq"),5));
   
   
   for(i in 1:length(performance.list.plot))
@@ -90,11 +89,11 @@ plot.comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, inter
                             DC = performance.DC[i],
                             interest.treshold = interest.treshold,
                             Debug = F) %>%
-      as.data.frame()
+      as.data.frame();
     
     
-    roc.max <- max(data.temp$RUN.RoC)*1.5
-    age.max <- max(data.temp$RUN.Age.Pos)
+    roc.max <- max(data.temp$RUN.RoC)*1.5;
+    age.max <- max(data.temp$RUN.Age.Pos);
     
     performance.list.plot[[i]]<-ggplot(data=data.temp, 
                                        aes(y=RUN.RoC, 
@@ -108,10 +107,12 @@ plot.comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, inter
                                 RUN.Age.Pos = data.temp$RUN.Age.Pos),
                 color="blue", size=1)+
       geom_point(color="black", size=1)+
-      geom_point(data = data.temp[data.temp$soft.Peak==T,],color="yellow", size=1)+
-      geom_point(data = data.temp[data.temp$Peak==T,],color="orange", size=2)+
+      geom_point(data = data.temp[data.temp$Peak.treshold==T,],color="yellow", size=1)+
+      geom_point(data = data.temp[data.temp$Peak.treshold.95==T,],color="orange", size=2)+
       geom_point(data = data.temp[data.temp$Peak.gam==T,],color="red", size=3)+
+      geom_point(data = data.temp[data.temp$Peak.SNI==T,],color="purple", size=3)+
       geom_hline(yintercept = 0, color="red")+
+      geom_hline(yintercept = median(data.temp$RUN.RoC), color="green")+
       xlab("Age")+ylab("Rate of Change")+
       ggtitle(paste(performance.smooth[i],"+",performance.DC[i]))
   }
@@ -133,8 +134,6 @@ plot.comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, inter
 
 dataset.25318 <- tibble_Europe2 %>%
   filter(dataset.id=="25318")
-
-
 
 # POllen graph
 
@@ -180,3 +179,7 @@ dataset.25318.comparison.BIN.shift <- plot.comparison(dataset.25318,
 dataset.25318.comparison.sample
 dataset.25318.comparison.BIN
 dataset.25318.comparison.BIN.shift
+
+
+# save.image("~/HOPE/GITHUB/RateOfChange/ENV_METHOD_20200319.RData")
+# load("~/HOPE/GITHUB/RateOfChange/ENV_METHOD_20200319.RData")

@@ -41,8 +41,15 @@ CharSNI = function(CharData,BandWidth) {
   
   # Data setup
   ages = CharData[,1];
+  
   CHAR = CharData[,2];
+  CHAR.mean <- mean(CHAR);
+  CHAR.sd <- sd(CHAR);
+  CHAR <- ( CHAR - CHAR.mean ) / CHAR.sd;
+  
   thresh = CharData[,3];
+  thresh <- ( thresh - CHAR.mean ) / CHAR.sd;
+  
   
   r = mean(diff(ages));
   
