@@ -239,3 +239,47 @@ r.m.full %>% ggplot(aes( x=RUN.Age.Pos))+
   
   
 
+
+
+ggarrange(as.data.frame(forcing) %>%
+            mutate(AGE = time) %>%
+            pivot_longer(., cols = -c(AGE)) %>%
+            ggplot(aes(y=AGE, x= value))+
+            geom_point(aes(color=name))+
+            geom_hline(yintercept = breaks, color="red")+
+            theme_classic()+
+            coord_cartesian(ylim=c(0,8000))+
+            scale_y_continuous(trans = "reverse"),
+          as.data.frame(proxies) %>%
+            mutate(AGE = time) %>%
+            #slice(.,seq(from=min(time), to=max(time), by= 100)) %>%
+            pivot_longer(., cols = -c(AGE)) %>%
+            ggplot(aes(x=AGE, y=value))+
+            geom_ribbon(aes(ymin=rep(0,length(value)), ymax=value, fill=name), alpha=1/5, color="gray30")+
+            geom_vline(xintercept = breaks, color="red")+
+            coord_flip(ylim = c(0,1),xlim=c(0,8000))+
+            facet_wrap(~name, ncol=nprox)+
+            theme_classic()+
+            scale_x_continuous(trans = "reverse"),
+          test %>% ggplot(aes( y=RUN.RoC, 
+                               x= RUN.Age.Pos))+
+            theme_classic()+
+            scale_x_continuous(trans = "reverse")+
+            geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), color="gray", alpha=1/5)+
+            geom_line(size=1)+
+            geom_line(data=data.frame(RUN.RoC = predict.gam(gam(RUN.RoC~s(RUN.Age.Pos), data = test)),
+                                      RUN.Age.Pos = test$RUN.Age.Pos),
+                      color="blue", size=1)+
+            geom_point(color="black",size=1)+
+            geom_point(data = test[test$Peak.treshold==T,], color="yellow", size=1)+
+            geom_point(data = test[test$Peak.treshold.95==T,], color="orange", size=2)+
+            geom_point(data = test[test$Peak.gam==T,], color="red", size=3)+
+            geom_point(data = test[test$Peak.SNI==T,], color="purple", size=4)+
+            geom_hline(yintercept = median(test$RUN.RoC), color="green")+
+            geom_hline(yintercept = 0, color="red")+
+            geom_vline(xintercept = breaks, color="red")+
+            xlab("Age")+ylab("Rate of Change")+
+            coord_flip(xlim=c(0,8000), ylim=c(0,2)),
+          ncol=3
+)
+

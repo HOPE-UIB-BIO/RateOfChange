@@ -29,15 +29,15 @@ glimpse(tibble_Europe2)
 
 plot.pollen <- function (data, sm.type, N.taxa, interest.treshold)
 {
-  Common.list <- data$filtered.counts[[1]] %>%
+  Common.list <- data$filtered.counts %>%
     colSums() %>% 
     sort(decreasing = T) %>%
     .subset(.,1:N.taxa) %>%
     names() %>%
     sub("/",".",.)
   
-  data.ext <-  fc_extract(data$filtered.counts[[1]],
-                          data$list_ages[[1]]) %>%
+  data.ext <-  fc_extract(data$filtered.counts,
+                          data$list_ages) %>%
     fc_smooth(.,sm.type = sm.type,
               N.points = 5,
               grim.N.max = 9,
@@ -73,8 +73,8 @@ plot.comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, inter
   
   for(i in 1:length(performance.list.plot))
   {
-    data.temp<- fc_ratepol( data.source.pollen =  data$filtered.counts[[1]],
-                            data.source.age = data$list_ages[[1]],
+    data.temp<- fc_ratepol( data.source.pollen =  data$filtered.counts,
+                            data.source.age = data$list_ages,
                             sm.type = performance.smooth[i],
                             N.points = 5,
                             range.age.max = 500, 
@@ -84,7 +84,7 @@ plot.comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, inter
                             Shiftbin = Shiftbin,
                             N.shifts = N.shifts,
                             rand = rand,
-                            standardise = T, 
+                            standardise = F, 
                             S.value = 150 ,
                             DC = performance.DC[i],
                             interest.treshold = interest.treshold,
@@ -129,11 +129,105 @@ plot.comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, inter
 
 
 # -----------------------------------------
+#                 SIMULATION
+# -----------------------------------------
+
+#tibble_Europe2$list_ages[[2]]$ages$age
+data.sim <-  fc_random_data(time = seq(from=0, to=10e3, by=100),
+                            nforc = 4, 
+                            nprox = 10,
+                            manual.edit = T,
+                            breaks=c(0,2000, 4000,6000),
+                            jitter = T)
+
+plot.pollen.sim <- ggarrange(
+  plot.pollen(data.sim,"none",10,8000),
+  plot.pollen(data.sim,"m.avg",10,8000),
+  plot.pollen(data.sim,"age.w",10,8000),
+  plot.pollen(data.sim,"grim",10,8000),
+  plot.pollen(data.sim,"shep",10,8000),
+  ncol=5, nrow = 1, common.legend = T, legend = "right"
+)
+
+plot.pollen.sim
+
+dataset.sim.comparison.sample <- plot.comparison(data.sim,
+                                                   BIN = F, 
+                                                   Shiftbin = F, 
+                                                   rand = 1, 
+                                                   interest.treshold =  8000)
+dataset.sim.comparison.BIN <- plot.comparison(data.sim,
+                                              BIN = T,
+                                              BIN.size = 500,
+                                              Shiftbin = F, 
+                                              rand = 1, 
+                                              interest.treshold =  8000)
+dataset.sim.comparison.BIN.shift <- plot.comparison(data.sim,
+                                                 BIN = F, 
+                                                 Shiftbin = F, 
+                                                 rand = 1, 
+                                                 interest.treshold =  8000)
+# -----------------------------------------
+#         SIMULATION with template
+# -----------------------------------------
+
+# uneven distribution of samples
+tibble_Europe2$list_ages[[2]]$ages %>%
+  filter(age <8000) %>%
+  nrow
+
+tibble_Europe2$list_ages[[2]]$ages %>%
+  filter(age <8000) %>%
+  ggplot(aes(x=age))+
+  geom_density(fill="gray80",color="gray30")+
+  coord_cartesian(xlim=c(0,8000))
+
+data.sim.template <-  fc_random_data(time = tibble_Europe2$list_ages[[2]]$ages$age,
+                            nforc = 4, 
+                            nprox = 10,
+                            manual.edit = T,
+                            breaks=c(0,2000, 4000,6000),
+                            jitter = T)
+
+plot.pollen.sim.template <- ggarrange(
+  plot.pollen(data.sim,"none",10,8000),
+  plot.pollen(data.sim,"m.avg",10,8000),
+  plot.pollen(data.sim,"age.w",10,8000),
+  plot.pollen(data.sim,"grim",10,8000),
+  plot.pollen(data.sim,"shep",10,8000),
+  ncol=5, nrow = 1, common.legend = T, legend = "right"
+)
+
+plot.pollen.sim.template
+
+dataset.sim.template.comparison.sample <- plot.comparison(data.sim.template,
+                                                 BIN = F, 
+                                                 Shiftbin = F, 
+                                                 rand = 1, 
+                                                 interest.treshold =  8000)
+dataset.sim.template.comparison.BIN <- plot.comparison(data.sim.template,
+                                              BIN = T,
+                                              BIN.size = 500,
+                                              Shiftbin = F, 
+                                              rand = 1, 
+                                              interest.treshold =  8000)
+dataset.sim.template.comparison.BIN.shift <- plot.comparison(data.sim.template,
+                                                    BIN = F, 
+                                                    Shiftbin = F, 
+                                                    rand = 1, 
+                                                    interest.treshold =  8000)
+
+
+
+# -----------------------------------------
 #                 25318
 # -----------------------------------------
 
+
+
 dataset.25318 <- tibble_Europe2 %>%
   filter(dataset.id=="25318")
+
 
 # POllen graph
 
@@ -183,3 +277,16 @@ dataset.25318.comparison.BIN.shift
 
 # save.image("~/HOPE/GITHUB/RateOfChange/ENV_METHOD_20200319.RData")
 # load("~/HOPE/GITHUB/RateOfChange/ENV_METHOD_20200319.RData")
+
+
+
+# ----------------------------------------------
+#               CLEAN UP 
+# ----------------------------------------------
+rm(list = ls())
+
+
+
+
+RandomEnv(nforc = 1, time = 8e3:0, nprox=10)
+test <- RandomProx()
