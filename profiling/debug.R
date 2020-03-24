@@ -20,6 +20,27 @@ DC = "chisq"
 interest.treshold = 8000
 Debug = F
 
+
+
+time=seq(from=0, to=10e3, by=100);
+time= tibble_Europe2$list_ages[[2]]$ages$age
+nforc=4;
+mean=100; 
+sdev=.15; 
+nprox=10; 
+var=20;
+range=15;
+manual.edit = T;
+breaks=c(1000,2000);
+jitter = T;
+BIN=F; 
+BIN.size=500; 
+Shiftbin=F;
+N.shifts=5;
+rand.sets=10;
+interest.treshold=8000;
+
+
 data.source.extrap <- data.bin
 
 
@@ -83,21 +104,21 @@ test <- fc_ratepol( data.source.pollen =  tibble_Europe2$filtered.counts[[datase
                     Debug = F)
 
 
-test %>% ggplot(aes( y=RUN.RoC, 
+data.temp %>% ggplot(aes( y=RUN.RoC, 
                      x= RUN.Age.Pos))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), color="gray", alpha=1/5)+
   geom_line(size=1)+
-  geom_line(data=data.frame(RUN.RoC = predict.gam(gam(RUN.RoC~s(RUN.Age.Pos), data = test)),
-                            RUN.Age.Pos = test$RUN.Age.Pos),
+  geom_line(data=data.frame(RUN.RoC = predict.gam(gam(RUN.RoC~s(RUN.Age.Pos), data = data.temp)),
+                            RUN.Age.Pos = data.temp$RUN.Age.Pos),
             color="blue", size=1)+
   geom_point(color="black",size=1)+
-  geom_point(data = test[test$Peak.treshold==T,], color="yellow", size=1)+
-  geom_point(data = test[test$Peak.treshold.95==T,], color="orange", size=2)+
-  geom_point(data = test[test$Peak.gam==T,], color="red", size=3)+
-  geom_point(data = test[test$Peak.SNI==T,], color="purple", size=4)+
-  geom_hline(yintercept = median(test$RUN.RoC), color="green")+
+  geom_point(data = data.temp[data.temp$Peak.treshold==T,], color="yellow", size=1)+
+  geom_point(data = data.temp[data.temp$Peak.treshold.95==T,], color="orange", size=2)+
+  geom_point(data = data.temp[data.temp$Peak.gam==T,], color="red", size=3)+
+  geom_point(data = data.temp[data.temp$Peak.SNI==T,], color="purple", size=4)+
+  geom_hline(yintercept = median(data.temp$RUN.RoC), color="green")+
   geom_hline(yintercept = 0, color="red")+
   xlab("Age")+ylab("Rate of Change")+
   coord_flip(xlim=c(0,8000), ylim=c(0,5))
@@ -238,6 +259,70 @@ r.m.full %>% ggplot(aes( x=RUN.Age.Pos))+
   scale_x_continuous(trans = "reverse")
   
   
+random.data <- fc_random_data(time=tibble_Europe2$list_ages[[2]]$ages$age,
+                              nforc=4,
+                              mean=100, 
+                              sdev=.15, 
+                              nprox=10, 
+                              var=20,
+                              range=15,
+                              manual.edit = T,
+                              breaks=c(2000,2500,5000,5500),
+                              jitter = T
+                              )
+
+
+random.data.ex <- fc_extract(random.data$filtered.counts, random.data$list_ages) %>%
+  fc_smooth("none") %>%
+  fc_check(., proportion = T)
+
+Roc.random <- fc_ratepol(data.source.pollen= random.data$filtered.counts, 
+           data.source.age= random.data$list_ages,
+           sm.type = "none",
+           standardise = F,
+           BIN=F,
+           BIN.size=500, 
+           Shiftbin=F,
+           N.shifts=5,
+           rand = 1,
+           interest.treshold=8000,
+           DC="euc"
+           )
+
+breaks=c(2000,2500,5000,5500);
+ggarrange(as.data.frame(random.data.ex$Pollen) %>%
+            mutate(AGE = random.data.ex$Age$newage) %>%
+            pivot_longer(., cols = -c(AGE)) %>%
+            ggplot(aes(x=AGE, y=value))+
+            geom_ribbon(aes(ymin=rep(0,length(value)), ymax=value, fill=name), alpha=1/5, color="gray30")+
+            geom_vline(xintercept = breaks, color="red")+
+            coord_flip(ylim = c(0,1),xlim=c(0,8000))+
+            facet_wrap(~name, ncol=nprox)+
+            theme_classic()+
+            scale_x_continuous(trans = "reverse")+
+            theme(legend.position ="none"),
+          Roc.random %>% ggplot(aes( y=RUN.RoC, 
+                               x= RUN.Age.Pos))+
+            theme_classic()+
+            scale_x_continuous(trans = "reverse")+
+            geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), color="gray", alpha=1/5)+
+            geom_line(size=1)+
+            geom_line(data=data.frame(RUN.RoC = predict.gam(gam(RUN.RoC~s(RUN.Age.Pos), data = Roc.random)),
+                                      RUN.Age.Pos = Roc.random$RUN.Age.Pos),
+                      color="blue", size=1)+
+            geom_point(color="black",size=1)+
+            geom_point(data = Roc.random[Roc.random$Peak.treshold==T,], color="yellow", size=1)+
+            geom_point(data = Roc.random[Roc.random$Peak.treshold.95==T,], color="orange", size=2)+
+            geom_point(data = Roc.random[Roc.random$Peak.gam==T,], color="red", size=3)+
+            geom_point(data = Roc.random[Roc.random$Peak.SNI==T,], color="purple", size=4)+
+            geom_hline(yintercept = median(Roc.random$RUN.RoC), color="green")+
+            geom_hline(yintercept = 0, color="red")+
+            geom_vline(xintercept = breaks, color="red")+
+            geom_vline(xintercept = c(breaks-500,breaks+500), color="gray80", lty=2)+
+            xlab("Age")+ylab("Rate of Change")+
+            coord_flip(xlim=c(0,8000), ylim=c(0,2)),
+          ncol=2
+)
 
 
 

@@ -15,12 +15,38 @@ fc_random_data <- function(time=5e3:0,
   for(i in 2:length(time))
     forcing[i,] <- rnorm(nforc, forcing[i-1,], sdev)
   
+  
+  
+  
   # manual edit of env.var.
   if (manual.edit==T)
   {
-    forcing[time>breaks[1] & time<breaks[2],] <-  forcing[time>breaks[1] & time<breaks[2],] * 1.2
-    forcing[time>breaks[2] & time<breaks[3],] <-  forcing[time>breaks[2] & time<breaks[3],] * 0.8
-    forcing[time>breaks[3] & time<breaks[4],] <-  forcing[time>breaks[3] & time<breaks[4],] * 1.2
+    
+    if(length(breaks)%%2!=0)
+      stop("number of breaks must be an even number (2-6)")
+    if(length(breaks)>6)
+      stop("Number of breaks must be maximum of 6 (2-6)")
+    
+    if(length(breaks)==2){
+      forcing[time>breaks[1] & time<breaks[2],] <-  forcing[time>breaks[1] & time<breaks[2],] * 1.2
+    }
+    
+    if(length(breaks)==4) {
+      forcing[time>breaks[1] & time<breaks[2],] <-  forcing[time>breaks[1] & time<breaks[2],] * 1.2
+      forcing[time>breaks[2] & time<breaks[3],] <-  forcing[time>breaks[2] & time<breaks[3],] * 0.8
+      forcing[time>breaks[3] & time<breaks[4],] <-  forcing[time>breaks[3] & time<breaks[4],] * 1.2  
+    }
+    
+    if(length(breaks)==6) {
+      forcing[time>breaks[1] & time<breaks[2],] <-  forcing[time>breaks[1] & time<breaks[2],] * 1.2
+      forcing[time>breaks[2] & time<breaks[3],] <-  forcing[time>breaks[2] & time<breaks[3],] * 0.8
+      forcing[time>breaks[3] & time<breaks[4],] <-  forcing[time>breaks[3] & time<breaks[4],] * 1.2
+      forcing[time>breaks[4] & time<breaks[5],] <-  forcing[time>breaks[4] & time<breaks[5],] * 0.8
+      forcing[time>breaks[5] & time<breaks[6],] <-  forcing[time>breaks[5] & time<breaks[6],] * 1.2
+    }
+    
+    
+    
   }
   
   # smooth env.var
@@ -46,6 +72,8 @@ fc_random_data <- function(time=5e3:0,
   o <- order(o, decreasing=TRUE)
   proxies <- proxies[,o]
   
+  
+  # jitter the resul the pollen data
   if(jitter==T)
   {
     proxies<- apply(proxies,2,FUN= function(x) jitter(x,factor = 1.5, amount = 0))
