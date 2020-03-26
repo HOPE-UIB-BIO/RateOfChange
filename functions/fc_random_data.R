@@ -15,9 +15,6 @@ fc_random_data <- function(time=5e3:0,
   for(i in 2:length(time))
     forcing[i,] <- rnorm(nforc, forcing[i-1,], sdev)
   
-  
-  
-  
   # manual edit of env.var.
   if (manual.edit==T)
   {
@@ -27,31 +24,25 @@ fc_random_data <- function(time=5e3:0,
     if(length(breaks)>6)
       stop("Number of breaks must be maximum of 6 (2-6)")
     
-    if(length(breaks)==2){
-      forcing[time>breaks[1] & time<breaks[2],] <-  forcing[time>breaks[1] & time<breaks[2],] * 1.2
+    for(l in 1:( length(breaks)-1 ) )
+    {
+      if(l%%2 == 1) # odd
+      {
+        forcing[time>breaks[l] & time<breaks[l+1],] <-  forcing[time>breaks[l] & time<breaks[l+1],] * (1+sdev)  
+      }
+      
+      if(l%%2 == 0) # even
+      {
+        forcing[time>breaks[l] & time<breaks[l+1],] <-  forcing[time>breaks[l] & time<breaks[l+1],] * (1-sdev) 
+      }
+      
     }
-    
-    if(length(breaks)==4) {
-      forcing[time>breaks[1] & time<breaks[2],] <-  forcing[time>breaks[1] & time<breaks[2],] * 1.2
-      forcing[time>breaks[2] & time<breaks[3],] <-  forcing[time>breaks[2] & time<breaks[3],] * 0.8
-      forcing[time>breaks[3] & time<breaks[4],] <-  forcing[time>breaks[3] & time<breaks[4],] * 1.2  
-    }
-    
-    if(length(breaks)==6) {
-      forcing[time>breaks[1] & time<breaks[2],] <-  forcing[time>breaks[1] & time<breaks[2],] * 1.2
-      forcing[time>breaks[2] & time<breaks[3],] <-  forcing[time>breaks[2] & time<breaks[3],] * 0.8
-      forcing[time>breaks[3] & time<breaks[4],] <-  forcing[time>breaks[3] & time<breaks[4],] * 1.2
-      forcing[time>breaks[4] & time<breaks[5],] <-  forcing[time>breaks[4] & time<breaks[5],] * 0.8
-      forcing[time>breaks[5] & time<breaks[6],] <-  forcing[time>breaks[5] & time<breaks[6],] * 1.2
-    }
-    
-    
     
   }
   
   # smooth env.var
   forcing<- apply(forcing,2, FUN = function(x) {
-    low <- lowess(x,f=.25,iter=0)
+    low <- lowess(x,f=.05,iter=0)
     return(low$y)
   }) 
   

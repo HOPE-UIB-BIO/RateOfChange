@@ -167,6 +167,60 @@ dataset.sim.comparison.BIN.shift <- plot.comparison(data.sim,
                                                  Shiftbin = F, 
                                                  rand = 1, 
                                                  interest.treshold =  8000)
+
+signif.sim.comparison.sample <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
+                                                    nforc=4,
+                                                    mean=100, 
+                                                    sdev=.15, 
+                                                    nprox=10, 
+                                                    var=20,
+                                                    range=15,
+                                                    manual.edit = T,
+                                                    breaks=c(2000,3000),
+                                                    jitter = T,
+                                                    BIN=F,
+                                                    BIN.size=500, 
+                                                    Shiftbin=F,
+                                                    N.shifts=5,
+                                                    rand.sets=10,
+                                                    interest.treshold=8000)
+
+signif.sim.comparison.BIN.shift <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
+                                                    nforc=4,
+                                                    mean=100, 
+                                                    sdev=.15, 
+                                                    nprox=10, 
+                                                    var=20,
+                                                    range=15,
+                                                    manual.edit = T,
+                                                    breaks=c(2000,3000),
+                                                    jitter = T,
+                                                    BIN=T,
+                                                    BIN.size=500, 
+                                                    Shiftbin=T,
+                                                    N.shifts=5,
+                                                    rand.sets=10,
+                                                    interest.treshold=8000)
+
+
+signif.sim.comparison.BIN <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
+                                                 nforc=4,
+                                                 mean=100, 
+                                                 sdev=.15, 
+                                                 nprox=10, 
+                                                 var=20,
+                                                 range=15,
+                                                 manual.edit = T,
+                                                 breaks=c(2000,3000),
+                                                 jitter = T,
+                                                 BIN=T,
+                                                 BIN.size=500, 
+                                                 Shiftbin=F,
+                                                 N.shifts=5,
+                                                 rand.sets=10,
+                                                 interest.treshold=8000)
+
+
 # -----------------------------------------
 #         SIMULATION with template
 # -----------------------------------------
