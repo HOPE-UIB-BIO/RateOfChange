@@ -118,7 +118,7 @@ fc_random_data_test <- function(time=0:10e3,
       # summary of randomisation
       plot.data <- list.res %>%
         group_by(SEGMENT,SIGNIF) %>%
-        summarise(VALUE.M= median(VALUE, na.rm = T),
+        summarise(VALUE.M= mean(VALUE, na.rm = T),
                   VALUE.05 = quantile(VALUE,0.025, na.rm = T),
                   VALUE.95 = quantile(VALUE,0.975, na.rm = T)
                   ) %>%
