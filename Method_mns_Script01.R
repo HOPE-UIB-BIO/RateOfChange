@@ -34,7 +34,11 @@ plot.pollen <- function (data, sm.type, N.taxa, interest.treshold)
     sort(decreasing = T) %>%
     .subset(.,1:N.taxa) %>%
     names() %>%
-    sub("/",".",.)
+    sub("/",".",.) %>%
+    sub("-",".",.) %>%
+    sub(")",".",.) %>%
+    sub(".\\(","..",.) 
+    
   
   data.ext <-  fc_extract(data$filtered.counts,
                           data$list_ages) %>%
@@ -64,7 +68,7 @@ plot.pollen <- function (data, sm.type, N.taxa, interest.treshold)
 }
 
 
-plot.comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, interest.treshold)
+plot.comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, standardise ,interest.treshold)
 {
   performance.list.plot <- vector("list",length = 20);
   performance.smooth <- c(rep("none",4),rep("m.avg",4),rep("grim",4),rep("age.w",4),rep("shep",4));
@@ -128,47 +132,137 @@ plot.comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, inter
 }
 
 
+plot.time <- function(data, BIN=F, BIN.size=500, Shiftbin=F, N.shifts=5, rand=10)
+{
+  DF.performance <- data.frame(matrix(nrow = 20, ncol=5))
+  names(DF.performance) <- c("smooth","DC","user","system","elapsed")
+  DF.performance$smooth <- c(rep("none",4),rep("m.avg",4),rep("grim",4),rep("age.w",4),rep("shep",4))
+  DF.performance$DC <- c(rep(c("euc","euc.sd","chord","chisq"),5))
+  
+  for(i in 1:nrow(DF.performance))
+  {
+    a<- system.time(fc_ratepol( data.source.pollen =  data$filtered.counts,
+                                data.source.age = data$list_ages,
+                                sm.type = DF.performance$smooth[i],
+                                N.points = 5,
+                                range.age.max = 500, 
+                                grim.N.max = 9,
+                                BIN = BIN,
+                                BIN.size = BIN.size,
+                                Shiftbin = Shiftbin,
+                                N.shifts = N.shifts,
+                                rand = rand,
+                                standardise = F,
+                                DC = DF.performance$DC[i],
+                                interest.treshold = 8000,
+                                Debug = F))
+    
+    DF.performance$user[i] <- a[1]
+    DF.performance$system[i] <- a[2]
+    DF.performance$elapsed[i] <- a[3]
+  }
+  
+  plot.fin <- DF.performance %>%
+    ggplot(aes(y=elapsed, x=smooth, fill=DC))+
+    geom_bar(stat="identity", position = "dodge", color="gray50")+
+    ggtitle(paste(",N samples",nrow(data$filtered.counts),
+                  ",N taxa",ncol(data$filtered.counts),
+                  ",N.randomisation",rand,
+                  ",BIN",BIN,
+                  ",Shift",Shiftbin))+
+    theme_classic()+
+    coord_cartesian(ylim = c(0,60))+
+    ylab("computation time (s)")
+  return (plot.fin)
+}
+
+
 # -----------------------------------------
-#                 SIMULATION
+#
+#         SIMULATION change 2000-3000 
+#
 # -----------------------------------------
 
-#tibble_Europe2$list_ages[[2]]$ages$age
-data.sim <-  fc_random_data(time = seq(from=0, to=10e3, by=100),
+# ------------------------------
+#             data
+# ------------------------------
+
+data.sim.up <-  fc_random_data(time = tibble_Europe2$list_ages[[2]]$ages$age,
                             nforc = 4, 
                             nprox = 10,
                             manual.edit = T,
-                            breaks=c(0,2000, 4000,6000),
+                            breaks=c(2000, 3000),
                             jitter = T)
 
-plot.pollen.sim <- ggarrange(
-  plot.pollen(data.sim,"none",10,8000),
-  plot.pollen(data.sim,"m.avg",10,8000),
-  plot.pollen(data.sim,"age.w",10,8000),
-  plot.pollen(data.sim,"grim",10,8000),
-  plot.pollen(data.sim,"shep",10,8000),
-  ncol=5, nrow = 1, common.legend = T, legend = "right"
+# ------------------------------
+#          smoothing 
+# ------------------------------
+
+plot.pollen.sim.up <- ggarrange(
+  data.sim.up$list_ages$ages %>%
+    filter(age <= 10000) %>%
+    ggplot(aes(x=age))+
+    geom_density(color="gray30",fill="gray80")+
+    coord_flip(xlim = c(0,8000))+
+    scale_x_continuous(trans = "reverse")+
+    theme_classic()+xlab("Age")+ylab("Sample density")+
+    ggtitle("Density of Samples") ,
+  plot.pollen(data.sim.up,"none",10,8000),
+  plot.pollen(data.sim.up,"m.avg",10,8000),
+  plot.pollen(data.sim.up,"age.w",10,8000),
+  plot.pollen(data.sim.up,"grim",10,8000),
+  plot.pollen(data.sim.up,"shep",10,8000),
+  ncol=6, nrow = 1, common.legend = T, legend = "none"
 )
 
-plot.pollen.sim
 
-dataset.sim.comparison.sample <- plot.comparison(data.sim,
+ggsave("plot.pollen.sim.up.pdf",
+       plot = plot.pollen.sim.up,
+       width = 40, height = 15, units = "cm")
+
+# ------------------------------
+#   visual result comparison
+# ------------------------------
+dataset.sim.comparison.up.sample <- plot.comparison(data.sim.up,
                                                    BIN = F, 
                                                    Shiftbin = F, 
-                                                   rand = 1, 
+                                                   rand = 1,
+                                                   standardise = F,
                                                    interest.treshold =  8000)
-dataset.sim.comparison.BIN <- plot.comparison(data.sim,
+
+ggsave("dataset.sim.comparison.up.sample.pdf",
+       plot = dataset.sim.comparison.up.sample,
+       width = 40, height = 25, units = "cm")
+
+dataset.sim.comparison.up.BIN <- plot.comparison(data.sim.up,
                                               BIN = T,
                                               BIN.size = 500,
                                               Shiftbin = F, 
                                               rand = 1, 
+                                              standardise = F,
                                               interest.treshold =  8000)
-dataset.sim.comparison.BIN.shift <- plot.comparison(data.sim,
-                                                 BIN = F, 
-                                                 Shiftbin = F, 
-                                                 rand = 1, 
-                                                 interest.treshold =  8000)
+ggsave("dataset.sim.comparison.up.BIN.pdf",
+       plot = dataset.sim.comparison.up.BIN,
+       width = 40, height = 25, units = "cm")
 
-signif.sim.comparison.sample <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
+
+dataset.sim.comparison.up.BIN.shift <- plot.comparison(data.sim.up,
+                                                 BIN = T, 
+                                                 BIN.size = 500,
+                                                 Shiftbin = T, 
+                                                 N.shifts = 5,
+                                                 rand = 1, 
+                                                 standardise = F,
+                                                 interest.treshold =  8000)
+ggsave("dataset.sim.comparison.up.BIN.shift.pdf",
+       plot = dataset.sim.comparison.up.BIN.shift,
+       width = 40, height = 25, units = "cm")
+
+# ------------------------------
+# statistical result comparison
+# ------------------------------
+
+signif.sim.comparison.up.sample <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
                                                     nforc=4,
                                                     mean=100, 
                                                     sdev=.15, 
@@ -179,31 +273,17 @@ signif.sim.comparison.sample <- fc_random_data_test(time= tibble_Europe2$list_ag
                                                     breaks=c(2000,3000),
                                                     jitter = T,
                                                     BIN=F,
-                                                    BIN.size=500, 
                                                     Shiftbin=F,
-                                                    N.shifts=5,
-                                                    rand.sets=10,
+                                                    rand.sets=100,
                                                     interest.treshold=8000)
 
-signif.sim.comparison.BIN.shift <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
-                                                    nforc=4,
-                                                    mean=100, 
-                                                    sdev=.15, 
-                                                    nprox=10, 
-                                                    var=20,
-                                                    range=15,
-                                                    manual.edit = T,
-                                                    breaks=c(2000,3000),
-                                                    jitter = T,
-                                                    BIN=T,
-                                                    BIN.size=500, 
-                                                    Shiftbin=T,
-                                                    N.shifts=5,
-                                                    rand.sets=10,
-                                                    interest.treshold=8000)
+ggsave("signif.sim.comparison.up.sample.pdf",
+       plot = signif.sim.comparison.up.sample,
+       width = 40, height = 25, units = "cm")
 
 
-signif.sim.comparison.BIN <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
+
+signif.sim.comparison.up.BIN <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
                                                  nforc=4,
                                                  mean=100, 
                                                  sdev=.15, 
@@ -216,118 +296,294 @@ signif.sim.comparison.BIN <- fc_random_data_test(time= tibble_Europe2$list_ages[
                                                  BIN=T,
                                                  BIN.size=500, 
                                                  Shiftbin=F,
-                                                 N.shifts=5,
-                                                 rand.sets=10,
+                                                 rand.sets=100,
                                                  interest.treshold=8000)
 
+ggsave("signif.sim.comparison.up.BIN.pdf",
+       plot = signif.sim.comparison.up.BIN,
+       width = 40, height = 25, units = "cm")
 
-# -----------------------------------------
-#         SIMULATION with template
-# -----------------------------------------
 
-# uneven distribution of samples
-tibble_Europe2$list_ages[[2]]$ages %>%
-  filter(age <8000) %>%
-  nrow
 
-tibble_Europe2$list_ages[[2]]$ages %>%
-  filter(age <8000) %>%
-  ggplot(aes(x=age))+
-  geom_density(fill="gray80",color="gray30")+
-  coord_cartesian(xlim=c(0,8000))
+signif.sim.comparison..up.BIN.shift <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
+                                                           nforc=4,
+                                                           mean=100, 
+                                                           sdev=.15, 
+                                                           nprox=10, 
+                                                           var=20,
+                                                           range=15,
+                                                           manual.edit = T,
+                                                           breaks=c(2000,3000),
+                                                           jitter = T,
+                                                           BIN=T,
+                                                           BIN.size=500, 
+                                                           Shiftbin=T,
+                                                           N.shifts=5,
+                                                           rand.sets=100,
+                                                           interest.treshold=8000)
 
-data.sim.template <-  fc_random_data(time = tibble_Europe2$list_ages[[2]]$ages$age,
-                            nforc = 4, 
-                            nprox = 10,
-                            manual.edit = T,
-                            breaks=c(0,2000, 4000,6000),
-                            jitter = T)
+ggsave("signif.sim.comparison..up.BIN.shift.pdf",
+       plot = signif.sim.comparison..up.BIN.shift,
+       width = 40, height = 25, units = "cm")
 
-plot.pollen.sim.template <- ggarrange(
-  plot.pollen(data.sim,"none",10,8000),
-  plot.pollen(data.sim,"m.avg",10,8000),
-  plot.pollen(data.sim,"age.w",10,8000),
-  plot.pollen(data.sim,"grim",10,8000),
-  plot.pollen(data.sim,"shep",10,8000),
-  ncol=5, nrow = 1, common.legend = T, legend = "right"
+
+# ------------------------------
+#   computation time compariosn
+# ------------------------------
+
+time.sim.comparison.up.sample <- plot.time(data.sim.up, BIN=F, Shiftbin = F, rand = 1000)
+
+time.sim.comparison.up.BIN <- plot.time(data.sim.up, BIN=T,BIN.size = 500, Shiftbin = F, rand = 1000)
+
+time.sim.comparison.up.BIN.shift <- plot.time(data.sim.up, BIN=T,BIN.size = 500, Shiftbin = T, N.shifts = 5, rand = 1000)
+
+time.sim.comparison.up.sum <- ggarrange(
+  time.sim.comparison.up.sample,
+  time.sim.comparison.up.BIN,
+  time.sim.comparison.up.BIN.shift,
+  nrow = 3, ncol = 1, common.legend = T, legend = "right"
 )
 
-plot.pollen.sim.template
+ggsave("time.sim.comparison.up.sum.pdf",
+       plot = time.sim.comparison.up.sum,
+       height = 25, width = 25, units="cm")
 
-dataset.sim.template.comparison.sample <- plot.comparison(data.sim.template,
-                                                 BIN = F, 
-                                                 Shiftbin = F, 
-                                                 rand = 1, 
-                                                 interest.treshold =  8000)
-dataset.sim.template.comparison.BIN <- plot.comparison(data.sim.template,
-                                              BIN = T,
-                                              BIN.size = 500,
-                                              Shiftbin = F, 
-                                              rand = 1, 
-                                              interest.treshold =  8000)
-dataset.sim.template.comparison.BIN.shift <- plot.comparison(data.sim.template,
+
+# -----------------------------------------
+#
+#       SIMULATION change 5500-6500 
+#
+# -----------------------------------------
+
+data.sim.dw <-  fc_random_data(time = tibble_Europe2$list_ages[[2]]$ages$age,
+                               nforc = 4, 
+                               nprox = 10,
+                               manual.edit = T,
+                               breaks=c(5500, 6500),
+                               jitter = T)
+
+plot.pollen.sim.dw <- ggarrange(
+  data.sim.dw$list_ages$ages %>%
+    filter(age <= 10000) %>%
+    ggplot(aes(x=age))+
+    geom_density(color="gray30",fill="gray80")+
+    coord_flip(xlim = c(0,8000))+
+    scale_x_continuous(trans = "reverse")+
+    theme_classic()+xlab("Age")+ylab("Sample density")+
+    ggtitle("Density of Samples") ,
+  plot.pollen(data.sim.dw,"none",10,8000),
+  plot.pollen(data.sim.dw,"m.avg",10,8000),
+  plot.pollen(data.sim.dw,"age.w",10,8000),
+  plot.pollen(data.sim.dw,"grim",10,8000),
+  plot.pollen(data.sim.dw,"shep",10,8000),
+  ncol=6, nrow = 1, common.legend = T, legend = "none"
+)
+
+plot.pollen.sim.dw
+
+
+ggsave("plot.pollen.sim.dw.pdf",
+       plot = plot.pollen.sim.dw,
+       width = 40, height = 15, units = "cm")
+
+
+dataset.sim.comparison.dw.sample <- plot.comparison(data.sim.dw,
                                                     BIN = F, 
                                                     Shiftbin = F, 
                                                     rand = 1, 
                                                     interest.treshold =  8000)
 
+ggsave("dataset.sim.comparison.dw.sample.pdf",
+       plot = dataset.sim.comparison.dw.sample,
+       width = 40, height = 25, units = "cm")
+
+dataset.sim.comparison.dw.BIN <- plot.comparison(data.sim.dw,
+                                                 BIN = T,
+                                                 BIN.size = 500,
+                                                 Shiftbin = F, 
+                                                 rand = 1, 
+                                                 interest.treshold =  8000)
+ggsave("dataset.sim.comparison.dw.BIN.pdf",
+       plot = dataset.sim.comparison.dw.BIN,
+       width = 40, height = 25, units = "cm")
+
+
+dataset.sim.comparison.dw.BIN.shift <- plot.comparison(data.sim.dw,
+                                                       BIN = T, 
+                                                       BIN.size = 500,
+                                                       Shiftbin = T, 
+                                                       N.shifts = 5,
+                                                       rand = 1, 
+                                                       interest.treshold =  8000)
+ggsave("dataset.sim.comparison.dw.BIN.shift.pdf",
+       plot = dataset.sim.comparison.dw.BIN.shift,
+       width = 40, height = 25, units = "cm")
+
+
+signif.sim.comparison.dw.sample <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
+                                                       nforc=4,
+                                                       mean=100, 
+                                                       sdev=.15, 
+                                                       nprox=10, 
+                                                       var=20,
+                                                       range=15,
+                                                       manual.edit = T,
+                                                       breaks=c(5500,6500),
+                                                       jitter = T,
+                                                       BIN=F,
+                                                       Shiftbin=F,
+                                                       rand.sets=10,
+                                                       interest.treshold=8000)
+
+ggsave("signif.sim.comparison.dw.sample.pdf",
+       plot = signif.sim.comparison.dw.sample,
+       width = 40, height = 25, units = "cm")
+
+
+
+signif.sim.comparison.dw.BIN <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
+                                                    nforc=4,
+                                                    mean=100, 
+                                                    sdev=.15, 
+                                                    nprox=10, 
+                                                    var=20,
+                                                    range=15,
+                                                    manual.edit = T,
+                                                    breaks=c(5500,6500),
+                                                    jitter = T,
+                                                    BIN=T,
+                                                    BIN.size=500, 
+                                                    Shiftbin=F,
+                                                    rand.sets=10,
+                                                    interest.treshold=8000)
+
+ggsave("signif.sim.comparison.dw.BIN.pdf",
+       plot = signif.sim.comparison.dw.BIN,
+       width = 40, height = 25, units = "cm")
+
+
+
+signif.sim.comparison.dw.BIN.shift <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
+                                                           nforc=4,
+                                                           mean=100, 
+                                                           sdev=.15, 
+                                                           nprox=10, 
+                                                           var=20,
+                                                           range=15,
+                                                           manual.edit = T,
+                                                           breaks=c(5500,6500),
+                                                           jitter = T,
+                                                           BIN=T,
+                                                           BIN.size=500, 
+                                                           Shiftbin=T,
+                                                           N.shifts=5,
+                                                           rand.sets=10,
+                                                           interest.treshold=8000)
+
+ggsave("signif.sim.comparison.dw.BIN.shift.pdf",
+       plot = signif.sim.comparison.dw.BIN.shift,
+       width = 40, height = 25, units = "cm")
+
 
 
 # -----------------------------------------
-#                 25318
+#
+#                 17334
+#
 # -----------------------------------------
 
 
-
-dataset.25318 <- tibble_Europe2 %>%
-  filter(dataset.id=="25318")
-
-
+dataset.17334 <- list(dataset.id = tibble_Europe2$dataset.id[[2]],
+                      filtered.counts = tibble_Europe2$filtered.counts[[2]],
+                      list_ages = tibble_Europe2$list_ages[[2]])
+  
 # POllen graph
 
-plot.pollen.25318 <- ggarrange(
-  plot.pollen(dataset.25318,"none",10,8000),
-  plot.pollen(dataset.25318,"m.avg",10,8000),
-  plot.pollen(dataset.25318,"age.w",10,8000),
-  plot.pollen(dataset.25318,"grim",10,8000),
-  plot.pollen(dataset.25318,"shep",10,8000),
-  ncol=5, nrow = 1, common.legend = T, legend = "right"
+plot.pollen.17334 <- ggarrange(
+  dataset.17334$list_ages$ages %>%
+    filter(age <= 10000) %>%
+    ggplot(aes(x=age))+
+    geom_density(color="gray30",fill="gray80")+
+    coord_flip(xlim = c(0,8000))+
+    scale_x_continuous(trans = "reverse")+
+    theme_classic()+xlab("Age")+ylab("Sample density")+
+    ggtitle("Density of Samples"),
+  plot.pollen(dataset.17334,"none",10,8000),
+  plot.pollen(dataset.17334,"m.avg",10,8000),
+  plot.pollen(dataset.17334,"age.w",10,8000),
+  plot.pollen(dataset.17334,"grim",10,8000),
+  plot.pollen(dataset.17334,"shep",10,8000),
+  ncol=6, nrow = 1, common.legend = T, legend = "right"
 )
 
-plot.pollen.25318
+
+ggsave("plot.pollen.17334.pdf",
+       plot = plot.pollen.17334,
+       width = 40, height = 15, units = "cm")
 
 
 
-# comparison of result between diferent settings
+# ------------------------------
+#   visual result comparison
+# ------------------------------
+dataset.17334.comparison.sample <- plot.comparison(dataset.17334,
+                                                    BIN = F, 
+                                                    Shiftbin = F, 
+                                                    rand = 1000,
+                                                    standardise = T,
+                                                    interest.treshold =  8000)
 
-dataset.25318.comparison.sample <- plot.comparison(dataset.25318,
-                                            BIN = F, 
-                                            BIN.size = 500, 
-                                            Shiftbin = F, 
-                                            N.shifts = 5, 
-                                            rand = 1000, 
-                                            interest.treshold =  8000)
+ggsave("dataset.17334.comparison.sample.pdf",
+       plot = dataset.17334.comparison.sample,
+       width = 40, height = 25, units = "cm")
 
-dataset.25318.comparison.BIN <- plot.comparison(dataset.25318,
-                                                BIN = T, 
-                                                BIN.size = 500, 
-                                                Shiftbin = F, 
-                                                N.shifts = 5, 
-                                                rand = 1000, 
-                                                interest.treshold =  8000)
+dataset.17334.comparison.BIN <- plot.comparison(dataset.17334,
+                                                 BIN = T,
+                                                 BIN.size = 500,
+                                                 Shiftbin = F, 
+                                                 rand = 1000,
+                                                 standardise = T,
+                                                 interest.treshold =  8000)
+ggsave("dataset.17334.comparison.BIN.pdf",
+       plot = dataset.17334.comparison.BIN,
+       width = 40, height = 25, units = "cm")
 
-dataset.25318.comparison.BIN.shift <- plot.comparison(dataset.25318,
-                                                BIN = T, 
-                                                BIN.size = 500, 
-                                                Shiftbin = T, 
-                                                N.shifts = 5, 
-                                                rand = 1000, 
-                                                interest.treshold =  8000)
 
-dataset.25318.comparison.sample
-dataset.25318.comparison.BIN
-dataset.25318.comparison.BIN.shift
+dataset.17334.comparison.BIN.shift <- plot.comparison(dataset.17334,
+                                                       BIN = T, 
+                                                       BIN.size = 500,
+                                                       Shiftbin = T, 
+                                                       N.shifts = 5,
+                                                       rand = 1000,
+                                                       standardise = T,
+                                                       interest.treshold =  8000)
+ggsave("dataset.sim.comparison.BIN.shift.pdf",
+       plot = dataset.sim.comparison.BIN.shift,
+       width = 40, height = 25, units = "cm")
 
+# ------------------------------
+#   computation time compariosn
+# ------------------------------
+
+time.sim.comparison.up.sample <- plot.time(data.sim.up, BIN=F, Shiftbin = F, rand = 1000)
+
+time.sim.comparison.up.BIN <- plot.time(data.sim.up, BIN=T,BIN.size = 500, Shiftbin = F, rand = 1000)
+
+time.sim.comparison.up.BIN.shift <- plot.time(data.sim.up, BIN=T,BIN.size = 500, Shiftbin = T, N.shifts = 5, rand = 1000)
+
+time.sim.comparison.up.sum <- ggarrange(
+  time.sim.comparison.up.sample,
+  time.sim.comparison.up.BIN,
+  time.sim.comparison.up.BIN.shift,
+  nrow = 3, ncol = 1, common.legend = T, legend = "right"
+)
+
+ggsave("time.sim.comparison.up.sum.pdf",
+       plot = time.sim.comparison.up.sum,
+       height = 25, width = 25, units="cm")
+
+
+# -----------------------------------------
 
 # save.image("~/HOPE/GITHUB/RateOfChange/ENV_METHOD_20200319.RData")
 # load("~/HOPE/GITHUB/RateOfChange/ENV_METHOD_20200319.RData")
@@ -340,7 +596,3 @@ dataset.25318.comparison.BIN.shift
 rm(list = ls())
 
 
-
-
-RandomEnv(nforc = 1, time = 8e3:0, nprox=10)
-test <- RandomProx()
