@@ -8,6 +8,7 @@ fc_random_data_test <- function(time=0:10e3,
                                 manual.edit = T,
                                 breaks=c(2000,3000),
                                 jitter = T,
+                                rarity=T,
                                 BIN=F, 
                                 BIN.size=500, 
                                 Shiftbin=F, 
@@ -40,7 +41,8 @@ fc_random_data_test <- function(time=0:10e3,
                                       range = range,
                                       manual.edit = manual.edit,
                                       breaks = breaks,
-                                      jitter = jitter)
+                                      jitter = jitter,
+                                      rarity = rarity)
         
         data.temp<- fc_ratepol( data.source.pollen =  random.data$filtered.counts,
                                 data.source.age = random.data$list_ages,

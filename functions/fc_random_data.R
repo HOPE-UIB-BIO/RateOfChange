@@ -6,7 +6,8 @@ fc_random_data <- function(time=5e3:0,
                            var=20, 
                            range=15,
                            manual.edit = T,
-                           breaks=c(0,2000, 4000,6000),
+                           breaks=c(2000,3000),
+                           rarity = T,
                            jitter = T)
 {
   # create enviromental variables
@@ -54,14 +55,26 @@ fc_random_data <- function(time=5e3:0,
   # reactions of the biota to the environmental changes
   proxies <- array(1, dim=c(length(time), nprox))
   o <- c()
+  
   for(i in 1:nprox)
   {
     for(j in 1:nforc)
       proxies[,i] <- proxies[,i] * dnorm(forcing[,j], ecology[[i]]$mean[j], ecology[[i]]$sd[j])
-    o[i] <- weighted.mean(time, proxies[,i])
+    #o[i] <- weighted.mean(time, proxies[,i])
   }
-  o <- order(o, decreasing=TRUE)
+  
+  # order taxa by abundance
+  o <- order(colSums(proxies), decreasing=TRUE)
   proxies <- proxies[,o]
+  
+  
+  # decrease the abundances of rare taxa
+  if(rarity==T)
+  {
+    for(i in 1:ncol(proxies)) {
+      proxies[,i]<- (proxies[,i] / max(1,runif(1, min = i-1, max=i)) )
+      }
+  }
   
   
   # jitter the resul the pollen data

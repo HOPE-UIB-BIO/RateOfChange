@@ -2,7 +2,7 @@ which(tibble_Europe2$dataset.id %in%  25318 )
 
 dataset.25318
 
-dataset.N <- 68
+dataset.N <- 66
 data.source.pollen <- tibble_Europe2$filtered.counts[[dataset.N]]
 data.source.age <- tibble_Europe2$list_ages[[dataset.N]]
 sm.type = "age.w" 
@@ -13,7 +13,7 @@ BIN = T
 BIN.size = 500
 Shiftbin  = T
 N.shifts = 5
-rand = 100
+rand = 1000
 standardise = T 
 S.value = 150 
 DC = "chisq"
@@ -27,7 +27,7 @@ time= tibble_Europe2$list_ages[[2]]$ages$age
 nforc=4;
 mean=100; 
 sdev=.15; 
-nprox=10; 
+nprox=50; 
 var=20;
 range=15;
 manual.edit = T;
@@ -377,7 +377,7 @@ ggarrange(as.data.frame(forcing) %>%
             geom_ribbon(aes(ymin=rep(0,length(value)), ymax=value, fill=name), alpha=1/5, color="gray30")+
             geom_vline(xintercept = breaks, color="red")+
             coord_flip(xlim=c(0,8000), ylim=c(0,1))+
-            facet_wrap(~name, ncol=nprox)+
+            #facet_wrap(~name, ncol=nprox)+
             theme_classic()+
             scale_x_continuous(trans = "reverse")+
             ylab("% of pollen grains")+
