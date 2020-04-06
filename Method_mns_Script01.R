@@ -27,6 +27,8 @@ sapply(paste0("~/HOPE/GITHUB/RateOfChange/functions/", files.sources, sep =""), 
 
 glimpse(tibble_Europe2)
 
+
+# density values
 low_diversity <- 5
 high_diversity <- 50
 

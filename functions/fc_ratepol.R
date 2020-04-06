@@ -68,7 +68,7 @@ fc_ratepol <- function (data.source.pollen,
   #                     Point is consider significat if it is higher than Treshold
   #     2) Peaks      = Treshold is set same as in 1). Peak is  consider significant if 95% quantile (gain from randomisation) is higher than treshold
   #     3) GAM        = Gam model is fitted with RoC and Age. Differences between GAM and each point is calculated. SD is calculated from all the differences
-  #                     Peak is considered significat if it is 2SD higher than GAM. 
+  #                     Peak is considered significat if it is 1.5 SD higher than GAM. 
   
   # CODE
   start.time <- Sys.time()
@@ -150,7 +150,7 @@ fc_ratepol <- function (data.source.pollen,
     
     # TIME SAMPLING
     # sample random time sequence from time uncern.
-    data.work$Age$newage <- as.numeric(data.work$Age.un[sample(c(1:nrow(data.work$Age.un)),1),])
+    data.work$Age$newage <- as.numeric(data.work$Age.un[sample(c(1:max(1,nrow(data.work$Age.un))),1),])
     
     # create result tible
     SHIFT.tibble <- tibble()
@@ -333,10 +333,10 @@ fc_ratepol <- function (data.source.pollen,
   r.m.full$Peak.treshold.95 <- r.m.full$RUN.RoC.05q>r.treshold  
 
   # GAM
-  # mark points that are abowe the GAM model (exactly 1 SD higher than GAM prediction)
+  # mark points that are abowe the GAM model (exactly 1.5 SD higher than GAM prediction)
   pred.gam <-  predict.gam(gam(RUN.RoC~s(RUN.Age.Pos), data = r.m.full))
   pred.gam.diff <- r.m.full$RUN.RoC - pred.gam
-  r.m.full$Peak.gam <- pred.gam.diff > 1*sd(pred.gam.diff)
+  r.m.full$Peak.gam <- pred.gam.diff > 1.5*sd(pred.gam.diff)
   
   # SNI  
   # set moving window of 5 times higher than average distance between samples
