@@ -9,8 +9,8 @@ fc_check <- function (data.source.check, proportion = F, Debug=F, Species=T, Sam
     if(any(rowSums(data.source.check.kill$Pollen, na.rm = T)==0) & Samples == T) # if there are some samples without pollen
     {
       data.source.check.kill$Age <- data.source.check.kill$Age[rowSums(data.source.check.kill$Pollen, na.rm = T)>0,]
-      data.source.check.kill$Pollen <- data.source.check.kill$Pollen[rowSums(data.source.check.kill$Pollen, na.rm = T)>0,]
       data.source.check.kill$Age.un <- data.source.check.kill$Age.un[,rowSums(data.source.check.kill$Pollen, na.rm = T)>0]
+      data.source.check.kill$Pollen <- data.source.check.kill$Pollen[rowSums(data.source.check.kill$Pollen, na.rm = T)>0,]
     }
     
     if(any(colSums(data.source.check.kill$Pollen, na.rm=T)==0) & Species == T) # if there are some species without pollen

@@ -44,7 +44,7 @@ library(mgcv)
 setwd("~/HOPE/GITHUB/RateOfChange")
 # "C:/Users/ondre/Dropbox/HOPE_data"
 
-load("C:/Users/ondre/Dropbox/HOPE_data/tibble_Europe_filtered18.02.20.RData")
+load("C:/Users/ondre/Dropbox/HOPE_data/tibble_Europe_filtered05.03.20.RData")
 
 files.sources <- list.files("~/HOPE/GITHUB/RateOfChange/functions/") 
 sapply(paste0("~/HOPE/GITHUB/RateOfChange/functions/", files.sources, sep =""), source)
@@ -65,7 +65,7 @@ glimpse(tibble_Europe2)
 
 s.time <- Sys.time()
 
-tibble_Europe_Roc <-  tibble_Europe2 %>%
+tibble_Europe_Roc <-  tibble_Europe2[-66,] %>%
   mutate(., ROC = map2(filtered.counts,list_ages,
                        .f = function(.x,.y)
                          {res <- fc_ratepol(
@@ -98,10 +98,10 @@ tot.time
 tibble_Europe_Roc %>%
   select(dataset.id, collection.handle, long, lat, ROC) %>%
   unnest(cols = c(ROC)) %>%
-  write.csv(.,"results20200311.csv")
+  write.csv(.,"results20200401.csv")
 
-# save.image("~/HOPE/GITHUB/RateOfChange/ENV20200311.RData")
-# load("~/HOPE/GITHUB/RateOfChange/ENV20200311.RData")
+# save.image("~/HOPE/GITHUB/RateOfChange/ENV20200403.RData")
+# load("~/HOPE/GITHUB/RateOfChange/ENV20200403.RData")
 
 # ----------------------------------------------
 #               PLOT RESULTS 
@@ -110,9 +110,9 @@ tibble_Europe_Roc %>%
 fc_draw_RoC(tibble_Europe_Roc,type = "perplot", age.treshold = 8000, Roc.treshold = 3,Signif.value = "Peak.gam")
 ggsave("PerPlot.pdf",width = 50, height = 30, units= "cm", dpi= 600)
 
-fc_draw_RoC(tibble_Europe_Roc,type = "singleplot", dataset.N = 1435, age.treshold = 8000)
+fc_draw_RoC(tibble_Europe_Roc,type = "singleplot", dataset.N = 12, age.treshold = 8000)
 
-fc_draw_RoC(tibble_Europe_Roc,type = "summary", age.treshold = 8000, Roc.treshold = 3, Signif.value = "Peak")
+fc_draw_RoC(tibble_Europe_Roc,type = "summary", age.treshold = 8000, Roc.treshold = 3, Signif.value = "Peak.gam")
 ggsave("Summary.pdf",dpi= 600)
 
 fc_draw_RoC(tibble_Europe_Roc,type = "map", age.treshold = 8000, Signif.value = "Peak.gam")
