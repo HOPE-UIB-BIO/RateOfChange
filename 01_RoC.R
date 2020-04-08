@@ -39,15 +39,14 @@ library(mgcv)
 # ----------------------------------------------
 #             LOAD DATA & FUNCTIONS
 # ----------------------------------------------
-# download.file("https://www.dropbox.com/s/lovb5ef7o5dn9e1/tibble_Europe_filtered13.02.20.RData?dl=1","~/HOPE/Data/tibble_Europe_filtered13.02.20.RData")
+# download.file("https://www.dropbox.com/s/3hp7rv03mkg4pjz/tibble_Europe_filtered05.03.20.RData?dl=1","~/DATA/tibble_Europe_filtered05.03.20.RData")
 
-setwd("~/HOPE/GITHUB/RateOfChange")
-# "C:/Users/ondre/Dropbox/HOPE_data"
+setwd("~/GITHUB/RateOfChange")
 
-load("C:/Users/ondre/Dropbox/HOPE_data/tibble_Europe_filtered05.03.20.RData")
+load("~/DATA/tibble_Europe_filtered05.03.20.RData")
 
-files.sources <- list.files("~/HOPE/GITHUB/RateOfChange/functions/") 
-sapply(paste0("~/HOPE/GITHUB/RateOfChange/functions/", files.sources, sep =""), source)
+files.sources <- list.files("~/GITHUB/RateOfChange/functions/") 
+sapply(paste0("~/GITHUB/RateOfChange/functions/", files.sources, sep =""), source)
 
 # ----------------------------------------------
 #               DATA EXPLORATION 

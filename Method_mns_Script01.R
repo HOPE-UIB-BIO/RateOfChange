@@ -14,23 +14,18 @@ library(mgcv)
 # ----------------------------------------------
 #             LOAD DATA & FUNCTIONS
 # ----------------------------------------------
-# download.file("https://www.dropbox.com/s/lovb5ef7o5dn9e1/tibble_Europe_filtered13.02.20.RData?dl=1","~/HOPE/Data/tibble_Europe_filtered13.02.20.RData")
+# download.file("https://www.dropbox.com/s/3hp7rv03mkg4pjz/tibble_Europe_filtered05.03.20.RData?dl=1","~/DATA/tibble_Europe_filtered05.03.20.RData")
 
-setwd("~/HOPE/GITHUB/RateOfChange")
-# "C:/Users/ondre/Dropbox/HOPE_data"
+setwd("~/GITHUB/RateOfChange")
 
-load("C:/Users/ondre/Dropbox/HOPE_data/tibble_Europe_filtered05.03.20.RData")
+load("~/DATA/tibble_Europe_filtered05.03.20.RData")
 
-files.sources <- list.files("~/HOPE/GITHUB/RateOfChange/functions/") 
-sapply(paste0("~/HOPE/GITHUB/RateOfChange/functions/", files.sources, sep =""), source)
+files.sources <- list.files("~/GITHUB/RateOfChange/functions/") 
+sapply(paste0("~/GITHUB/RateOfChange/functions/", files.sources, sep =""), source)
 
 
 glimpse(tibble_Europe2)
 
-
-# density values
-low_diversity <- 5
-high_diversity <- 50
 
 
 plot.pollen <- function (data, sm.type, N.taxa, interest.treshold)
@@ -54,12 +49,14 @@ plot.pollen <- function (data, sm.type, N.taxa, interest.treshold)
               range.age.max = 500) %>%
     fc_check(.,proportion = T)
   
-  plot.p <- data.ext$Pollen %>%
+  plot.data <- data.ext$Pollen %>%
     select(Common.list) %>%
     rownames_to_column() %>%
     pivot_longer(., cols = c(Common.list)) %>%
     rename(sample.id = rowname) %>%
-    inner_join(.,data.ext$Age, by="sample.id")  %>%
+    inner_join(.,data.ext$Age, by="sample.id")
+  
+  plot.p <-  plot.data %>%
     ggplot(aes( y=value, 
                 x= age))+
     theme_classic()+
@@ -67,12 +64,30 @@ plot.pollen <- function (data, sm.type, N.taxa, interest.treshold)
     geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
                 color="gray20", alpha=1/5, size=0.1)+
     xlab("Age")+ylab("Pollen (%)")+
-    coord_flip(xlim=c(0,interest.treshold), ylim = c(0,1))+
+    coord_flip(xlim=c(interest.treshold,0), ylim = c(0,1))+
     ggtitle(paste("smoothing",sm.type))  
-  return (plot.p)
-  
+  return (list(data=plot.data,plot=plot.p))
 }
 
+plot.smooting <- function(data)
+{
+res.temp<-  ggarrange(
+    data$list_ages$ages %>%
+      filter(age <= age_lim) %>%
+      ggplot(aes(x=age))+
+      geom_density(color="gray30",fill="gray80")+
+      scale_x_reverse()+
+      coord_flip(xlim = c(age_lim,0))+
+      theme_classic()+xlab("Age")+ylab("Sample density")+
+      ggtitle("Density of Samples") ,
+    plot.pollen(data,"none",low_diversity,age_lim)$plot,
+    plot.pollen(data,"m.avg",low_diversity,age_lim)$plot,
+    plot.pollen(data,"age.w",low_diversity,age_lim)$plot,
+    plot.pollen(data,"grim",low_diversity,age_lim)$plot,
+    plot.pollen(data,"shep",low_diversity,age_lim)$plot,
+    ncol=6, nrow = 1, common.legend = T, legend = "none")  
+return(res.temp)
+}
 
 plot.comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, standardise ,interest.treshold)
 {
@@ -105,12 +120,21 @@ plot.comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, stand
     roc.max <- max(data.temp$RUN.RoC)*1.5;
     age.max <- max(data.temp$RUN.Age.Pos);
     
+    data.temp.sum<- data.frame(data.temp,performance.smooth[i],performance.DC[i])
+    names(data.temp.sum) <- c(names(data.temp),"smooth","DC")
+    
+    if(i == 1){
+      perfomance.tibble <- data.temp.sum} else {
+        perfomance.tibble <- rbind(perfomance.tibble,data.temp.sum)
+      }
+    
+    
     performance.list.plot[[i]]<-ggplot(data=data.temp, 
                                        aes(y=RUN.RoC, 
                                            x= RUN.Age.Pos))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
-      coord_flip(xlim=c(0,age.max), ylim = c(0,roc.max))+
+      coord_flip(xlim=c(age.max,0), ylim = c(0,roc.max))+
       geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1/5, color="gray")+
       geom_line(alpha=1, size=1)+
       geom_line(data=data.frame(RUN.RoC = predict.gam(gam(RUN.RoC~s(RUN.Age.Pos), data = data.temp)),
@@ -134,11 +158,11 @@ plot.comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, stand
                      performance.list.plot[[17]],performance.list.plot[[18]],performance.list.plot[[19]],performance.list.plot[[20]],
                      nrow = 5, ncol = 4)
   
-  return(p.all)
+  return(list(data=perfomance.tibble, plot=p.all))
 }
 
 
-plot.time <- function(data, BIN=F, BIN.size=500, Shiftbin=F, N.shifts=5, rand=10)
+plot.time <- function(data, BIN=F, BIN.size=500, Shiftbin=F, N.shifts=5, rand=100)
 {
   DF.performance <- data.frame(matrix(nrow = 20, ncol=5))
   names(DF.performance) <- c("smooth","DC","user","system","elapsed")
@@ -160,7 +184,7 @@ plot.time <- function(data, BIN=F, BIN.size=500, Shiftbin=F, N.shifts=5, rand=10
                                 rand = rand,
                                 standardise = F,
                                 DC = DF.performance$DC[i],
-                                interest.treshold = 8000,
+                                interest.treshold = age_lim,
                                 Debug = F))
     
     DF.performance$user[i] <- a[1]
@@ -182,540 +206,246 @@ plot.time <- function(data, BIN=F, BIN.size=500, Shiftbin=F, N.shifts=5, rand=10
   return (plot.fin)
 }
 
+# ----------------------------------------------
+#             DEFINITION OF VARIBLES
+# ----------------------------------------------
+
+# Number of simulated enviromental variables
+N_env <- 4
+
+# diversity of pollen taxat in simulated data
+low_diversity <- 5
+high_diversity <- 50
+
+# position of the enviromental change in the sequence 
+breaks_recent <- c(2000, 3000)
+breaks_late <- c(5500, 6500)
+
+# Number of repetion in simulation pollen data
+N_rep <- 100
+
+# template of time sequence with uneven distribution of points
+time_seq <- tibble_Europe2$list_ages[[2]]$ages$age
+
+# maximal time of focus 
+age_lim <- max(time_seq)
 
 # -----------------------------------------
 #
-#       SIMULATION change 2000-3000 
-#             low diversity
+#           SIMULATION DATA 
 #
 # -----------------------------------------
 
-# ------------------------------
-#             data
-# ------------------------------
+# low diversity - recent
+data_sim_ld_recent <-  fc_random_data(time = time_seq,
+                                      nforc = N_env, 
+                                      nprox = low_diversity,
+                                      manual.edit = T,
+                                      breaks=breaks_recent,
+                                      jitter = T,
+                                      rarity = T)
 
-data_sim_ld_recent <-  fc_random_data(time = tibble_Europe2$list_ages[[2]]$ages$age,
-                            nforc = 4, 
-                            nprox = low_diversity,
-                            manual.edit = T,
-                            breaks=c(2000, 3000),
-                            jitter = T,
-                            rarity = T)
 
-# ------------------------------
-#          smoothing 
-# ------------------------------
-
-pollen_sim_ld_recent <- ggarrange(
-  data_sim_ld_recent$list_ages$ages %>%
-    filter(age <= 10000) %>%
-    ggplot(aes(x=age))+
-    geom_density(color="gray30",fill="gray80")+
-    coord_flip(xlim = c(0,8000))+
-    scale_x_continuous(trans = "reverse")+
-    theme_classic()+xlab("Age")+ylab("Sample density")+
-    ggtitle("Density of Samples") ,
-  plot.pollen(data_sim_ld_recent,"none",low_diversity,8000),
-  plot.pollen(data_sim_ld_recent,"m.avg",low_diversity,8000),
-  plot.pollen(data_sim_ld_recent,"age.w",low_diversity,8000),
-  plot.pollen(data_sim_ld_recent,"grim",low_diversity,8000),
-  plot.pollen(data_sim_ld_recent,"shep",low_diversity,8000),
-  ncol=6, nrow = 1, common.legend = T, legend = "none"
-)
+pollen_sim_ld_recent <- plot.smooting(data_sim_ld_recent)
 
 pollen_sim_ld_recent
 
-ggsave("pollen_sim_ld_recent.pdf",
+ggsave("RESULTS/pollen_sim_ld_recent.pdf",
        plot = pollen_sim_ld_recent,
        width = 40, height = 15, units = "cm")
 
-# ------------------------------
-#   visual result comparison
-# ------------------------------
-visual_sim_ld_recent_sample <- plot.comparison(data_sim_ld_recent,
-                                                   BIN = F, 
-                                                   Shiftbin = F, 
-                                                   rand = 1,
-                                                   standardise = F,
-                                                   interest.treshold =  8000)
+# low diversity - late
 
-ggsave("visual_sim_ld_recent_sample.pdf",
-       plot = visual_sim_ld_recent_sample,
-       width = 40, height = 25, units = "cm")
-
-visual_sim_ld_recent_BIN <- plot.comparison(data_sim_ld_recent,
-                                              BIN = T,
-                                              BIN.size = 500,
-                                              Shiftbin = F, 
-                                              rand = 1, 
-                                              standardise = F,
-                                              interest.treshold =  8000)
-ggsave("visual_sim_ld_recent_BIN.pdf",
-       plot = visual_sim_ld_recent_BIN,
-       width = 40, height = 25, units = "cm")
+data_sim_ld_late <-  fc_random_data(time = time_seq,
+                                    nforc = N_env, 
+                                    nprox = low_diversity,
+                                    manual.edit = T,
+                                    breaks=breaks_late,
+                                    jitter = T,
+                                    rarity = T)
 
 
-visual_sim_ld_recent_MW <- plot.comparison(data_sim_ld_recent,
-                                                 BIN = T, 
-                                                 BIN.size = 500,
-                                                 Shiftbin = T, 
-                                                 N.shifts = 5,
-                                                 rand = 1, 
-                                                 standardise = F,
-                                                 interest.treshold =  8000)
-ggsave("visual_sim_ld_recent_MW.pdf",
-       plot = visual_sim_ld_recent_MW,
-       width = 40, height = 25, units = "cm")
-
-# ------------------------------
-# statistical result comparison
-# ------------------------------
-
-perform_sim_ld_recent_sample <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
-                                                    nforc=4,
-                                                    mean=100, 
-                                                    sdev=.15, 
-                                                    nprox=low_diversity, 
-                                                    var=20,
-                                                    range=15,
-                                                    manual.edit = T,
-                                                    breaks=c(2000,3000),
-                                                    jitter = T,
-                                                    rarity = T,
-                                                    BIN=F,
-                                                    Shiftbin=F,
-                                                    rand.sets=100,
-                                                    interest.treshold=8000)
-
-ggsave("perform_sim_ld_recent_sample.pdf",
-       plot = perform_sim_ld_recent_sample,
-       width = 40, height = 25, units = "cm")
-
-
-
-perform_sim_ld_recent_BIN <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
-                                                 nforc=4,
-                                                 mean=100, 
-                                                 sdev=.15, 
-                                                 nprox=low_diversity, 
-                                                 var=20,
-                                                 range=15,
-                                                 manual.edit = T,
-                                                 breaks=c(2000,3000),
-                                                 jitter = T,
-                                                 rarity = T,
-                                                 BIN=T,
-                                                 BIN.size=500, 
-                                                 Shiftbin=F,
-                                                 rand.sets=100,
-                                                 interest.treshold=8000)
-
-ggsave("perform_sim_ld_recent_BIN.pdf",
-       plot = perform_sim_ld_recent_BIN,
-       width = 40, height = 25, units = "cm")
-
-
-
-perform_sim_ld_recent_MW <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
-                                                           nforc=4,
-                                                           mean=100, 
-                                                           sdev=.15, 
-                                                           nprox=10, 
-                                                           var=20,
-                                                           range=15,
-                                                           manual.edit = T,
-                                                           breaks=c(2000,3000),
-                                                           jitter = T,
-                                                           rarity = T,
-                                                           BIN=T,
-                                                           BIN.size=500, 
-                                                           Shiftbin=T,
-                                                           N.shifts=5,
-                                                           rand.sets=100,
-                                                           interest.treshold=8000)
-
-ggsave("perform_sim_ld_recent_MW.pdf",
-       plot = perform_sim_ld_recent_MW,
-       width = 40, height = 25, units = "cm")
-
-
-# -----------------------------------------
-#
-#       SIMULATION change 5500-6500 
-#           low diversity
-#
-# -----------------------------------------
-
-# ------------------------------
-#               data
-# ------------------------------
-data_sim_ld_late <-  fc_random_data(time = tibble_Europe2$list_ages[[2]]$ages$age,
-                               nforc = 4, 
-                               nprox = low_diversity,
-                               manual.edit = T,
-                               breaks=c(5500, 6500),
-                               jitter = T,
-                               rarity = T)
-
-
-# ------------------------------
-#         smoothing
-# ------------------------------
-
-pollen_sim_ld_late <- ggarrange(
-  data_sim_ld_late$list_ages$ages %>%
-    filter(age <= 10000) %>%
-    ggplot(aes(x=age))+
-    geom_density(color="gray30",fill="gray80")+
-    coord_flip(xlim = c(0,8000))+
-    scale_x_continuous(trans = "reverse")+
-    theme_classic()+xlab("Age")+ylab("Sample density")+
-    ggtitle("Density of Samples") ,
-  plot.pollen(data_sim_ld_late,"none",low_diversity,8000),
-  plot.pollen(data_sim_ld_late,"m.avg",low_diversity,8000),
-  plot.pollen(data_sim_ld_late,"age.w",low_diversity,8000),
-  plot.pollen(data_sim_ld_late,"grim",low_diversity,8000),
-  plot.pollen(data_sim_ld_late,"shep",low_diversity,8000),
-  ncol=6, nrow = 1, common.legend = T, legend = "none"
-)
+pollen_sim_ld_late <- plot.smooting(data_sim_ld_late)
 
 pollen_sim_ld_late
 
 
-ggsave("pollen_sim_ld_late.pdf",
+ggsave("RESULTS/pollen_sim_ld_late.pdf",
        plot = pollen_sim_ld_late,
        width = 40, height = 15, units = "cm")
 
 
-# ------------------------------
-#   visual result comparison
-# ------------------------------
+# hight diversity - recent
 
+data_sim_hd_recent <-  fc_random_data(time = time_seq,
+                                      nforc = N_env, 
+                                      nprox = high_diversity,
+                                      manual.edit = T,
+                                      breaks=breaks_recent,
+                                      jitter = T,
+                                      rarity = T)
 
-visual_sim_ld_late_sample <- plot.comparison(data_sim_ld_late,
-                                                    BIN = F, 
-                                                    Shiftbin = F, 
-                                                    rand = 1, 
-                                                    interest.treshold =  8000)
-
-ggsave("visual_sim_ld_late_sample.pdf",
-       plot = visual_sim_ld_late_sample,
-       width = 40, height = 25, units = "cm")
-
-visual_sim_ld_late_BIN <- plot.comparison(data_sim_ld_late,
-                                                 BIN = T,
-                                                 BIN.size = 500,
-                                                 Shiftbin = F, 
-                                                 rand = 1, 
-                                                 interest.treshold =  8000)
-ggsave("visual_sim_ld_late_BIN.pdf",
-       plot = visual_sim_ld_late_BIN,
-       width = 40, height = 25, units = "cm")
-
-
-visual_sim_ld_late_MW <- plot.comparison(data_sim_ld_late,
-                                                       BIN = T, 
-                                                       BIN.size = 500,
-                                                       Shiftbin = T, 
-                                                       N.shifts = 5,
-                                                       rand = 1, 
-                                                       interest.treshold =  8000)
-ggsave("visual_sim_ld_late_MW.pdf",
-       plot = visual_sim_ld_late_MW,
-       width = 40, height = 25, units = "cm")
-
-
-# ------------------------------
-# statistical result comparison
-# ------------------------------
-
-perform_sim_ld_late_sample <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
-                                                       nforc=4,
-                                                       mean=100, 
-                                                       sdev=.15, 
-                                                       nprox=low_diversity, 
-                                                       var=20,
-                                                       range=15,
-                                                       manual.edit = T,
-                                                       breaks=c(5500,6500),
-                                                       jitter = T,
-                                                       rarity = T,
-                                                       BIN=F,
-                                                       Shiftbin=F,
-                                                       rand.sets=10,
-                                                       interest.treshold=8000)
-
-ggsave("perform_sim_ld_late_sample.pdf",
-       plot = perform_sim_ld_late_sample,
-       width = 40, height = 25, units = "cm")
-
-
-
-perform_sim_ld_late_BIN <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
-                                                    nforc=4,
-                                                    mean=100, 
-                                                    sdev=.15, 
-                                                    nprox=low_diversity, 
-                                                    var=20,
-                                                    range=15,
-                                                    manual.edit = T,
-                                                    breaks=c(5500,6500),
-                                                    jitter = T,
-                                                    rarity = T,
-                                                    BIN=T,
-                                                    BIN.size=500, 
-                                                    Shiftbin=F,
-                                                    rand.sets=10,
-                                                    interest.treshold=8000)
-
-ggsave("perform_sim_ld_late_BIN.pdf",
-       plot = perform_sim_ld_late_BIN,
-       width = 40, height = 25, units = "cm")
-
-
-
-perform_sim_ld_late_MW <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
-                                                           nforc=4,
-                                                           mean=100, 
-                                                           sdev=.15, 
-                                                           nprox=low_diversity, 
-                                                           var=20,
-                                                           range=15,
-                                                           manual.edit = T,
-                                                           breaks=c(5500,6500),
-                                                           jitter = T,
-                                                           rarity = T,
-                                                           BIN=T,
-                                                           BIN.size=500, 
-                                                           Shiftbin=T,
-                                                           N.shifts=5,
-                                                           rand.sets=10,
-                                                           interest.treshold=8000)
-
-ggsave("perform_sim_ld_late_MW.pdf",
-       plot = perform_sim_ld_late_MW,
-       width = 40, height = 25, units = "cm")
-
-
-
-# -----------------------------------------
-#
-#       SIMULATION change 2000-3000 
-#             high diversity
-#
-# -----------------------------------------
-
-# ------------------------------
-#             data
-# ------------------------------
-
-data_sim_hd_recent <-  fc_random_data(time = tibble_Europe2$list_ages[[2]]$ages$age,
-                               nforc = 4, 
-                               nprox = high_diversity,
-                               manual.edit = T,
-                               breaks=c(2000, 3000),
-                               jitter = T,
-                               rarity = T)
-
-
-# ------------------------------
-#          smoothing 
-# ------------------------------
-
-pollen_sim_hd_recent <- ggarrange(
-  data_sim_hd_recent$list_ages$ages %>%
-    filter(age <= 10000) %>%
-    ggplot(aes(x=age))+
-    geom_density(color="gray30",fill="gray80")+
-    coord_flip(xlim = c(0,8000))+
-    scale_x_continuous(trans = "reverse")+
-    theme_classic()+xlab("Age")+ylab("Sample density")+
-    ggtitle("Density of Samples") ,
-  plot.pollen(data_sim_hd_recent,"none",high_diversity,8000),
-  plot.pollen(data_sim_hd_recent,"m.avg",high_diversity,8000),
-  plot.pollen(data_sim_hd_recent,"age.w",high_diversity,8000),
-  plot.pollen(data_sim_hd_recent,"grim",high_diversity,8000),
-  plot.pollen(data_sim_hd_recent,"shep",high_diversity,8000),
-  ncol=6, nrow = 1, common.legend = T, legend = "none"
-)
+pollen_sim_hd_recent <- plot.smooting(data_sim_hd_recent)
 
 pollen_sim_hd_recent
 
-ggsave("pollen_sim_hd_recent.pdf",
+ggsave("RESULTS/pollen_sim_hd_recent.pdf",
        plot = pollen_sim_hd_recent,
        width = 40, height = 15, units = "cm")
 
-# ------------------------------
-#   visual result comparison
-# ------------------------------
-visual_sim_hd_recent_sample <- plot.comparison(data_sim_hd_recent,
-                                                    BIN = F, 
-                                                    Shiftbin = F, 
-                                                    rand = 1,
-                                                    standardise = F,
-                                                    interest.treshold =  8000)
 
-ggsave("visual_sim_hd_recent_sample.pdf",
-       plot = visual_sim_hd_recent_sample,
-       width = 40, height = 25, units = "cm")
+# high diversity - late
 
-visual_sim_hd_recent_BIN <- plot.comparison(data_sim_hd_recent,
-                                                 BIN = T,
-                                                 BIN.size = 500,
-                                                 Shiftbin = F, 
-                                                 rand = 1, 
-                                                 standardise = F,
-                                                 interest.treshold =  8000)
-ggsave("visual_sim_hd_recent_BIN.pdf",
-       plot = visual_sim_hd_recent_BIN,
-       width = 40, height = 25, units = "cm")
-
-
-visual_sim_hd_recent_MW <- plot.comparison(data_sim_hd_recent,
-                                                       BIN = T, 
-                                                       BIN.size = 500,
-                                                       Shiftbin = T, 
-                                                       N.shifts = 5,
-                                                       rand = 1, 
-                                                       standardise = F,
-                                                       interest.treshold =  8000)
-ggsave("visual_sim_hd_recent_MW.pdf",
-       plot = visual_sim_hd_recent_MW,
-       width = 40, height = 25, units = "cm")
-
-# ------------------------------
-# statistical result comparison
-# ------------------------------
-
-perform_sim_hd_recent_sample <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
-                                                       nforc=4,
-                                                       mean=100, 
-                                                       sdev=.15, 
-                                                       nprox=high_diversity, 
-                                                       var=20,
-                                                       range=15,
-                                                       manual.edit = T,
-                                                       breaks=c(2000,3000),
-                                                       jitter = T,
-                                                       rarity = T,
-                                                       BIN=F,
-                                                       Shiftbin=F,
-                                                       rand.sets=100,
-                                                       interest.treshold=8000)
-
-ggsave("perform_sim_hd_recent_sample.pdf",
-       plot = perform_sim_hd_recent_sample,
-       width = 40, height = 25, units = "cm")
-
-
-
-perform_sim_hd_recent_BIN <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
-                                                    nforc=4,
-                                                    mean=100, 
-                                                    sdev=.15, 
-                                                    nprox=high_diversity, 
-                                                    var=20,
-                                                    range=15,
-                                                    manual.edit = T,
-                                                    breaks=c(2000,3000),
-                                                    jitter = T,
-                                                    rarity = T,
-                                                    BIN=T,
-                                                    BIN.size=500, 
-                                                    Shiftbin=F,
-                                                    rand.sets=100,
-                                                    interest.treshold=8000)
-
-ggsave("perform_sim_hd_recent_BIN.pdf",
-       plot = perform_sim_hd_recent_BIN,
-       width = 40, height = 25, units = "cm")
-
-
-
-perform_sim_hd_recent_MW <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
-                                                           nforc=4,
-                                                           mean=100, 
-                                                           sdev=.15, 
-                                                           nprox=high_diversity, 
-                                                           var=20,
-                                                           range=15,
-                                                           manual.edit = T,
-                                                           breaks=c(2000,3000),
-                                                           jitter = T,
-                                                           rarity=T,
-                                                           BIN=T,
-                                                           BIN.size=500, 
-                                                           Shiftbin=T,
-                                                           N.shifts=5,
-                                                           rand.sets=10,
-                                                           interest.treshold=8000)
-
-ggsave("perform_sim_hd_recent_MW.pdf",
-       plot = perform_sim_hd_recent_MW,
-       width = 40, height = 25, units = "cm")
-
-
-
-# -----------------------------------------
-#
-#       SIMULATION change 5500-6500 
-#           high diversity
-#
-# -----------------------------------------
-
-# ------------------------------
-#               data
-# ------------------------------
-data_sim_hd_late <-  fc_random_data(time = tibble_Europe2$list_ages[[2]]$ages$age,
-                                    nforc = 4, 
+data_sim_hd_late <-  fc_random_data(time = time_seq,
+                                    nforc = N_env, 
                                     nprox = high_diversity,
                                     manual.edit = T,
-                                    breaks=c(5500, 6500),
+                                    breaks=breaks_late,
                                     jitter = T)
 
 
-# ------------------------------
-#         smoothing
-# ------------------------------
-
-pollen_sim_hd_late <- ggarrange(
-  data_sim_hd_late$list_ages$ages %>%
-    filter(age <= 10000) %>%
-    ggplot(aes(x=age))+
-    geom_density(color="gray30",fill="gray80")+
-    coord_flip(xlim = c(0,8000))+
-    scale_x_continuous(trans = "reverse")+
-    theme_classic()+xlab("Age")+ylab("Sample density")+
-    ggtitle("Density of Samples") ,
-  plot.pollen(data_sim_hd_late,"none",high_diversity,8000),
-  plot.pollen(data_sim_hd_late,"m.avg",high_diversity,8000),
-  plot.pollen(data_sim_hd_late,"age.w",high_diversity,8000),
-  plot.pollen(data_sim_hd_late,"grim",high_diversity,8000),
-  plot.pollen(data_sim_hd_late,"shep",high_diversity,8000),
-  ncol=6, nrow = 1, common.legend = T, legend = "none"
-)
+pollen_sim_hd_late <- plot.smooting(data_sim_hd_late)
 
 pollen_sim_hd_late
 
-
-ggsave("pollen_sim_hd_late.pdf",
+ggsave("RESULTS/pollen_sim_hd_late.pdf",
        plot = pollen_sim_hd_late,
        width = 40, height = 15, units = "cm")
 
 
-# ------------------------------
-#   visual result comparison
-# ------------------------------
+# -----------------------------------------
+#
+#             VISUAL RESULTS
+# 
+# -----------------------------------------
+
+# low diversity - recent
+
+visual_sim_ld_recent_sample <- plot.comparison(data_sim_ld_recent,
+                                               BIN = F, 
+                                               Shiftbin = F, 
+                                               rand = 1,
+                                               standardise = F,
+                                               interest.treshold =  age_lim)
+
+ggsave("RESULTS/visual_sim_ld_recent_sample.pdf",
+       plot = visual_sim_ld_recent_sample$plot,
+       width = 40, height = 25, units = "cm")
+
+visual_sim_ld_recent_BIN <- plot.comparison(data_sim_ld_recent,
+                                            BIN = T,
+                                            BIN.size = 500,
+                                            Shiftbin = F, 
+                                            rand = 1, 
+                                            standardise = F,
+                                            interest.treshold =  age_lim)
+
+ggsave("RESULTS/visual_sim_ld_recent_BIN.pdf",
+       plot = visual_sim_ld_recent_BIN$plot,
+       width = 40, height = 25, units = "cm")
+
+
+visual_sim_ld_recent_MW <- plot.comparison(data_sim_ld_recent,
+                                           BIN = T, 
+                                           BIN.size = 500,
+                                           Shiftbin = T, 
+                                           N.shifts = 5,
+                                           rand = 1, 
+                                           standardise = F,
+                                           interest.treshold =  age_lim)
+
+ggsave("RESULTS/visual_sim_ld_recent_MW.pdf",
+       plot = visual_sim_ld_recent_MW$plot,
+       width = 40, height = 25, units = "cm")
+
+
+
+# low diversity late
+
+
+visual_sim_ld_late_sample <- plot.comparison(data_sim_ld_late,
+                                             BIN = F, 
+                                             Shiftbin = F, 
+                                             rand = 1, 
+                                             interest.treshold =  age_lim)
+
+ggsave("RESULTS/visual_sim_ld_late_sample.pdf",
+       plot = visual_sim_ld_late_sample$plot,
+       width = 40, height = 25, units = "cm")
+
+visual_sim_ld_late_BIN <- plot.comparison(data_sim_ld_late,
+                                          BIN = T,
+                                          BIN.size = 500,
+                                          Shiftbin = F, 
+                                          rand = 1, 
+                                          interest.treshold =  age_lim)
+
+ggsave("RESULTS/visual_sim_ld_late_BIN.pdf",
+       plot = visual_sim_ld_late_BIN$plot,
+       width = 40, height = 25, units = "cm")
+
+
+visual_sim_ld_late_MW <- plot.comparison(data_sim_ld_late,
+                                         BIN = T, 
+                                         BIN.size = 500,
+                                         Shiftbin = T, 
+                                         N.shifts = 5,
+                                         rand = 1, 
+                                         interest.treshold =  age_lim)
+
+ggsave("RESULTS/visual_sim_ld_late_MW.pdf",
+       plot = visual_sim_ld_late_MW$plot,
+       width = 40, height = 25, units = "cm")
+
+# high diveristy - recent
+visual_sim_hd_recent_sample <- plot.comparison(data_sim_hd_recent,
+                                               BIN = F, 
+                                               Shiftbin = F, 
+                                               rand = 1,
+                                               standardise = F,
+                                               interest.treshold =  age_lim)
+
+ggsave("RESULTS/visual_sim_hd_recent_sample.pdf",
+       plot = visual_sim_hd_recent_sample$plot,
+       width = 40, height = 25, units = "cm")
+
+visual_sim_hd_recent_BIN <- plot.comparison(data_sim_hd_recent,
+                                            BIN = T,
+                                            BIN.size = 500,
+                                            Shiftbin = F, 
+                                            rand = 1, 
+                                            standardise = F,
+                                            interest.treshold =  age_lim)
+ggsave("RESULTS/visual_sim_hd_recent_BIN.pdf",
+       plot = visual_sim_hd_recent_BIN$plot,
+       width = 40, height = 25, units = "cm")
+
+
+visual_sim_hd_recent_MW <- plot.comparison(data_sim_hd_recent,
+                                           BIN = T, 
+                                           BIN.size = 500,
+                                           Shiftbin = T, 
+                                           N.shifts = 5,
+                                           rand = 1, 
+                                           standardise = F,
+                                           interest.treshold =  age_lim)
+
+ggsave("RESULTS/visual_sim_hd_recent_MW.pdf",
+       plot = visual_sim_hd_recent_MW$plot,
+       width = 40, height = 25, units = "cm")
+
+
+# hight diversity - late
 
 
 visual_sim_hd_late_sample <- plot.comparison(data_sim_hd_late,
                                              BIN = F, 
                                              Shiftbin = F, 
                                              rand = 1, 
-                                             interest.treshold =  8000)
+                                             interest.treshold =  age_lim)
 
-ggsave("visual_sim_hd_late_sample.pdf",
-       plot = visual_sim_hd_late_sample,
+ggsave("RESULTS/visual_sim_hd_late_sample.pdf",
+       plot = visual_sim_hd_late_sample$plot,
        width = 40, height = 25, units = "cm")
 
 visual_sim_hd_late_BIN <- plot.comparison(data_sim_hd_late,
@@ -723,9 +453,10 @@ visual_sim_hd_late_BIN <- plot.comparison(data_sim_hd_late,
                                           BIN.size = 500,
                                           Shiftbin = F, 
                                           rand = 1, 
-                                          interest.treshold =  8000)
-ggsave("visual_sim_hd_late_BIN.pdf",
-       plot = visual_sim_hd_late_BIN,
+                                          interest.treshold =  age_lim)
+
+ggsave("RESULTS/visual_sim_hd_late_BIN.pdf",
+       plot = visual_sim_hd_late_BIN$plot,
        width = 40, height = 25, units = "cm")
 
 
@@ -735,82 +466,306 @@ visual_sim_hd_late_MW <- plot.comparison(data_sim_hd_late,
                                          Shiftbin = T, 
                                          N.shifts = 5,
                                          rand = 1, 
-                                         interest.treshold =  8000)
-ggsave("visual_sim_hd_late_MW.pdf",
-       plot = visual_sim_hd_late_MW,
+                                         interest.treshold =  age_lim)
+
+ggsave("RESULTS/visual_sim_hd_late_MW.pdf",
+       plot = visual_sim_hd_late_MW$plot,
        width = 40, height = 25, units = "cm")
 
 
-# ------------------------------
-# statistical result comparison
-# ------------------------------
 
-perform_sim_hd_late_sample <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
-                                                  nforc=4,
+# -----------------------------------------
+#
+#             STATISTICAL COMP
+# 
+# -----------------------------------------
+
+# low diversity - recent
+
+perform_sim_ld_recent_sample <- fc_random_data_test(time= time_seq,
+                                                    nforc=4,
+                                                    mean=100, 
+                                                    sdev=.15, 
+                                                    nprox=low_diversity, 
+                                                    var=20,
+                                                    range=15,
+                                                    manual.edit = T,
+                                                    breaks=breaks_recent,
+                                                    jitter = T,
+                                                    rarity = T,
+                                                    BIN=F,
+                                                    Shiftbin=F,
+                                                    rand.sets=N_rep,
+                                                    interest.treshold=age_lim)
+
+ggsave("RESULTS/perform_sim_ld_recent_sample.pdf",
+       plot = perform_sim_ld_recent_sample$plot,
+       width = 40, height = 25, units = "cm")
+
+
+
+perform_sim_ld_recent_BIN <- fc_random_data_test(time= time_seq,
+                                                 nforc=N_env,
+                                                 mean=100, 
+                                                 sdev=.15, 
+                                                 nprox=low_diversity, 
+                                                 var=20,
+                                                 range=15,
+                                                 manual.edit = T,
+                                                 breaks=breaks_recent,
+                                                 jitter = T,
+                                                 rarity = T,
+                                                 BIN=T,
+                                                 BIN.size=500, 
+                                                 Shiftbin=F,
+                                                 rand.sets=N_rep,
+                                                 interest.treshold=age_lim)
+
+
+
+
+ggsave("RESULTS/perform_sim_ld_recent_BIN.pdf",
+       plot = perform_sim_ld_recent_BIN$plot,
+       width = 40, height = 25, units = "cm")
+
+
+
+perform_sim_ld_recent_MW <- fc_random_data_test(time= time_seq,
+                                                nforc=N_env,
+                                                mean=100, 
+                                                sdev=.15, 
+                                                nprox=10, 
+                                                var=20,
+                                                range=15,
+                                                manual.edit = T,
+                                                breaks=breaks_recent,
+                                                jitter = T,
+                                                rarity = T,
+                                                BIN=T,
+                                                BIN.size=500, 
+                                                Shiftbin=T,
+                                                N.shifts=5,
+                                                rand.sets=N_rep,
+                                                interest.treshold=age_lim)
+
+ggsave("RESULTS/perform_sim_ld_recent_MW.pdf",
+       plot = perform_sim_ld_recent_MW$plot,
+       width = 40, height = 25, units = "cm")
+
+
+
+# low diversity - late 
+
+perform_sim_ld_late_sample <- fc_random_data_test(time= time_seq,
+                                                  nforc=N_env,
                                                   mean=100, 
                                                   sdev=.15, 
-                                                  nprox=high_diversity, 
+                                                  nprox=low_diversity, 
                                                   var=20,
                                                   range=15,
                                                   manual.edit = T,
-                                                  breaks=c(5500,6500),
+                                                  breaks=breaks_late,
                                                   jitter = T,
                                                   rarity = T,
                                                   BIN=F,
                                                   Shiftbin=F,
-                                                  rand.sets=10,
-                                                  interest.treshold=8000)
+                                                  rand.sets=N_rep,
+                                                  interest.treshold=age_lim)
 
-ggsave("perform_sim_hd_late_sample.pdf",
-       plot = perform_sim_hd_late_sample,
+ggsave("RESULTS/perform_sim_ld_late_sample.pdf",
+       plot = perform_sim_ld_late_sample$plot,
        width = 40, height = 25, units = "cm")
 
 
 
-perform_sim_hd_late_BIN <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
-                                               nforc=4,
+perform_sim_ld_late_BIN <- fc_random_data_test(time= time_seq,
+                                               nforc=N_env,
                                                mean=100, 
                                                sdev=.15, 
-                                               nprox=high_diversity, 
+                                               nprox=low_diversity, 
                                                var=20,
                                                range=15,
                                                manual.edit = T,
-                                               breaks=c(5500,6500),
+                                               breaks=breaks_late,
                                                jitter = T,
                                                rarity = T,
                                                BIN=T,
                                                BIN.size=500, 
                                                Shiftbin=F,
-                                               rand.sets=10,
-                                               interest.treshold=8000)
+                                               rand.sets=N_rep,
+                                               interest.treshold=age_lim)
 
-ggsave("perform_sim_hd_late_BIN.pdf",
-       plot = perform_sim_hd_late_BIN,
+ggsave("RESULTS/perform_sim_ld_late_BIN.pdf",
+       plot = perform_sim_ld_late_BIN$plot,
        width = 40, height = 25, units = "cm")
 
 
 
-perform_sim_hd_late_MW <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,
-                                              nforc=4,
+perform_sim_ld_late_MW <- fc_random_data_test(time= time_seq,
+                                              nforc=N_env,
                                               mean=100, 
                                               sdev=.15, 
-                                              nprox=high_diversity, 
+                                              nprox=low_diversity, 
                                               var=20,
                                               range=15,
                                               manual.edit = T,
-                                              breaks=c(5500,6500),
+                                              breaks=breaks_late,
                                               jitter = T,
                                               rarity = T,
                                               BIN=T,
                                               BIN.size=500, 
                                               Shiftbin=T,
                                               N.shifts=5,
-                                              rand.sets=10,
-                                              interest.treshold=8000)
+                                              rand.sets=N_rep,
+                                              interest.treshold=age_lim)
 
-ggsave("perform_sim_hd_late_MW.pdf",
-       plot = perform_sim_hd_late_MW,
+ggsave("RESULTS/perform_sim_ld_late_MW.pdf",
+       plot = perform_sim_ld_late_MW$plot,
        width = 40, height = 25, units = "cm")
+
+
+
+# high diversity  - recent
+
+perform_sim_hd_recent_sample <- fc_random_data_test(time= time_seq,
+                                                    nforc=N_env,
+                                                    mean=100, 
+                                                    sdev=.15, 
+                                                    nprox=high_diversity, 
+                                                    var=20,
+                                                    range=15,
+                                                    manual.edit = T,
+                                                    breaks=breaks_recent,
+                                                    jitter = T,
+                                                    rarity = T,
+                                                    BIN=F,
+                                                    Shiftbin=F,
+                                                    rand.sets=N_rep,
+                                                    interest.treshold=age_lim)
+
+ggsave("RESULTS/perform_sim_hd_recent_sample.pdf",
+       plot = perform_sim_hd_recent_sample$plot,
+       width = 40, height = 25, units = "cm")
+
+
+
+perform_sim_hd_recent_BIN <- fc_random_data_test(time= time_seq,
+                                                 nforc=N_env,
+                                                 mean=100, 
+                                                 sdev=.15, 
+                                                 nprox=high_diversity, 
+                                                 var=20,
+                                                 range=15,
+                                                 manual.edit = T,
+                                                 breaks=breaks_recent,
+                                                 jitter = T,
+                                                 rarity = T,
+                                                 BIN=T,
+                                                 BIN.size=500, 
+                                                 Shiftbin=F,
+                                                 rand.sets=N_rep,
+                                                 interest.treshold=age_lim)
+
+ggsave("RESULTS/perform_sim_hd_recent_BIN.pdf",
+       plot = perform_sim_hd_recent_BIN$plot,
+       width = 40, height = 25, units = "cm")
+
+
+
+perform_sim_hd_recent_MW <- fc_random_data_test(time= time_seq,
+                                                nforc=N_env,
+                                                mean=100, 
+                                                sdev=.15, 
+                                                nprox=high_diversity, 
+                                                var=20,
+                                                range=15,
+                                                manual.edit = T,
+                                                breaks=breaks_recent,
+                                                jitter = T,
+                                                rarity=T,
+                                                BIN=T,
+                                                BIN.size=500, 
+                                                Shiftbin=T,
+                                                N.shifts=5,
+                                                rand.sets=N_rep,
+                                                interest.treshold=age_lim)
+
+ggsave("RESULTS/perform_sim_hd_recent_MW.pdf",
+       plot = perform_sim_hd_recent_MW$plot,
+       width = 40, height = 25, units = "cm")
+
+
+
+# high diversity  - late
+
+perform_sim_hd_late_sample <- fc_random_data_test(time= time_seq,
+                                                  nforc=N_env,
+                                                  mean=100, 
+                                                  sdev=.15, 
+                                                  nprox=high_diversity, 
+                                                  var=20,
+                                                  range=15,
+                                                  manual.edit = T,
+                                                  breaks=breaks_late,
+                                                  jitter = T,
+                                                  rarity = T,
+                                                  BIN=F,
+                                                  Shiftbin=F,
+                                                  rand.sets=N_rep,
+                                                  interest.treshold=age_lim)
+
+ggsave("RESULTS/perform_sim_hd_late_sample.pdf",
+       plot = perform_sim_hd_late_sample$plot,
+       width = 40, height = 25, units = "cm")
+
+
+
+perform_sim_hd_late_BIN <- fc_random_data_test(time= time_seq,
+                                               nforc=N_env,
+                                               mean=100, 
+                                               sdev=.15, 
+                                               nprox=high_diversity, 
+                                               var=20,
+                                               range=15,
+                                               manual.edit = T,
+                                               breaks=breaks_late,
+                                               jitter = T,
+                                               rarity = T,
+                                               BIN=T,
+                                               BIN.size=500, 
+                                               Shiftbin=F,
+                                               rand.sets=10,
+                                               interest.treshold=age_lim)
+
+ggsave("RESULTS/perform_sim_hd_late_BIN.pdf",
+       plot = perform_sim_hd_late_BIN$plot,
+       width = 40, height = 25, units = "cm")
+
+
+
+perform_sim_hd_late_MW <- fc_random_data_test(time= time_seq,
+                                              nforc=N_env,
+                                              mean=100, 
+                                              sdev=.15, 
+                                              nprox=high_diversity, 
+                                              var=20,
+                                              range=15,
+                                              manual.edit = T,
+                                              breaks=breaks_late,
+                                              jitter = T,
+                                              rarity = T,
+                                              BIN=T,
+                                              BIN.size=500, 
+                                              Shiftbin=T,
+                                              N.shifts=5,
+                                              rand.sets=N_rep,
+                                              interest.treshold=age_lim)
+
+ggsave("RESULTS/perform_sim_hd_late_MW.pdf",
+       plot = perform_sim_hd_late_MW$plot,
+       width = 40, height = 25, units = "cm")
+
+
 
 
 # -----------------------------------------
@@ -828,24 +783,24 @@ data_17334 <- list(dataset.id = tibble_Europe2$dataset.id[[2]],
 
 pollen_17334 <- ggarrange(
   data_17334$list_ages$ages %>%
-    filter(age <= 10000) %>%
+    filter(age <= age_lim) %>%
     ggplot(aes(x=age))+
     geom_density(color="gray30",fill="gray80")+
-    coord_flip(xlim = c(0,8000))+
+    coord_flip(xlim = c(age_lim,0))+
     scale_x_continuous(trans = "reverse")+
     theme_classic()+xlab("Age")+ylab("Sample density")+
     ggtitle("Density of Samples"),
-  plot.pollen(data_17334,"none",10,8000),
-  plot.pollen(data_17334,"m.avg",10,8000),
-  plot.pollen(data_17334,"age.w",10,8000),
-  plot.pollen(data_17334,"grim",10,8000),
-  plot.pollen(data_17334,"shep",10,8000),
+  plot.pollen(data_17334,"none",10,age_lim),
+  plot.pollen(data_17334,"m.avg",10,age_lim),
+  plot.pollen(data_17334,"age.w",10,age_lim),
+  plot.pollen(data_17334,"grim",10,age_lim),
+  plot.pollen(data_17334,"shep",10,age_lim),
   ncol=6, nrow = 1, common.legend = T, legend = "right"
 )
 
 pollen_17334
 
-ggsave("pollen_17334.pdf",
+ggsave("RESULTS/pollen_17334.pdf",
        plot = pollen_17334,
        width = 40, height = 15, units = "cm")
 
@@ -858,9 +813,9 @@ visual_17334_sample <- plot.comparison(data_17334,
                                         Shiftbin = F, 
                                         rand = 1000,
                                         standardise = T,
-                                        interest.treshold =  8000)
+                                        interest.treshold =  age_lim)
 
-ggsave("visual_17334_sample.pdf",
+ggsave("RESULTS/visual_17334_sample.pdf",
        plot = visual_17334_sample,
        width = 40, height = 25, units = "cm")
 
@@ -870,8 +825,8 @@ visual_17334_BIN <- plot.comparison(data_17334,
                                                  Shiftbin = F, 
                                                  rand = 1000,
                                                  standardise = T,
-                                                 interest.treshold =  8000)
-ggsave("visual_17334_BIN",
+                                                 interest.treshold =  age_lim)
+ggsave("RESULTS/visual_17334_BIN",
        plot = visual_17334_BIN,
        width = 40, height = 25, units = "cm")
 
@@ -883,8 +838,8 @@ visual_17334_MW <- plot.comparison(data_17334,
                                                        N.shifts = 5,
                                                        rand = 1000,
                                                        standardise = T,
-                                                       interest.treshold =  8000)
-ggsave("visual_17334_MW.pdf",
+                                                       interest.treshold =  age_lim)
+ggsave("RESULTS/visual_17334_MW.pdf",
        plot = visual_17334_MW,
        width = 40, height = 25, units = "cm")
 
@@ -905,16 +860,100 @@ time_17334_sum <- ggarrange(
   nrow = 3, ncol = 1, common.legend = T, legend = "right"
 )
 
-ggsave("time_17334_sum.pdf",
+ggsave("RESULTS/time_17334_sum.pdf",
        plot = time_17334_sum,
        height = 25, width = 25, units="cm")
 
 
+
+# ----------------------------------------------
+#               SUMMARY 
+# ----------------------------------------------
+
+data_ld_sum <- rbind(
+  data.frame(perform_sim_ld_recent_MW$data,Position="recent"),
+  data.frame(perform_sim_ld_late_MW$data,Position="late")
+) %>%
+  filter(SIGNIF=="Peak.gam")
+
+data_ld_sum <- within(data_ld_sum, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
+
+plot_sum_ld_MW_gam <- data_ld_sum %>%
+  ggplot(aes(y=VALUE.M,x=Position,fill=SEGMENT, group=SEGMENT))+
+  geom_bar(stat="identity", position="dodge", color="gray30")+
+  geom_errorbar(aes(ymin=VALUE.05,ymax=VALUE.95, group=SEGMENT),
+                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray30")+
+  facet_grid(smooth~DC)+
+  scale_fill_manual("Position in sequence", labels=c("focal area (correct detection)","outside of focal area (false positive)"),
+                    values = c("darkseagreen","coral"))+
+  ylab("Percentage of Peak detection")+xlab("Position of enviromental change")+
+  theme_classic()+
+  theme(legend.position = "right")
+  
+plot_sum_ld_MW_gam
+
+ggsave("RESULTS/plot_sum_ld_MW_gam.pdf",
+       plot = plot_sum_ld_MW_gam,
+       height = 25, width = 25, units="cm")
+
+
+data_hd_sum <- rbind(
+  data.frame(perform_sim_hd_recent_MW$data,Position="recent"),
+  data.frame(perform_sim_hd_late_MW$data,Position="late")
+) %>%
+  filter(SIGNIF=="Peak.gam")
+
+data_hd_sum <- within(data_hd_sum, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
+
+plot_sum_hd_MV_gam <- data_hd_sum %>%
+  ggplot(aes(y=VALUE.M,x=Position,fill=SEGMENT, group=SEGMENT))+
+  geom_bar(stat="identity", position="dodge", color="gray30")+
+  geom_errorbar(aes(ymin=VALUE.05,ymax=VALUE.95, group=SEGMENT),
+                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray30")+
+  facet_grid(smooth~DC)+
+  scale_fill_manual("Position in sequence", labels=c("focal area (correct detection)","outside of focal area (false positive)"),
+                    values = c("darkseagreen","coral"))+
+  ylab("Percentage of Peak detection")+xlab("Position of enviromental change")+
+  theme_classic()+
+  theme(legend.position = "right")
+
+
+plot_sum_hd_MV_gam
+
+ggsave("RESULTS/plot_sum_hd_MV_gam.pdf",
+       plot = plot_sum_hd_MV_gam,
+       height = 25, width = 25, units="cm")
+
+data_mag <- rbind(
+  data.frame(visual_sim_ld_recent_MW$data, DIVERSITY="ld" ,POSITION = "recent"),
+  data.frame(visual_sim_ld_late_MW$data, DIVERSITY="ld" ,POSITION = "late"),
+  data.frame(visual_sim_hd_recent_MW$data, DIVERSITY="hd" ,POSITION = "recent"),
+  data.frame(visual_sim_hd_late_MW$data, DIVERSITY="hd" ,POSITION = "late")
+)
+
+plot_mag_MW <- data_mag %>%
+  select(RUN.RoC,smooth,DC,DIVERSITY,POSITION) %>%
+  group_by(smooth,DC, DIVERSITY, POSITION) %>%
+    summarise(RoC.max = max(RUN.RoC)) %>%
+  ggplot(aes(y=RoC.max,x=POSITION,fill=DIVERSITY))+
+  geom_hline(yintercept = c(0,1,2,10,20,30), color="gray80")+
+  geom_bar(stat="identity", position = "dodge", color="gray30")+
+  facet_grid(smooth~DC)+
+  scale_y_continuous(trans = "log1p", breaks = c(0,1,2,10,20,30))+
+  theme_classic()+
+  scale_fill_manual("Diversity",labels=c("low","high"), values = c("#F8766D","#00BFC4"))+
+  xlab("Position of enviromental change")+ylab("Maximum value of Rate of CHange")
+
+plot_mag_MW
+
+ggsave("RESULTS/plot_mag_MW.pdf",
+       plot = plot_mag_MW,
+       height = 25, width = 25, units="cm")
+
 # -----------------------------------------
 
-# save.image("~/HOPE/GITHUB/RateOfChange/ENV_METHOD_20200319.RData")
-# load("~/HOPE/GITHUB/RateOfChange/ENV_METHOD_20200319.RData")
-
+# save.image("~/GITHUB/RateOfChange/ENV_METHOD_20200408.RData")
+# load("~/GITHUB/RateOfChange/ENV_METHOD_20200408.RData")
 
 
 # ----------------------------------------------

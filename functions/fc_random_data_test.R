@@ -126,6 +126,15 @@ fc_random_data_test <- function(time=0:10e3,
                   ) %>%
         ungroup()
       
+      plot.data.sum <- data.frame(plot.data,performance.smooth[j],performance.DC[j])
+      names(plot.data.sum) <- c(names(plot.data),"smooth","DC")
+      
+      if(j == 1) {
+        perfomance.data  <- plot.data.sum  
+      } else {
+        perfomance.data <- rbind(perfomance.data,plot.data.sum )
+      }
+      
       performance.list.plot[[j]] <- plot.data %>%
         ggplot(aes(y=VALUE.M,x=SEGMENT))+
         geom_bar(stat="identity")+
@@ -145,5 +154,5 @@ fc_random_data_test <- function(time=0:10e3,
                      performance.list.plot[[13]],performance.list.plot[[14]],performance.list.plot[[15]],performance.list.plot[[16]],
                      performance.list.plot[[17]],performance.list.plot[[18]],performance.list.plot[[19]],performance.list.plot[[20]],
                      nrow = 5, ncol = 4, common.legend = T)
-  return(p.all)
+  return(list(data=perfomance.data, plot=p.all))
 }
