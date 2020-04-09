@@ -201,9 +201,9 @@ plot.time <- function(data, BIN=F, BIN.size=500, Shiftbin=F, N.shifts=5, rand=10
                   ",BIN",BIN,
                   ",Shift",Shiftbin))+
     theme_classic()+
-    coord_cartesian(ylim = c(0,60))+
+    coord_cartesian(ylim = c(0,120))+
     ylab("computation time (s)")
-  return (plot.fin)
+  return (list(data=DF.performance, plot=plot.fin))
 }
 
 # ----------------------------------------------
@@ -790,11 +790,11 @@ pollen_17334 <- ggarrange(
     scale_x_continuous(trans = "reverse")+
     theme_classic()+xlab("Age")+ylab("Sample density")+
     ggtitle("Density of Samples"),
-  plot.pollen(data_17334,"none",10,age_lim),
-  plot.pollen(data_17334,"m.avg",10,age_lim),
-  plot.pollen(data_17334,"age.w",10,age_lim),
-  plot.pollen(data_17334,"grim",10,age_lim),
-  plot.pollen(data_17334,"shep",10,age_lim),
+  plot.pollen(data_17334,"none",10,age_lim)$plot,
+  plot.pollen(data_17334,"m.avg",10,age_lim)$plot,
+  plot.pollen(data_17334,"age.w",10,age_lim)$plot,
+  plot.pollen(data_17334,"grim",10,age_lim)$plot,
+  plot.pollen(data_17334,"shep",10,age_lim)$plot,
   ncol=6, nrow = 1, common.legend = T, legend = "right"
 )
 
@@ -808,6 +808,7 @@ ggsave("RESULTS/pollen_17334.pdf",
 # ------------------------------
 #   visual result comparison
 # ------------------------------
+
 visual_17334_sample <- plot.comparison(data_17334,
                                         BIN = F, 
                                         Shiftbin = F, 
@@ -816,7 +817,7 @@ visual_17334_sample <- plot.comparison(data_17334,
                                         interest.treshold =  age_lim)
 
 ggsave("RESULTS/visual_17334_sample.pdf",
-       plot = visual_17334_sample,
+       plot = visual_17334_sample$plot,
        width = 40, height = 25, units = "cm")
 
 visual_17334_BIN <- plot.comparison(data_17334,
@@ -826,8 +827,8 @@ visual_17334_BIN <- plot.comparison(data_17334,
                                                  rand = 1000,
                                                  standardise = T,
                                                  interest.treshold =  age_lim)
-ggsave("RESULTS/visual_17334_BIN",
-       plot = visual_17334_BIN,
+ggsave("RESULTS/visual_17334_BIN.pdf",
+       plot = visual_17334_BIN$plot,
        width = 40, height = 25, units = "cm")
 
 
@@ -840,7 +841,7 @@ visual_17334_MW <- plot.comparison(data_17334,
                                                        standardise = T,
                                                        interest.treshold =  age_lim)
 ggsave("RESULTS/visual_17334_MW.pdf",
-       plot = visual_17334_MW,
+       plot = visual_17334_MW$plot,
        width = 40, height = 25, units = "cm")
 
 # ------------------------------
@@ -854,15 +855,47 @@ time_17334_BIN <- plot.time(data_17334, BIN=T,BIN.size = 500, Shiftbin = F, rand
 time_17334_MW <- plot.time(data_17334, BIN=T,BIN.size = 500, Shiftbin = T, N.shifts = 5, rand = 1000)
 
 time_17334_sum <- ggarrange(
-  time_17334_sample,
-  time_17334_BIN,
-  time_17334_MW,
+  time_17334_sample$data %>%
+    ggplot(aes(y=elapsed, x=smooth, fill=DC))+
+    geom_hline(yintercept = c(50,100,150), color="gray80")+
+    geom_bar(stat="identity", position = "dodge", color="gray30")+
+    ggtitle(paste("N samples =",150,
+                  ",N taxa =",80,
+                  ",N.randomisation =",1000,
+                  ",sample"))+
+    theme_classic()+
+    coord_cartesian(ylim = c(0,160))+
+    ylab("computation time (s)"),
+  time_17334_BIN$data%>%
+    ggplot(aes(y=elapsed, x=smooth, fill=DC))+
+    geom_hline(yintercept = c(50,100,150), color="gray80")+
+    geom_bar(stat="identity", position = "dodge", color="gray30")+
+    ggtitle(paste("N samples =",150,
+                  ",N taxa =",80,
+                  ",N.randomisation =",1000,
+                  ",Binning"))+
+    theme_classic()+
+    coord_cartesian(ylim = c(0,160))+
+    ylab("computation time (s)"),
+  time_17334_MW$data%>%
+    ggplot(aes(y=elapsed, x=smooth, fill=DC))+
+    geom_hline(yintercept = c(50,100,150), color="gray80")+
+    geom_bar(stat="identity", position = "dodge", color="gray30")+
+    ggtitle(paste("N samples =",150,
+                  ",N taxa =",80,
+                  ",N.randomisation =",1000,
+                  ",Moving window"))+
+    theme_classic()+
+    coord_cartesian(ylim = c(0,160))+
+    ylab("computation time (s)"),
   nrow = 3, ncol = 1, common.legend = T, legend = "right"
 )
 
+time_17334_sum
+
 ggsave("RESULTS/time_17334_sum.pdf",
        plot = time_17334_sum,
-       height = 25, width = 25, units="cm")
+       height = 18, width = 25, units="cm")
 
 
 
