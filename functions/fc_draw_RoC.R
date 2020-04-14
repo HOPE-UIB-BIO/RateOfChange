@@ -27,7 +27,7 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000,
                   x= RUN.Age.Pos))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
-      coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold))+
+      coord_flip(xlim=c(age.treshold,0), ylim = c(0,Roc.treshold))+
       geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1/5)+
       geom_line(alpha=1, size=1)+
       geom_point(data = res.df.plot %>%  filter(get(noquote(Signif.value))==T) , color="red", size=3)+
@@ -45,7 +45,7 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000,
                   x= RUN.Age.Pos))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
-      coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold))+
+      coord_flip(xlim=c(age.treshold,0), ylim = c(0,Roc.treshold))+
       geom_line(aes(group=as.factor(dataset.id)),alpha=1/10, size=1)+
       geom_hline(yintercept = 0, color="red")+
       geom_smooth(color="green", method = "loess", se=F)+
@@ -57,7 +57,7 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000,
       geom_density(fill="gray")+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
-      coord_flip(xlim=c(0,age.treshold))+
+      coord_flip(xlim=c(age.treshold,0))+
       xlab("")+ylab("Density of the samples")
     
     RoC_summary_p2 <- res.df.plot %>%
@@ -68,7 +68,7 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000,
       theme_classic()+
       scale_color_gradient2(low="white",mid="darkblue",high="black", midpoint = 4)+
       scale_x_continuous(trans = "reverse")+
-      coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold))+
+      coord_flip(xlim=c(age.treshold,0), ylim = c(0,Roc.treshold))+
       geom_point(color="red", alpha=1/5, size=3)+ #aes(color=RUN.RoC),
       geom_hline(yintercept = 0, color="red")+
       geom_smooth(color="orange", method = "loess", se=F)+
@@ -81,7 +81,7 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000,
       ggplot(aes( x= RUN.Age.Pos))+
       theme_classic()+
       scale_x_continuous(trans = "reverse")+
-      coord_flip(xlim=c(0,age.treshold))+
+      coord_flip(xlim=c(age.treshold,0))+
       geom_density(fill="gray")+
       xlab("")+ylab("Density of Peak-points")
     
@@ -137,7 +137,7 @@ fc_draw_RoC <- function (data.source, type="map", age.treshold = 15000,
                   x= RUN.Age.Pos)) +
       theme_classic() +
       scale_x_continuous(trans = "reverse") +
-      coord_flip(xlim=c(0,age.treshold), ylim = c(0,Roc.treshold)) +
+      coord_flip(xlim=c(age.treshold,0), ylim = c(0,Roc.treshold)) +
       geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1/5) +
       geom_line(alpha=1, size=1) +
       geom_point(color="gray30", alpha=1, size=1)+

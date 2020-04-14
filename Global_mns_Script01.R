@@ -114,7 +114,6 @@ for(i in 1:length(unique(test$lat.BIN)))
 {
   for(k in 1:length(unique(test$BIN)))
   {
-    print(paste(i,k))
     DF.lat.sum$lat.BIN[((i-1)*16) + k] = lat.BIN.list[i]
     DF.lat.sum$BIN[((i-1)*16) + k] = k
     

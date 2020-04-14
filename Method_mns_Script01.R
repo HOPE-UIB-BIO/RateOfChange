@@ -14,11 +14,11 @@ library(mgcv)
 # ----------------------------------------------
 #             LOAD DATA & FUNCTIONS
 # ----------------------------------------------
-# download.file("https://www.dropbox.com/s/3hp7rv03mkg4pjz/tibble_Europe_filtered05.03.20.RData?dl=1","~/DATA/tibble_Europe_filtered05.03.20.RData")
+# download.file("https://www.dropbox.com/s/3hp7rv03mkg4pjz/tibble_Europe_filtered05.03.20.RData?dl=1","~/input/DATA/tibble_Europe_filtered05.03.20.RData")
 
 setwd("~/GITHUB/RateOfChange")
 
-load("~/DATA/tibble_Europe_filtered05.03.20.RData")
+load("~/DATA/input/tibble_Europe_filtered05.03.20.RData")
 
 files.sources <- list.files("~/GITHUB/RateOfChange/functions/") 
 sapply(paste0("~/GITHUB/RateOfChange/functions/", files.sources, sep =""), source)
@@ -250,7 +250,7 @@ pollen_sim_ld_recent <- plot.smooting(data_sim_ld_recent)
 
 pollen_sim_ld_recent
 
-ggsave("RESULTS/pollen_sim_ld_recent.pdf",
+ggsave("~RESULTS/Methods/pollen_sim_ld_recent.pdf",
        plot = pollen_sim_ld_recent,
        width = 40, height = 15, units = "cm")
 
@@ -270,7 +270,7 @@ pollen_sim_ld_late <- plot.smooting(data_sim_ld_late)
 pollen_sim_ld_late
 
 
-ggsave("RESULTS/pollen_sim_ld_late.pdf",
+ggsave("~RESULTS/Methods/pollen_sim_ld_late.pdf",
        plot = pollen_sim_ld_late,
        width = 40, height = 15, units = "cm")
 
@@ -289,7 +289,7 @@ pollen_sim_hd_recent <- plot.smooting(data_sim_hd_recent)
 
 pollen_sim_hd_recent
 
-ggsave("RESULTS/pollen_sim_hd_recent.pdf",
+ggsave("~RESULTS/Methods/pollen_sim_hd_recent.pdf",
        plot = pollen_sim_hd_recent,
        width = 40, height = 15, units = "cm")
 
@@ -308,7 +308,7 @@ pollen_sim_hd_late <- plot.smooting(data_sim_hd_late)
 
 pollen_sim_hd_late
 
-ggsave("RESULTS/pollen_sim_hd_late.pdf",
+ggsave("~RESULTS/Methods/pollen_sim_hd_late.pdf",
        plot = pollen_sim_hd_late,
        width = 40, height = 15, units = "cm")
 
@@ -328,7 +328,7 @@ visual_sim_ld_recent_sample <- plot.comparison(data_sim_ld_recent,
                                                standardise = F,
                                                interest.treshold =  age_lim)
 
-ggsave("RESULTS/visual_sim_ld_recent_sample.pdf",
+ggsave("~RESULTS/Methods/visual_sim_ld_recent_sample.pdf",
        plot = visual_sim_ld_recent_sample$plot,
        width = 40, height = 25, units = "cm")
 
@@ -340,7 +340,7 @@ visual_sim_ld_recent_BIN <- plot.comparison(data_sim_ld_recent,
                                             standardise = F,
                                             interest.treshold =  age_lim)
 
-ggsave("RESULTS/visual_sim_ld_recent_BIN.pdf",
+ggsave("~RESULTS/Methods/visual_sim_ld_recent_BIN.pdf",
        plot = visual_sim_ld_recent_BIN$plot,
        width = 40, height = 25, units = "cm")
 
@@ -354,7 +354,7 @@ visual_sim_ld_recent_MW <- plot.comparison(data_sim_ld_recent,
                                            standardise = F,
                                            interest.treshold =  age_lim)
 
-ggsave("RESULTS/visual_sim_ld_recent_MW.pdf",
+ggsave("~RESULTS/Methods/visual_sim_ld_recent_MW.pdf",
        plot = visual_sim_ld_recent_MW$plot,
        width = 40, height = 25, units = "cm")
 
@@ -369,7 +369,7 @@ visual_sim_ld_late_sample <- plot.comparison(data_sim_ld_late,
                                              rand = 1, 
                                              interest.treshold =  age_lim)
 
-ggsave("RESULTS/visual_sim_ld_late_sample.pdf",
+ggsave("~RESULTS/Methods/visual_sim_ld_late_sample.pdf",
        plot = visual_sim_ld_late_sample$plot,
        width = 40, height = 25, units = "cm")
 
@@ -380,7 +380,7 @@ visual_sim_ld_late_BIN <- plot.comparison(data_sim_ld_late,
                                           rand = 1, 
                                           interest.treshold =  age_lim)
 
-ggsave("RESULTS/visual_sim_ld_late_BIN.pdf",
+ggsave("~RESULTS/Methods/visual_sim_ld_late_BIN.pdf",
        plot = visual_sim_ld_late_BIN$plot,
        width = 40, height = 25, units = "cm")
 
@@ -393,7 +393,7 @@ visual_sim_ld_late_MW <- plot.comparison(data_sim_ld_late,
                                          rand = 1, 
                                          interest.treshold =  age_lim)
 
-ggsave("RESULTS/visual_sim_ld_late_MW.pdf",
+ggsave("~RESULTS/Methods/visual_sim_ld_late_MW.pdf",
        plot = visual_sim_ld_late_MW$plot,
        width = 40, height = 25, units = "cm")
 
@@ -405,7 +405,7 @@ visual_sim_hd_recent_sample <- plot.comparison(data_sim_hd_recent,
                                                standardise = F,
                                                interest.treshold =  age_lim)
 
-ggsave("RESULTS/visual_sim_hd_recent_sample.pdf",
+ggsave("~RESULTS/Methods/visual_sim_hd_recent_sample.pdf",
        plot = visual_sim_hd_recent_sample$plot,
        width = 40, height = 25, units = "cm")
 
@@ -416,7 +416,7 @@ visual_sim_hd_recent_BIN <- plot.comparison(data_sim_hd_recent,
                                             rand = 1, 
                                             standardise = F,
                                             interest.treshold =  age_lim)
-ggsave("RESULTS/visual_sim_hd_recent_BIN.pdf",
+ggsave("~RESULTS/Methods/visual_sim_hd_recent_BIN.pdf",
        plot = visual_sim_hd_recent_BIN$plot,
        width = 40, height = 25, units = "cm")
 
@@ -430,7 +430,7 @@ visual_sim_hd_recent_MW <- plot.comparison(data_sim_hd_recent,
                                            standardise = F,
                                            interest.treshold =  age_lim)
 
-ggsave("RESULTS/visual_sim_hd_recent_MW.pdf",
+ggsave("~RESULTS/Methods/visual_sim_hd_recent_MW.pdf",
        plot = visual_sim_hd_recent_MW$plot,
        width = 40, height = 25, units = "cm")
 
@@ -444,7 +444,7 @@ visual_sim_hd_late_sample <- plot.comparison(data_sim_hd_late,
                                              rand = 1, 
                                              interest.treshold =  age_lim)
 
-ggsave("RESULTS/visual_sim_hd_late_sample.pdf",
+ggsave("~RESULTS/Methods/visual_sim_hd_late_sample.pdf",
        plot = visual_sim_hd_late_sample$plot,
        width = 40, height = 25, units = "cm")
 
@@ -455,7 +455,7 @@ visual_sim_hd_late_BIN <- plot.comparison(data_sim_hd_late,
                                           rand = 1, 
                                           interest.treshold =  age_lim)
 
-ggsave("RESULTS/visual_sim_hd_late_BIN.pdf",
+ggsave("~RESULTS/Methods/visual_sim_hd_late_BIN.pdf",
        plot = visual_sim_hd_late_BIN$plot,
        width = 40, height = 25, units = "cm")
 
@@ -468,7 +468,7 @@ visual_sim_hd_late_MW <- plot.comparison(data_sim_hd_late,
                                          rand = 1, 
                                          interest.treshold =  age_lim)
 
-ggsave("RESULTS/visual_sim_hd_late_MW.pdf",
+ggsave("~RESULTS/Methods/visual_sim_hd_late_MW.pdf",
        plot = visual_sim_hd_late_MW$plot,
        width = 40, height = 25, units = "cm")
 
@@ -498,7 +498,7 @@ perform_sim_ld_recent_sample <- fc_random_data_test(time= time_seq,
                                                     rand.sets=N_rep,
                                                     interest.treshold=age_lim)
 
-ggsave("RESULTS/perform_sim_ld_recent_sample.pdf",
+ggsave("~RESULTS/Methods/perform_sim_ld_recent_sample.pdf",
        plot = perform_sim_ld_recent_sample$plot,
        width = 40, height = 25, units = "cm")
 
@@ -524,7 +524,7 @@ perform_sim_ld_recent_BIN <- fc_random_data_test(time= time_seq,
 
 
 
-ggsave("RESULTS/perform_sim_ld_recent_BIN.pdf",
+ggsave("~RESULTS/Methods/perform_sim_ld_recent_BIN.pdf",
        plot = perform_sim_ld_recent_BIN$plot,
        width = 40, height = 25, units = "cm")
 
@@ -548,7 +548,7 @@ perform_sim_ld_recent_MW <- fc_random_data_test(time= time_seq,
                                                 rand.sets=N_rep,
                                                 interest.treshold=age_lim)
 
-ggsave("RESULTS/perform_sim_ld_recent_MW.pdf",
+ggsave("~RESULTS/Methods/perform_sim_ld_recent_MW.pdf",
        plot = perform_sim_ld_recent_MW$plot,
        width = 40, height = 25, units = "cm")
 
@@ -572,7 +572,7 @@ perform_sim_ld_late_sample <- fc_random_data_test(time= time_seq,
                                                   rand.sets=N_rep,
                                                   interest.treshold=age_lim)
 
-ggsave("RESULTS/perform_sim_ld_late_sample.pdf",
+ggsave("~RESULTS/Methods/perform_sim_ld_late_sample.pdf",
        plot = perform_sim_ld_late_sample$plot,
        width = 40, height = 25, units = "cm")
 
@@ -595,7 +595,7 @@ perform_sim_ld_late_BIN <- fc_random_data_test(time= time_seq,
                                                rand.sets=N_rep,
                                                interest.treshold=age_lim)
 
-ggsave("RESULTS/perform_sim_ld_late_BIN.pdf",
+ggsave("~RESULTS/Methods/perform_sim_ld_late_BIN.pdf",
        plot = perform_sim_ld_late_BIN$plot,
        width = 40, height = 25, units = "cm")
 
@@ -619,7 +619,7 @@ perform_sim_ld_late_MW <- fc_random_data_test(time= time_seq,
                                               rand.sets=N_rep,
                                               interest.treshold=age_lim)
 
-ggsave("RESULTS/perform_sim_ld_late_MW.pdf",
+ggsave("~RESULTS/Methods/perform_sim_ld_late_MW.pdf",
        plot = perform_sim_ld_late_MW$plot,
        width = 40, height = 25, units = "cm")
 
@@ -643,7 +643,7 @@ perform_sim_hd_recent_sample <- fc_random_data_test(time= time_seq,
                                                     rand.sets=N_rep,
                                                     interest.treshold=age_lim)
 
-ggsave("RESULTS/perform_sim_hd_recent_sample.pdf",
+ggsave("~RESULTS/Methods/perform_sim_hd_recent_sample.pdf",
        plot = perform_sim_hd_recent_sample$plot,
        width = 40, height = 25, units = "cm")
 
@@ -666,7 +666,7 @@ perform_sim_hd_recent_BIN <- fc_random_data_test(time= time_seq,
                                                  rand.sets=N_rep,
                                                  interest.treshold=age_lim)
 
-ggsave("RESULTS/perform_sim_hd_recent_BIN.pdf",
+ggsave("~RESULTS/Methods/perform_sim_hd_recent_BIN.pdf",
        plot = perform_sim_hd_recent_BIN$plot,
        width = 40, height = 25, units = "cm")
 
@@ -690,7 +690,7 @@ perform_sim_hd_recent_MW <- fc_random_data_test(time= time_seq,
                                                 rand.sets=N_rep,
                                                 interest.treshold=age_lim)
 
-ggsave("RESULTS/perform_sim_hd_recent_MW.pdf",
+ggsave("~RESULTS/Methods/perform_sim_hd_recent_MW.pdf",
        plot = perform_sim_hd_recent_MW$plot,
        width = 40, height = 25, units = "cm")
 
@@ -714,7 +714,7 @@ perform_sim_hd_late_sample <- fc_random_data_test(time= time_seq,
                                                   rand.sets=N_rep,
                                                   interest.treshold=age_lim)
 
-ggsave("RESULTS/perform_sim_hd_late_sample.pdf",
+ggsave("~RESULTS/Methods/perform_sim_hd_late_sample.pdf",
        plot = perform_sim_hd_late_sample$plot,
        width = 40, height = 25, units = "cm")
 
@@ -737,7 +737,7 @@ perform_sim_hd_late_BIN <- fc_random_data_test(time= time_seq,
                                                rand.sets=10,
                                                interest.treshold=age_lim)
 
-ggsave("RESULTS/perform_sim_hd_late_BIN.pdf",
+ggsave("~RESULTS/Methods/perform_sim_hd_late_BIN.pdf",
        plot = perform_sim_hd_late_BIN$plot,
        width = 40, height = 25, units = "cm")
 
@@ -761,7 +761,7 @@ perform_sim_hd_late_MW <- fc_random_data_test(time= time_seq,
                                               rand.sets=N_rep,
                                               interest.treshold=age_lim)
 
-ggsave("RESULTS/perform_sim_hd_late_MW.pdf",
+ggsave("~RESULTS/Methods/perform_sim_hd_late_MW.pdf",
        plot = perform_sim_hd_late_MW$plot,
        width = 40, height = 25, units = "cm")
 
@@ -800,7 +800,7 @@ pollen_17334 <- ggarrange(
 
 pollen_17334
 
-ggsave("RESULTS/pollen_17334.pdf",
+ggsave("~RESULTS/Methods/pollen_17334.pdf",
        plot = pollen_17334,
        width = 40, height = 15, units = "cm")
 
@@ -816,7 +816,7 @@ visual_17334_sample <- plot.comparison(data_17334,
                                         standardise = T,
                                         interest.treshold =  age_lim)
 
-ggsave("RESULTS/visual_17334_sample.pdf",
+ggsave("~RESULTS/Methods/visual_17334_sample.pdf",
        plot = visual_17334_sample$plot,
        width = 40, height = 25, units = "cm")
 
@@ -827,7 +827,7 @@ visual_17334_BIN <- plot.comparison(data_17334,
                                                  rand = 1000,
                                                  standardise = T,
                                                  interest.treshold =  age_lim)
-ggsave("RESULTS/visual_17334_BIN.pdf",
+ggsave("~RESULTS/Methods/visual_17334_BIN.pdf",
        plot = visual_17334_BIN$plot,
        width = 40, height = 25, units = "cm")
 
@@ -840,7 +840,7 @@ visual_17334_MW <- plot.comparison(data_17334,
                                                        rand = 1000,
                                                        standardise = T,
                                                        interest.treshold =  age_lim)
-ggsave("RESULTS/visual_17334_MW.pdf",
+ggsave("~RESULTS/Methods/visual_17334_MW.pdf",
        plot = visual_17334_MW$plot,
        width = 40, height = 25, units = "cm")
 
@@ -893,7 +893,7 @@ time_17334_sum <- ggarrange(
 
 time_17334_sum
 
-ggsave("RESULTS/time_17334_sum.pdf",
+ggsave("~RESULTS/Methods/time_17334_sum.pdf",
        plot = time_17334_sum,
        height = 18, width = 25, units="cm")
 
@@ -925,7 +925,7 @@ plot_sum_ld_MW_gam <- data_ld_sum %>%
   
 plot_sum_ld_MW_gam
 
-ggsave("RESULTS/plot_sum_ld_MW_gam.pdf",
+ggsave("~RESULTS/Methods/plot_sum_ld_MW_gam.pdf",
        plot = plot_sum_ld_MW_gam,
        height = 25, width = 25, units="cm")
 
@@ -953,7 +953,7 @@ plot_sum_hd_MV_gam <- data_hd_sum %>%
 
 plot_sum_hd_MV_gam
 
-ggsave("RESULTS/plot_sum_hd_MV_gam.pdf",
+ggsave("~RESULTS/Methods/plot_sum_hd_MV_gam.pdf",
        plot = plot_sum_hd_MV_gam,
        height = 25, width = 25, units="cm")
 
@@ -979,14 +979,14 @@ plot_mag_MW <- data_mag %>%
 
 plot_mag_MW
 
-ggsave("RESULTS/plot_mag_MW.pdf",
+ggsave("~RESULTS/Methods/plot_mag_MW.pdf",
        plot = plot_mag_MW,
        height = 25, width = 25, units="cm")
 
 # -----------------------------------------
 
-# save.image("~/GITHUB/RateOfChange/ENV_METHOD_20200408.RData")
-# load("~/GITHUB/RateOfChange/ENV_METHOD_20200408.RData")
+# save.image("~/DATA/temp/ENV_METHOD_20200408.RData")
+# load("~/DATA/temp/ENV_METHOD_20200408.RData")
 
 
 # ----------------------------------------------
