@@ -27,7 +27,6 @@ sapply(paste0("~/GITHUB/RateOfChange/functions/", files.sources, sep =""), sourc
 glimpse(tibble_Europe2)
 
 
-
 plot.pollen <- function (data, sm.type, N.taxa, interest.treshold)
 {
   Common.list <- data$filtered.counts %>%
@@ -63,13 +62,15 @@ plot.pollen <- function (data, sm.type, N.taxa, interest.treshold)
     scale_x_continuous(trans = "reverse")+
     geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
                 color="gray20", alpha=1/5, size=0.1)+
+    labs(fill = "pollen taxa")+
     xlab("Age")+ylab("Pollen (%)")+
     coord_flip(xlim=c(interest.treshold,0), ylim = c(0,1))+
-    ggtitle(paste("smoothing",sm.type))  
+    ggtitle(paste("smoothing",sm.type))
+    
   return (list(data=plot.data,plot=plot.p))
 }
 
-plot.smooting <- function(data)
+plot.smooting <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, standardise ,interest.treshold)
 {
 res.temp<-  ggarrange(
     data$list_ages$ages %>%
@@ -161,7 +162,6 @@ plot.comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts, rand, stand
   return(list(data=perfomance.tibble, plot=p.all))
 }
 
-
 plot.time <- function(data, BIN=F, BIN.size=500, Shiftbin=F, N.shifts=5, rand=100)
 {
   DF.performance <- data.frame(matrix(nrow = 20, ncol=5))
@@ -237,7 +237,7 @@ age_lim <- max(time_seq)
 # -----------------------------------------
 
 # low diversity - recent
-data_sim_ld_recent <-  fc_random_data(time = time_seq,
+data_sim_ld_recent <-  fc_simulate_pollen_data(time = time_seq,
                                       nforc = N_env, 
                                       nprox = low_diversity,
                                       manual.edit = T,
@@ -256,7 +256,7 @@ ggsave("~/RESULTS/Methods/pollen_sim_ld_recent.pdf",
 
 # low diversity - late
 
-data_sim_ld_late <-  fc_random_data(time = time_seq,
+data_sim_ld_late <-  fc_simulate_pollen_data(time = time_seq,
                                     nforc = N_env, 
                                     nprox = low_diversity,
                                     manual.edit = T,
@@ -277,7 +277,7 @@ ggsave("~/RESULTS/Methods/pollen_sim_ld_late.pdf",
 
 # hight diversity - recent
 
-data_sim_hd_recent <-  fc_random_data(time = time_seq,
+data_sim_hd_recent <-  fc_simulate_pollen_data(time = time_seq,
                                       nforc = N_env, 
                                       nprox = high_diversity,
                                       manual.edit = T,
@@ -296,7 +296,7 @@ ggsave("~/RESULTS/Methods/pollen_sim_hd_recent.pdf",
 
 # high diversity - late
 
-data_sim_hd_late <-  fc_random_data(time = time_seq,
+data_sim_hd_late <-  fc_simulate_pollen_data(time = time_seq,
                                     nforc = N_env, 
                                     nprox = high_diversity,
                                     manual.edit = T,
@@ -482,7 +482,7 @@ ggsave("~/RESULTS/Methods/visual_sim_hd_late_MW.pdf",
 
 # low diversity - recent
 
-perform_sim_ld_recent_sample <- fc_random_data_test(time= time_seq,
+perform_sim_ld_recent_sample <- fc_test_simlutated_data_succsess(time= time_seq,
                                                     nforc=4,
                                                     mean=100, 
                                                     sdev=.15, 
@@ -493,7 +493,7 @@ perform_sim_ld_recent_sample <- fc_random_data_test(time= time_seq,
                                                     breaks=breaks_recent,
                                                     jitter = T,
                                                     rarity = T,
-                                                    BIN=F,
+                                                    BIN=F,-
                                                     Shiftbin=F,
                                                     rand.sets=N_rep,
                                                     interest.treshold=age_lim)
@@ -504,7 +504,7 @@ ggsave("~/RESULTS/Methods/perform_sim_ld_recent_sample.pdf",
 
 
 
-perform_sim_ld_recent_BIN <- fc_random_data_test(time= time_seq,
+perform_sim_ld_recent_BIN <- fc_test_simlutated_data_succsess(time= time_seq,
                                                  nforc=N_env,
                                                  mean=100, 
                                                  sdev=.15, 
@@ -530,7 +530,7 @@ ggsave("~/RESULTS/Methods/perform_sim_ld_recent_BIN.pdf",
 
 
 
-perform_sim_ld_recent_MW <- fc_random_data_test(time= time_seq,
+perform_sim_ld_recent_MW <- fc_test_simlutated_data_succsess(time= time_seq,
                                                 nforc=N_env,
                                                 mean=100, 
                                                 sdev=.15, 
@@ -556,7 +556,7 @@ ggsave("~/RESULTS/Methods/perform_sim_ld_recent_MW.pdf",
 
 # low diversity - late 
 
-perform_sim_ld_late_sample <- fc_random_data_test(time= time_seq,
+perform_sim_ld_late_sample <- fc_test_simlutated_data_succsess(time= time_seq,
                                                   nforc=N_env,
                                                   mean=100, 
                                                   sdev=.15, 
@@ -578,7 +578,7 @@ ggsave("~/RESULTS/Methods/perform_sim_ld_late_sample.pdf",
 
 
 
-perform_sim_ld_late_BIN <- fc_random_data_test(time= time_seq,
+perform_sim_ld_late_BIN <- fc_test_simlutated_data_succsess(time= time_seq,
                                                nforc=N_env,
                                                mean=100, 
                                                sdev=.15, 
@@ -601,7 +601,7 @@ ggsave("~/RESULTS/Methods/perform_sim_ld_late_BIN.pdf",
 
 
 
-perform_sim_ld_late_MW <- fc_random_data_test(time= time_seq,
+perform_sim_ld_late_MW <- fc_test_simlutated_data_succsess(time= time_seq,
                                               nforc=N_env,
                                               mean=100, 
                                               sdev=.15, 
@@ -627,7 +627,7 @@ ggsave("~/RESULTS/Methods/perform_sim_ld_late_MW.pdf",
 
 # high diversity  - recent
 
-perform_sim_hd_recent_sample <- fc_random_data_test(time= time_seq,
+perform_sim_hd_recent_sample <- fc_test_simlutated_data_succsess(time= time_seq,
                                                     nforc=N_env,
                                                     mean=100, 
                                                     sdev=.15, 
@@ -649,7 +649,7 @@ ggsave("~/RESULTS/Methods/perform_sim_hd_recent_sample.pdf",
 
 
 
-perform_sim_hd_recent_BIN <- fc_random_data_test(time= time_seq,
+perform_sim_hd_recent_BIN <- fc_test_simlutated_data_succsess(time= time_seq,
                                                  nforc=N_env,
                                                  mean=100, 
                                                  sdev=.15, 
@@ -672,7 +672,7 @@ ggsave("~/RESULTS/Methods/perform_sim_hd_recent_BIN.pdf",
 
 
 
-perform_sim_hd_recent_MW <- fc_random_data_test(time= time_seq,
+perform_sim_hd_recent_MW <- fc_test_simlutated_data_succsess(time= time_seq,
                                                 nforc=N_env,
                                                 mean=100, 
                                                 sdev=.15, 
@@ -698,7 +698,7 @@ ggsave("~/RESULTS/Methods/perform_sim_hd_recent_MW.pdf",
 
 # high diversity  - late
 
-perform_sim_hd_late_sample <- fc_random_data_test(time= time_seq,
+perform_sim_hd_late_sample <- fc_test_simlutated_data_succsess(time= time_seq,
                                                   nforc=N_env,
                                                   mean=100, 
                                                   sdev=.15, 
@@ -720,7 +720,7 @@ ggsave("~/RESULTS/Methods/perform_sim_hd_late_sample.pdf",
 
 
 
-perform_sim_hd_late_BIN <- fc_random_data_test(time= time_seq,
+perform_sim_hd_late_BIN <- fc_test_simlutated_data_succsess(time= time_seq,
                                                nforc=N_env,
                                                mean=100, 
                                                sdev=.15, 
@@ -743,7 +743,7 @@ ggsave("~/RESULTS/Methods/perform_sim_hd_late_BIN.pdf",
 
 
 
-perform_sim_hd_late_MW <- fc_random_data_test(time= time_seq,
+perform_sim_hd_late_MW <- fc_test_simlutated_data_succsess(time= time_seq,
                                               nforc=N_env,
                                               mean=100, 
                                               sdev=.15, 
@@ -765,7 +765,186 @@ ggsave("~/RESULTS/Methods/perform_sim_hd_late_MW.pdf",
        plot = perform_sim_hd_late_MW$plot,
        width = 40, height = 25, units = "cm")
 
+# -----------------------------------------
+#
+#       MAGNITUDE COMPARISON
+# 
+# -----------------------------------------
 
+# low diversity - recent
+mag_sim_ld_recent_MW <- fc_test_simlutated_data_magnitude(time= time_seq,
+                                                              nforc=N_env,
+                                                              mean=100, 
+                                                              sdev=.15, 
+                                                              nprox=low_diversity, 
+                                                              var=20,
+                                                              range=15,
+                                                              manual.edit = T,
+                                                              breaks=breaks_recent,
+                                                              jitter = T,
+                                                              rarity = T,
+                                                              BIN=T,
+                                                              BIN.size=500, 
+                                                              Shiftbin=T,
+                                                              N.shifts=5,
+                                                              rand.sets=N_rep,
+                                                              interest.treshold=age_lim)
+
+# low diversity - late
+mag_sim_ld_late_MW <- fc_test_simlutated_data_magnitude(time= time_seq,
+                                                              nforc=N_env,
+                                                              mean=100, 
+                                                              sdev=.15, 
+                                                              nprox=low_diversity, 
+                                                              var=20,
+                                                              range=15,
+                                                              manual.edit = T,
+                                                              breaks=breaks_late,
+                                                              jitter = T,
+                                                              rarity = T,
+                                                              BIN=T,
+                                                              BIN.size=500, 
+                                                              Shiftbin=T,
+                                                              N.shifts=5,
+                                                              rand.sets=N_rep,
+                                                              interest.treshold=age_lim)
+
+# high diversity - recent
+mag_sim_hd_recent_MW <- fc_test_simlutated_data_magnitude(time= time_seq,
+                                                              nforc=N_env,
+                                                              mean=100, 
+                                                              sdev=.15, 
+                                                              nprox=high_diversity, 
+                                                              var=20,
+                                                              range=15,
+                                                              manual.edit = T,
+                                                              breaks=breaks_recent,
+                                                              jitter = T,
+                                                              rarity = T,
+                                                              BIN=T,
+                                                              BIN.size=500, 
+                                                              Shiftbin=T,
+                                                              N.shifts=5,
+                                                              rand.sets=N_rep,
+                                                              interest.treshold=age_lim)
+
+# high diversity - late
+mag_sim_hd_late_MW <- fc_test_simlutated_data_magnitude(time= time_seq,
+                                                              nforc=N_env,
+                                                              mean=100, 
+                                                              sdev=.15, 
+                                                              nprox=high_diversity, 
+                                                              var=20,
+                                                              range=15,
+                                                              manual.edit = T,
+                                                              breaks=breaks_late,
+                                                              jitter = T,
+                                                              rarity = T,
+                                                              BIN=T,
+                                                              BIN.size=500, 
+                                                              Shiftbin=T,
+                                                              N.shifts=5,
+                                                              rand.sets=N_rep,
+                                                              interest.treshold=age_lim)
+
+
+
+# ----------------------------------------------
+#               SUMMARY 
+# ----------------------------------------------
+
+data_ld_sum <- rbind(
+  data.frame(perform_sim_ld_recent_MW$data,Position="recent"),
+  data.frame(perform_sim_ld_late_MW$data,Position="late")
+) %>%
+  filter(SIGNIF=="Peak.gam")
+
+data_ld_sum <- within(data_ld_sum, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
+
+plot_sum_ld_MW_gam <- data_ld_sum %>%
+  ggplot(aes(y=VALUE.M,x=Position,fill=SEGMENT, group=SEGMENT))+
+  geom_bar(stat="identity", position="dodge", color="gray30")+
+  geom_errorbar(aes(ymin=VALUE.05,ymax=VALUE.95, group=SEGMENT),
+                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray30")+
+  facet_grid(smooth~DC)+
+  scale_fill_manual("Position in sequence", labels=c("focal area (correct detection)","outside of focal area (false positive)"),
+                    values = c("darkseagreen","coral"))+
+  ylab("Percentage of Peak detection")+xlab("Position of enviromental change")+
+  theme_classic()+
+  theme(legend.position = "right")+
+  ggtitle("Low diversity")
+  
+plot_sum_ld_MW_gam
+
+ggsave("~/RESULTS/Methods/plot_sum_ld_MW_gam.pdf",
+       plot = plot_sum_ld_MW_gam,
+       height = 25, width = 25, units="cm")
+
+
+data_hd_sum <- rbind(
+  data.frame(perform_sim_hd_recent_MW$data,Position="recent"),
+  data.frame(perform_sim_hd_late_MW$data,Position="late")
+) %>%
+  filter(SIGNIF=="Peak.gam")
+
+data_hd_sum <- within(data_hd_sum, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
+
+plot_sum_hd_MV_gam <- data_hd_sum %>%
+  ggplot(aes(y=VALUE.M,x=Position,fill=SEGMENT, group=SEGMENT))+
+  geom_bar(stat="identity", position="dodge", color="gray30")+
+  geom_errorbar(aes(ymin=VALUE.05,ymax=VALUE.95, group=SEGMENT),
+                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray30")+
+  facet_grid(smooth~DC)+
+  scale_fill_manual("Position in sequence", labels=c("focal area (correct detection)","outside of focal area (false positive)"),
+                    values = c("darkseagreen","coral"))+
+  ylab("Percentage of Peak detection")+xlab("Position of enviromental change")+
+  theme_classic()+
+  theme(legend.position = "right")+
+  ggtitle("High diversity")
+
+
+plot_sum_hd_MV_gam
+
+ggsave("~/RESULTS/Methods/plot_sum_hd_MV_gam.pdf",
+       plot = plot_sum_hd_MV_gam,
+       height = 25, width = 25, units="cm")
+
+
+plot_sum_BOTH_MW_gam <- ggarrange(plot_sum_ld_MW_gam, plot_sum_hd_MV_gam, 
+          ncol=2, common.legend = T, legend = "bottom")
+
+ggsave("~/RESULTS/Methods/plot_sum_BOTH_MV_gam.pdf",
+       plot = plot_sum_BOTH_MW_gam,
+       height = 15, width = 25, units="cm")
+
+
+data_mag_sum <- rbind(
+data.frame(perform_sim_ld_recent_MW$data,Position="recent",Diversity="low"),
+data.frame(perform_sim_ld_late_MW$data,Position="late",Diversity="low"),
+data.frame(perform_sim_hd_recent_MW$data,Position="recent",Diversity="high"),
+data.frame(perform_sim_hd_late_MW$data,Position="late",Diversity="high")
+)
+
+
+data_mag_sum <- within(data_mag_sum, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
+data_mag_sum <- within(data_mag_sum, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
+
+plot_mag_MW <- data_mag_sum %>%
+  ggplot(aes(y=RoC_max,fill=Position,x=Diversity))+
+  geom_bar(stat="identity", position = "dodge", color="gray30")+
+  geom_errorbar(aes(ymax=RoC_max_95, ymin=RoC_max_05), 
+                position = position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
+  facet_grid(DC~SMOOTH, scales = "free_y")+
+  theme_classic()+
+  scale_fill_manual("Position of enviromental change",labels=c("recent","late"), values = c("#F8766D","#00BFC4"))+
+  scale_x_discrete(label=c("low diversity","high diversity"))+
+  xlab("Diversity of pollen taxa")+ylab("Maximum value of Rate of Change")
+
+plot_mag_MW
+
+ggsave("~/RESULTS/Methods/plot_mag_MW.pdf",
+       plot = plot_mag_MW,
+       height = 20, width = 25, units="cm")
 
 
 # -----------------------------------------
@@ -776,9 +955,9 @@ ggsave("~/RESULTS/Methods/perform_sim_hd_late_MW.pdf",
 
 
 data_17334 <- list(dataset.id = tibble_Europe2$dataset.id[[2]],
-                      filtered.counts = tibble_Europe2$filtered.counts[[2]],
-                      list_ages = tibble_Europe2$list_ages[[2]])
-  
+                   filtered.counts = tibble_Europe2$filtered.counts[[2]],
+                   list_ages = tibble_Europe2$list_ages[[2]])
+
 # POllen graph
 
 pollen_17334 <- ggarrange(
@@ -810,39 +989,56 @@ ggsave("~/RESULTS/Methods/pollen_17334.pdf",
 # ------------------------------
 
 visual_17334_sample <- plot.comparison(data_17334,
-                                        BIN = F, 
-                                        Shiftbin = F, 
-                                        rand = 1000,
-                                        standardise = T,
-                                        interest.treshold =  age_lim)
+                                       BIN = F, 
+                                       Shiftbin = F, 
+                                       rand = 1000,
+                                       standardise = T,
+                                       interest.treshold =  age_lim)
 
 ggsave("~/RESULTS/Methods/visual_17334_sample.pdf",
        plot = visual_17334_sample$plot,
        width = 40, height = 25, units = "cm")
 
 visual_17334_BIN <- plot.comparison(data_17334,
-                                                 BIN = T,
-                                                 BIN.size = 500,
-                                                 Shiftbin = F, 
-                                                 rand = 1000,
-                                                 standardise = T,
-                                                 interest.treshold =  age_lim)
+                                    BIN = T,
+                                    BIN.size = 500,
+                                    Shiftbin = F, 
+                                    rand = 1000,
+                                    standardise = T,
+                                    interest.treshold =  age_lim)
 ggsave("~/RESULTS/Methods/visual_17334_BIN.pdf",
        plot = visual_17334_BIN$plot,
        width = 40, height = 25, units = "cm")
 
 
 visual_17334_MW <- plot.comparison(data_17334,
-                                                       BIN = T, 
-                                                       BIN.size = 500,
-                                                       Shiftbin = T, 
-                                                       N.shifts = 5,
-                                                       rand = 1000,
-                                                       standardise = T,
-                                                       interest.treshold =  age_lim)
-ggsave("~/RESULTS/Methods/visual_17334_MW.pdf",
-       plot = visual_17334_MW$plot,
-       width = 40, height = 25, units = "cm")
+                                   BIN = T, 
+                                   BIN.size = 500,
+                                   Shiftbin = T, 
+                                   N.shifts = 5,
+                                   rand = 1000,
+                                   standardise = T,
+                                   interest.treshold =  age_lim)
+
+plot_visual_17334_MW <-visual_17334_MW$data %>%
+  ggplot(aes(y=RUN.RoC, 
+             x= RUN.Age.Pos))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip()+
+  geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1, color="gray80", fill="gray80")+
+  geom_line(alpha=1, size=0.1)+
+  geom_point(data = filter(visual_17334_MW$data, Peak.treshold==T ),color="blue", size=1, shape=1, alpha=2/3)+
+  geom_point(data = filter(visual_17334_MW$data, Peak.gam==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_point(data = filter(visual_17334_MW$data, Peak.SNI==T ),color="red", size=2, shape=8, alpha=2/3)+
+  geom_hline(yintercept = 0, color="red")+
+  xlab("Age")+ylab("Rate of Change")+
+  facet_grid(smooth~DC, scales = "free_x")
+
+
+ggsave("~/RESULTS/Methods/plot_visual_17334_MW.pdf",
+       plot = plot_visual_17334_MW,
+       width = 20, height = 12, units = "cm")
 
 # ------------------------------
 #   computation time compariosn
@@ -898,163 +1094,110 @@ ggsave("~/RESULTS/Methods/time_17334_sum.pdf",
        height = 18, width = 25, units="cm")
 
 
+# ------------------------------
+#             FIN
+# ------------------------------
+data_17334 <- list(dataset.id = tibble_Europe2$dataset.id[[2]],
+                   filtered.counts = tibble_Europe2$filtered.counts[[2]],
+                   list_ages = tibble_Europe2$list_ages[[2]])
 
-# ----------------------------------------------
-#               SUMMARY 
-# ----------------------------------------------
-
-data_ld_sum <- rbind(
-  data.frame(perform_sim_ld_recent_MW$data,Position="recent"),
-  data.frame(perform_sim_ld_late_MW$data,Position="late")
-) %>%
-  filter(SIGNIF=="Peak.gam")
-
-data_ld_sum <- within(data_ld_sum, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
-
-plot_sum_ld_MW_gam <- data_ld_sum %>%
-  ggplot(aes(y=VALUE.M,x=Position,fill=SEGMENT, group=SEGMENT))+
-  geom_bar(stat="identity", position="dodge", color="gray30")+
-  geom_errorbar(aes(ymin=VALUE.05,ymax=VALUE.95, group=SEGMENT),
-                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray30")+
-  facet_grid(smooth~DC)+
-  scale_fill_manual("Position in sequence", labels=c("focal area (correct detection)","outside of focal area (false positive)"),
-                    values = c("darkseagreen","coral"))+
-  ylab("Percentage of Peak detection")+xlab("Position of enviromental change")+
-  theme_classic()+
-  theme(legend.position = "right")
-  
-plot_sum_ld_MW_gam
-
-ggsave("~/RESULTS/Methods/plot_sum_ld_MW_gam.pdf",
-       plot = plot_sum_ld_MW_gam,
-       height = 25, width = 25, units="cm")
-
-
-data_hd_sum <- rbind(
-  data.frame(perform_sim_hd_recent_MW$data,Position="recent"),
-  data.frame(perform_sim_hd_late_MW$data,Position="late")
-) %>%
-  filter(SIGNIF=="Peak.gam")
-
-data_hd_sum <- within(data_hd_sum, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
-
-plot_sum_hd_MV_gam <- data_hd_sum %>%
-  ggplot(aes(y=VALUE.M,x=Position,fill=SEGMENT, group=SEGMENT))+
-  geom_bar(stat="identity", position="dodge", color="gray30")+
-  geom_errorbar(aes(ymin=VALUE.05,ymax=VALUE.95, group=SEGMENT),
-                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray30")+
-  facet_grid(smooth~DC)+
-  scale_fill_manual("Position in sequence", labels=c("focal area (correct detection)","outside of focal area (false positive)"),
-                    values = c("darkseagreen","coral"))+
-  ylab("Percentage of Peak detection")+xlab("Position of enviromental change")+
-  theme_classic()+
-  theme(legend.position = "right")
-
-
-plot_sum_hd_MV_gam
-
-ggsave("~/RESULTS/Methods/plot_sum_hd_MV_gam.pdf",
-       plot = plot_sum_hd_MV_gam,
-       height = 25, width = 25, units="cm")
-
-# Magnitude
-
-data_sim_ud_recent <-  fc_random_data(time = time_seq,
-                                      nforc = N_env, 
-                                      nprox = 100,
-                                      manual.edit = T,
-                                      breaks=breaks_recent,
-                                      jitter = T,
-                                      rarity = T)
-plot.smooting(data_sim_ud_recent)
-
-visual_sim_ud_recent_MW <- plot.comparison(data_sim_ud_recent,
-                BIN = T, 
-                BIN.size = 500,
-                Shiftbin = T, 
-                N.shifts = 5,
-                rand = 1, 
-                standardise = F,
-                interest.treshold =  age_lim)
-
-
-data_sim_ud_late <-  fc_random_data(time = time_seq,
-                                      nforc = N_env, 
-                                      nprox = 100,
-                                      manual.edit = T,
-                                      breaks=breaks_late,
-                                      jitter = T,
-                                      rarity = T)
-plot.smooting(data_sim_ud_late)
-
-visual_sim_ud_late_MW <- plot.comparison(data_sim_ud_late,
-                                           BIN = T, 
-                                           BIN.size = 500,
-                                           Shiftbin = T, 
-                                           N.shifts = 5,
-                                           rand = 1, 
-                                           standardise = F,
-                                           interest.treshold =  age_lim)
-
-
-data_mag <- rbind(
-  data.frame(visual_sim_ld_recent_MW$data, DIVERSITY="ld" ,POSITION = "recent"),
-  data.frame(visual_sim_ld_late_MW$data, DIVERSITY="ld" ,POSITION = "late"),
-  data.frame(visual_sim_hd_recent_MW$data, DIVERSITY="hd" ,POSITION = "recent"),
-  data.frame(visual_sim_hd_late_MW$data, DIVERSITY="hd" ,POSITION = "late"),
-  data.frame(visual_sim_ud_recent_MW$data,  DIVERSITY="ud" ,POSITION = "recent"),
-  data.frame(visual_sim_ud_late_MW$data,  DIVERSITY="ud" ,POSITION = "late")
+data_17334_RoC <- fc_ratepol(data.source.pollen = data_17334$filtered.counts,
+                             data.source.age = data_17334$list_ages,
+                             sm.type = "age.w", 
+                             N.points = 5, 
+                             range.age.max = 500, 
+                             BIN = T,
+                             BIN.size = 500,
+                             Shiftbin = T,
+                             N.shifts = 5,
+                             rand = 1000,
+                             standardise = T, 
+                             S.value = 150, 
+                             DC = "chord",
+                             interest.treshold = F
 )
 
-plot_mag_MW <- data_mag %>%
-  select(RUN.RoC,smooth,DC,DIVERSITY,POSITION) %>%
-  group_by(smooth,DC, DIVERSITY, POSITION) %>%
-    summarise(RoC.max = max(RUN.RoC)) %>%
-  ggplot(aes(y=RoC.max,fill=POSITION,x=DIVERSITY))+
-  geom_hline(yintercept = c(0,1,2,10,20,30), color="gray80")+
-  geom_bar(stat="identity", position = "dodge", color="gray30")+
-  facet_grid(smooth~DC)+
-  scale_y_continuous(trans = "log1p", breaks = c(0,1,2,10,20,30))+
+ggarrange(
+data_17334$list_ages$ages %>%
+    filter(age <= age_lim) %>%
+    ggplot(aes(x=age))+
+    geom_density(color="gray30",fill="gray80")+
+    coord_flip(xlim = c(age_lim,0))+
+    scale_x_continuous(trans = "reverse")+
+    theme_classic()+xlab("Age")+ylab("Sample density")+
+    ggtitle("Density of Samples"),
+plot.pollen(data_17334,"age.w",10,age_lim)$plot,
+data_17334_RoC %>%
+  ggplot(aes(y=RUN.RoC, 
+             x= RUN.Age.Pos))+
   theme_classic()+
-  scale_fill_manual("Position of enviromental change",labels=c("recent","late"), values = c("#F8766D","#00BFC4"))+
-  scale_x_discrete(label=c("low diversity","high diversity","very high diversity"))+
-  xlab("Diversity of pollen taxa")+ylab("Maximum value of Rate of Change")
+  scale_x_continuous(trans = "reverse")+
+  coord_flip()+
+  geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1/5, color="gray")+
+  geom_line(alpha=1, size=1)+
+  geom_line(data=data.frame(RUN.RoC = predict.gam(gam(RUN.RoC~s(RUN.Age.Pos), data = data_17334_RoC)),
+                            RUN.Age.Pos = data_17334_RoC$RUN.Age.Pos),
+            color="blue", size=1)+
+  geom_point(color="black", size=1)+
+  geom_point(data = data_17334_RoC[data_17334_RoC$Peak.gam==T,],color="red", size=2)+
+  geom_hline(yintercept = 0, color="red")+
+  xlab("Age")+ylab("Rate of Change")+
+  ggtitle("DC Chord"),
+ncol = 3)
+ 
+data_24996 <- list(dataset.id = tibble_Europe2$dataset.id[[208]],
+                   filtered.counts = tibble_Europe2$filtered.counts[[208]],
+                   list_ages = tibble_Europe2$list_ages[[208]])
 
-plot_mag_MW
+data_24996_RoC <- fc_ratepol(data.source.pollen = data_24996$filtered.counts,
+                             data.source.age = data_24996$list_ages,
+                             sm.type = "age.w", 
+                             N.points = 5, 
+                             range.age.max = 500, 
+                             BIN = T,
+                             BIN.size = 500,
+                             Shiftbin = T,
+                             N.shifts = 5,
+                             rand = 1000,
+                             standardise = T, 
+                             S.value = 150, 
+                             DC = "chord",
+                             interest.treshold = F
+)
 
-ggsave("~/RESULTS/Methods/plot_mag_MW.pdf",
-       plot = plot_mag_MW,
-       height = 25, width = 25, units="cm")
+ggarrange(
+  data_24996$list_ages$ages %>%
+    ggplot(aes(x=age))+
+    geom_density(color="gray30",fill="gray80")+
+    coord_flip(xlim = c(max(data_24996$list_ages$ages$age),0))+
+    scale_x_continuous(trans = "reverse")+
+    theme_classic()+xlab("Age")+ylab("Sample density")+
+    ggtitle("Density of Samples"),
+  plot.pollen(data_24996,"age.w",10,max(data_24996$list_ages$ages$age))$plot,
+  data_24996_RoC %>%
+    ggplot(aes(y=RUN.RoC, 
+               x= RUN.Age.Pos))+
+    theme_classic()+
+    scale_x_continuous(trans = "reverse")+
+    coord_flip()+
+    geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1/5, color="gray")+
+    geom_line(alpha=1, size=1)+
+    geom_line(data=data.frame(RUN.RoC = predict.gam(gam(RUN.RoC~s(RUN.Age.Pos), data = data_24996_RoC)),
+                              RUN.Age.Pos = data_24996_RoC$RUN.Age.Pos),
+              color="blue", size=1)+
+    geom_point(color="black", size=1)+
+    geom_point(data = data_24996_RoC[data_24996_RoC$Peak.gam==T,],color="red", size=2)+
+    geom_hline(yintercept = 0, color="red")+
+    xlab("Age")+ylab("Rate of Change")+
+    ggtitle("DC Chord"),
+  ncol = 3)
 
-plot_mag_MW_clean <- data_mag %>%
-  select(RUN.RoC,smooth,DC,DIVERSITY,POSITION) %>%
-  group_by(smooth,DC, DIVERSITY, POSITION) %>%
-  summarise(RoC.max = max(RUN.RoC)) %>%
-  filter(DC =="chord"| DC =="chisq") %>%
-  filter(smooth == "m.avg" | smooth == "age.w") %>%
-  ggplot(aes(y=RoC.max,fill=POSITION,x=DIVERSITY))+
-  #geom_hline(yintercept = c(0,1,2,10,20,30), color="gray80")+
-  geom_bar(stat="identity", position = "dodge", color="gray30")+
-  facet_grid(smooth~DC)+
-  #scale_y_continuous(trans = "log1p", breaks = c(0,1,2,10,20,30))+
-  theme_classic()+
-  scale_fill_manual("Position of enviromental change",labels=c("recent","late"), values = c("#F8766D","#00BFC4"))+
-  scale_x_discrete(label=c("low diversity","high diversity","very high diversity"))+
-  xlab("Diversity of pollen taxa")+ylab("Maximum value of Rate of Change")
-
-plot_mag_MW_clean
-
-
-ggsave("~/RESULTS/Methods/plot_mag_MW_clean.pdf",
-       plot = plot_mag_MW_clean,
-       height = 25, width = 25, units="cm")
-
-
-
+ 
+  
 # -----------------------------------------
-
-# save.image("~/DATA/temp/ENV_METHOD_20200408.RData")
-# load("~/DATA/temp/ENV_METHOD_20200408.RData")
+# save.image("~/DATA/temp/ENV_METHOD_20200420.RData")
+# save.image("~/DATA/temp/ENV_METHOD_20200417.RData")
+# load("~/DATA/temp/ENV_METHOD_20200417.RData")
 
 
 # ----------------------------------------------

@@ -2,7 +2,7 @@ which(tibble_Europe2$dataset.id %in%  25318 )
 
 dataset.25318
 
-dataset.N <- 66
+dataset.N <- 208
 data.source.pollen <- tibble_Europe2$filtered.counts[[dataset.N]]
 data.source.age <- tibble_Europe2$list_ages[[dataset.N]]
 sm.type = "age.w" 
@@ -16,8 +16,8 @@ N.shifts = 5
 rand = 1000
 standardise = T 
 S.value = 150 
-DC = "chisq"
-interest.treshold = 8000
+DC = "chord"
+interest.treshold = F
 Debug = F
 
 
@@ -33,6 +33,7 @@ range=15;
 manual.edit = T;
 breaks=c(2000,3000);
 jitter = T;
+rarity=T;
 BIN=T; 
 BIN.size=500; 
 Shiftbin=T;

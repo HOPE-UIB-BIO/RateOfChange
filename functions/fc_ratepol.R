@@ -344,7 +344,7 @@ fc_ratepol <- function (data.source.pollen,
   # calculate SNI (singal to noise ratio)
   SNI.calc <- CharSNI(data.frame(r.m.full$RUN.Age.Pos, r.m.full$RUN.RoC, pred.gam),mean.age.window)
   # mark points with SNI higher than 3
-  r.m.full$Peak.SNI <- SNI.calc$SNI > 3 & r.m.full$RUN.RoC > pred.gam
+  r.m.full$Peak.SNI <- SNI.calc$SNI > 3
   
   
   

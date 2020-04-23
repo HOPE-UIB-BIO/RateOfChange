@@ -1,4 +1,4 @@
-fc_random_data_test <- function(time=0:10e3, 
+fc_test_simlutated_data_succsess <- function(time=0:10e3, 
                                 nforc=4, 
                                 mean=100, 
                                 sdev=.15, 
@@ -32,7 +32,7 @@ fc_random_data_test <- function(time=0:10e3,
       for(i in 1:rand.sets)
       {
         # create random data
-        random.data <- fc_random_data(time=time,
+        random.data <- fc_simulate_pollen_data(time=time,
                                       nforc = nforc, 
                                       mean = mean, 
                                       sdev=sdev,
@@ -120,7 +120,8 @@ fc_random_data_test <- function(time=0:10e3,
       # summary of randomisation
       plot.data <- list.res %>%
         group_by(SEGMENT,SIGNIF) %>%
-        summarise(VALUE.M= mean(VALUE, na.rm = T),
+        summarise(VALUE.M = mean(VALUE, na.rm = T),
+                  VALUE.SD = sd(VALUE, na.rm = T),
                   VALUE.05 = quantile(VALUE,0.025, na.rm = T),
                   VALUE.95 = quantile(VALUE,0.975, na.rm = T)
                   ) %>%
