@@ -70,7 +70,7 @@ fc_test_simlutated_data_succsess <- function(time=0:10e3,
         res.mat.temp <- res.mat
         
         #look in arround im the distace of the differences betwen ecollogical breaks
-        window.size <- diff(breaks)[1]/2
+        window.size <- 500 #diff(breaks)[1]/2
         
         # extract values for each significance test
         for(l in 1:length(signif.list))
