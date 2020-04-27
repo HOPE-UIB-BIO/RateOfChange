@@ -1,3 +1,5 @@
+# load("~/DATA/temp/ENV_METHOD_20200427.RData")
+
 # ----------------------------------------------
 #                     SETUP
 # ----------------------------------------------
@@ -63,7 +65,7 @@ fc_calculate_RoC_comparison <- function(data, BIN, BIN.size, Shiftbin, N.shifts,
   return(perfomance.tibble)
 }
 
-fc_get_pollen_data <- function (data, sm.type, N.taxa, interest.treshold)
+fc_get_pollen_data <- function (data, sm.type, N.taxa)
 {
   Common.list <- data$filtered.counts %>%
     colSums() %>% 
@@ -85,9 +87,9 @@ fc_get_pollen_data <- function (data, sm.type, N.taxa, interest.treshold)
     fc_check(.,proportion = T)
   
   plot.data <- data.ext$Pollen %>%
-    select(Common.list) %>%
+    select(any_of(Common.list)) %>%
     rownames_to_column() %>%
-    pivot_longer(., cols = c(Common.list)) %>%
+    pivot_longer(cols = -c(rowname)) %>%
     rename(sample.id = rowname) %>%
     inner_join(.,data.ext$Age, by="sample.id")
   
@@ -307,49 +309,6 @@ data_example_MW <- fc_calculate_RoC_comparison(data_example,
 #               FIGURES 
 #
 # ----------------------------------------------
-
-###############
-# SUPLEMENTARY 
-###############
-
-#LD-R
-data_supp_fig_MW <- rbind(
-  perform_sim_ld_recent_MW$data,
-  perform_sim_ld_late_MW$data,
-  perform_sim_hd_recent_MW$data,
-  perform_sim_hd_late_MW$data
-)
-
-data_supp_fig_MW$Dataset_type <- c(rep("LD-R",120),rep("LD-L",120),rep("HD-R",120),rep("HD-L",120))
-
-data_supp_fig_MW <- within(data_supp_fig_MW, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
-data_supp_fig_MW <- within(data_supp_fig_MW, smooth <- factor(smooth, levels = c("none","m.avg","grim","age.w","shep")))
-data_supp_fig_MW <- within(data_supp_fig_MW, Dataset_type <- factor(Dataset_type, levels = c("LD-R","LD-L","HD-R","HD-L")))
-data_supp_fig_MW <- within(data_supp_fig_MW, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
-data_supp_fig_MW <- within(data_supp_fig_MW, SIGNIF <- factor(SIGNIF, levels = c("Peak.treshold","Peak.gam","Peak.SNI")))
-levels(data_supp_fig_MW$SIGNIF) <- c("Threshold","GAM","SNI")
-
-
-Supplementary_F1 <- data_supp_fig_MW %>%
-  ggplot(aes(y=VALUE.M,x=Dataset_type,fill=SEGMENT, group=SEGMENT))+
-  geom_bar(stat="identity", position="dodge", color="gray30")+
-  geom_errorbar(aes(ymin=VALUE.M-VALUE.SD,ymax=VALUE.M+VALUE.SD, group=SEGMENT),
-                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
-  facet_grid(smooth~DC+SIGNIF)+
-  scale_fill_manual("Position in sequence", labels=c("focal area (correct detection)","outside of focal area (false positive)"),
-                    values = c("darkseagreen","coral"))+
-  ylab("Percentage of Peak detection")+xlab("Type of simulated dataset")+
-  theme_classic()+
-  theme(legend.position = "bottom")+
-  theme(axis.text.x = element_text(angle = -45,hjust = 0.3, vjust = 0.2 ))
-
-
-Supplementary_F1
-
-ggsave("~/RESULTS/Methods/FIN/Supplementary_F1.pdf",
-       plot = Supplementary_F1,
-       height = 15, width = 22, units="cm")
-
 
 ##############
 #   FIG 1
@@ -584,7 +543,18 @@ data_site_A <- list(dataset.id = tibble_Europe2$dataset.id[[2]],
                     filtered.counts = tibble_Europe2$filtered.counts[[2]],
                     list_ages = tibble_Europe2$list_ages[[2]])
 
-data_site_A_pollen <-fc_get_pollen_data(data_site_A, sm.type = "age.w",N.taxa = 10, interest.treshold = 8000)
+data_site_A_pollen <-fc_get_pollen_data(data_site_A, sm.type = "shep",N.taxa = 10)
+
+data_site_A$filtered.counts %>%
+  as_tibble() %>%
+  filter(data_site_A$list_ages$ages$age < 9000) %>%
+  dim()
+
+data_site_A_pollen %>%
+  group_by(name) %>%
+  summarise(SUM = sum(value)) %>%
+  arrange(-SUM)
+  
 
 #Site B
 
@@ -595,7 +565,17 @@ data_site_B <- list(dataset.id = tibble_Europe2$dataset.id[[224]],
                     list_ages = tibble_Europe2$list_ages[[224]])
 
 
-data_site_B_pollen <-fc_get_pollen_data(data_site_B, sm.type = "age.w",N.taxa = 10, interest.treshold = 8000)
+data_site_B_pollen <-fc_get_pollen_data(data_site_B, sm.type = "shep",N.taxa = 10)
+
+data_site_B$filtered.counts %>%
+  filter(data_site_B$list_ages$ages$age < 9000) %>%
+  as_tibble() %>%
+  dim()
+
+data_site_B_pollen %>%
+  group_by(name) %>%
+  summarise(SUM = sum(value)) %>%
+  arrange(-SUM)
 
 
 # SITE c
@@ -606,7 +586,17 @@ data_site_C <- list(dataset.id = tibble_Europe2$dataset.id[[45]],
                     filtered.counts = tibble_Europe2$filtered.counts[[45]],
                     list_ages = tibble_Europe2$list_ages[[45]])
 
-data_site_C_pollen <-fc_get_pollen_data(data_site_C, sm.type = "age.w",N.taxa = 10, interest.treshold = 8000)
+data_site_C_pollen <-fc_get_pollen_data(data_site_C, sm.type = "shep",N.taxa = 10)
+
+data_site_C$filtered.counts %>%
+  as_tibble() %>%
+  filter(data_site_C$list_ages$ages$age < 9000) %>%
+  dim()
+
+data_site_C_pollen %>%
+  group_by(name) %>%
+  summarise(SUM = sum(value)) %>%
+  arrange(-SUM)
 
 
 # Pollen taxa table
@@ -684,30 +674,37 @@ data_Site_B_RoC <- fc_ratepol(data.source.pollen = data_site_B$filtered.counts,
 FIG4_Site_A_1 <- data_site_A$list_ages$ages %>%
   filter(age < 9000) %>%
   ggplot(aes(x=age))+
+  geom_hline(yintercept = seq(from=0,to=3e-4, by=1e-4), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_density(color="gray30", fill="gray50")+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   scale_y_continuous(breaks = seq(from=0,to=3e-4, by=1e-4))+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))+
-  xlab("Age (cal yr BC)")+ylab("Density of samples")
+  xlab("Age (cal yr BC)")+ylab("")+
+  theme(axis.ticks.x = element_blank(),
+        axis.text.x = element_blank())
 
 
 FIG4_Site_B_1 <- data_site_B$list_ages$ages %>%
   filter(age < 9000) %>%
   ggplot(aes(x=age))+
+  geom_hline(yintercept = seq(from=0,to=3e-4, by=1e-4), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_density(color="gray30", fill="gray50")+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   scale_y_continuous(breaks = seq(from=0,to=3e-4, by=1e-4))+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))+
-  xlab("Age (cal yr BC)")+ylab("Density of samples")
+  xlab("Age (cal yr BC)")+ylab("")+
+  theme(axis.ticks.x = element_blank(),
+        axis.text.x = element_blank())
 
 
 FIG4_Site_C_1 <- data_site_C$list_ages$ages %>%
   filter(age < 9000) %>%
   ggplot(aes(x=age))+
+  geom_hline(yintercept = seq(from=0,to=3e-4, by=1e-4), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_density(color="gray30", fill="gray50")+
   theme_classic()+
@@ -731,13 +728,16 @@ FIG4_Site_A_2 <-  data_site_A_pollen %>%
               x= age))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
+  geom_hline(yintercept = seq(from=0,to=1, by=0.25), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
               color="gray20", alpha=1/5, size=0.1)+
   scale_fill_manual("pollen taxa",values = Palette.1)+
-  xlab("")+ylab("Pollen (%)")+
+  xlab("")+ylab("")+
   coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
   theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y = element_blank())
 
@@ -746,13 +746,16 @@ FIG4_Site_B_2 <-  data_site_B_pollen %>%
               x= age))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
+  geom_hline(yintercept = seq(from=0,to=1, by=0.25), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
               color="gray20", alpha=1/5, size=0.1)+
   scale_fill_manual("pollen taxa",values = Palette.1, drop=FALSE)+
-  xlab("")+ylab("Pollen (%)")+
+  xlab("")+ylab("")+
   coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
   theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y = element_blank())
 
@@ -761,11 +764,12 @@ FIG4_Site_C_2 <-  data_site_C_pollen %>%
               x= age))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
+  geom_hline(yintercept = seq(from=0,to=1, by=0.25), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
               color="gray20", alpha=1/5, size=0.1)+
   scale_fill_manual("pollen taxa",values = Palette.1)+
-  xlab("")+ylab("Pollen (%)")+
+  xlab("")+ylab("% of pollen grains")+
   coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
   theme(legend.position = "none",
         axis.ticks.y = element_blank(),
@@ -777,15 +781,19 @@ ggplot(aes(y=RUN.RoC,
            x= RUN.Age.Pos))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim = c(age_lim,0))+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,1.5))+
+  geom_hline(yintercept = seq(from=0,to=1.5, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
   geom_point(data = filter(data_site_A_RoC, Peak.gam==T ),color="green", size=2, shape=16, alpha=2/3)+
   geom_hline(yintercept = 0, color="purple", size=0.1)+
-  xlab("")+ylab("Rate of Change score")+
-  theme(axis.ticks.y = element_blank(),
-        axis.text.y = element_blank())
+  xlab("")+ylab("")+
+  theme(
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank())
 
 
 FIG4_Site_B_3 <- data_Site_B_RoC %>%
@@ -793,22 +801,28 @@ FIG4_Site_B_3 <- data_Site_B_RoC %>%
              x= RUN.Age.Pos))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim = c(age_lim,0))+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,1.5))+
+  geom_hline(yintercept = seq(from=0,to=1.5, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
   geom_point(data = filter(data_Site_B_RoC, Peak.gam==T ),color="green", size=2, shape=16, alpha=2/3)+
   geom_hline(yintercept = 0, color="purple", size=0.1)+
-  xlab("")+ylab("Rate of Change score")+
-  theme(axis.ticks.y = element_blank(),
-        axis.text.y = element_blank())
+  xlab("")+ylab("")+
+  theme(
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank())
+
 
 FIG4_Site_C_3 <- data_Site_C_RoC %>%
   ggplot(aes(y=RUN.RoC, 
              x= RUN.Age.Pos))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim = c(age_lim,0))+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,1.5))+
+  geom_hline(yintercept = seq(from=0,to=1.5, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -825,7 +839,7 @@ FIG4_Site_comparison <- ggarrange(
   FIG4_Site_C_1,FIG4_Site_C_2,FIG4_Site_C_3,
   #labels = c(17334,"","",40951,"","",4012,"",""),
   labels = c("A","","","B","","","C","",""),
-  ncol = 3, nrow = 3, legend = "none", align = "h")
+  ncol = 3, nrow = 3, legend = "none", align = "hv")
 
 
 FIG4_Site_comparison_legend <- ggarrange(
@@ -838,4 +852,91 @@ ggsave("~/RESULTS/Methods/FIN/FIG4_Site_comparison.pdf",
        height = 20, width = 20, units="cm")
 
 
-# save.image("~/DATA/temp/ENV_METHOD_20200421.RData")
+
+###############
+# SUPLEMENTARY 
+###############
+
+# Need to go to the DEBUG and run SIMULATION MANUALY!!!
+
+
+Supplementary_F1 <-ggarrange(as.data.frame(forcing) %>%
+                               mutate(AGE = time) %>%
+                               pivot_longer(., cols = -c(AGE)) %>%
+                               arrange(AGE,value) %>%
+                               ggplot(aes(x=AGE, y= value))+
+                               geom_vline(xintercept = breaks, color="gray80", size=0.1)+
+                               geom_line(aes(color=name))+
+                               theme_classic()+
+                               coord_flip(xlim=c(8000,0))+
+                               scale_x_continuous(trans = "reverse")+
+                               theme(legend.position = "none")+
+                               xlab("Age (cal yr BC)"),
+                             fc_extract(data.source.pollen, data.source.age) %>%
+                               fc_smooth("none") %>%
+                               fc_check(., proportion = T) %>%
+                               pluck("Pollen") %>%
+                               mutate(AGE = time) %>%
+                               pivot_longer(-c(AGE)) %>%
+                               ggplot(aes(x=AGE, y=value))+
+                               geom_ribbon(aes(ymin=rep(0,length(value)), ymax=value, fill=name), 
+                                           color="gray20", alpha=1/5, size=0.1)+
+                               geom_vline(xintercept = breaks, color="gray80", size=0.1)+
+                               coord_flip(xlim=c(8000,0), ylim=c(0,1))+
+                               theme_classic()+
+                               scale_x_continuous(trans = "reverse")+
+                               ylab("% of pollen grains")+xlab("")+
+                               theme(legend.position = "none",
+                                     axis.ticks.y = element_blank(),
+                                     axis.text.y = element_blank()),
+                             ncol=2, align = "h")
+
+
+Supplementary_F1
+
+ggsave("~/RESULTS/Methods/FIN/Supplementary_F1.pdf",
+       plot = Supplementary_F1,
+       height = 10, width = 15, units="cm")
+
+
+
+
+data_supp_fig_MW <- rbind(
+  perform_sim_ld_recent_MW$data,
+  perform_sim_ld_late_MW$data,
+  perform_sim_hd_recent_MW$data,
+  perform_sim_hd_late_MW$data
+)
+
+data_supp_fig_MW$Dataset_type <- c(rep("LD-R",120),rep("LD-L",120),rep("HD-R",120),rep("HD-L",120))
+
+data_supp_fig_MW <- within(data_supp_fig_MW, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
+data_supp_fig_MW <- within(data_supp_fig_MW, smooth <- factor(smooth, levels = c("none","m.avg","grim","age.w","shep")))
+data_supp_fig_MW <- within(data_supp_fig_MW, Dataset_type <- factor(Dataset_type, levels = c("LD-R","LD-L","HD-R","HD-L")))
+data_supp_fig_MW <- within(data_supp_fig_MW, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
+data_supp_fig_MW <- within(data_supp_fig_MW, SIGNIF <- factor(SIGNIF, levels = c("Peak.treshold","Peak.gam","Peak.SNI")))
+levels(data_supp_fig_MW$SIGNIF) <- c("Threshold","GAM","SNI")
+
+
+Supplementary_F2 <- data_supp_fig_MW %>%
+  ggplot(aes(y=VALUE.M,x=Dataset_type,fill=SEGMENT, group=SEGMENT))+
+  geom_bar(stat="identity", position="dodge", color="gray30")+
+  geom_errorbar(aes(ymin=VALUE.M-VALUE.SD,ymax=VALUE.M+VALUE.SD, group=SEGMENT),
+                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
+  facet_grid(smooth~DC+SIGNIF)+
+  scale_fill_manual("Position in sequence", labels=c("focal area (correct detection)","outside of focal area (false positive)"),
+                    values = c("darkseagreen","coral"))+
+  ylab("Percentage of Peak detection")+xlab("Type of simulated dataset")+
+  theme_classic()+
+  theme(legend.position = "bottom")+
+  theme(axis.text.x = element_text(angle = -45,hjust = 0.3, vjust = 0.2 ))
+
+
+Supplementary_F2
+
+ggsave("~/RESULTS/Methods/FIN/Supplementary_F2.pdf",
+       plot = Supplementary_F1,
+       height = 15, width = 22, units="cm")
+
+
+# save.image("~/DATA/temp/ENV_METHOD_20200427.RData")

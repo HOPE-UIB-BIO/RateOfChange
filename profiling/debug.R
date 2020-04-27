@@ -365,7 +365,7 @@ ggarrange(as.data.frame(forcing) %>%
             geom_point(aes(color=name))+
             geom_hline(yintercept = breaks, color="red")+
             theme_classic()+
-            coord_cartesian(ylim=c(0,8000))+
+            coord_cartesian(ylim=c(8000,0))+
             scale_y_continuous(trans = "reverse")+
             theme(legend.position = "none"),
           fc_extract(data.source.pollen, data.source.age) %>%
