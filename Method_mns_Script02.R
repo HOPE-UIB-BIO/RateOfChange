@@ -857,10 +857,89 @@ ggsave("~/RESULTS/Methods/FIN/FIG4_Site_comparison.pdf",
 # SUPLEMENTARY 
 ###############
 
-# Need to go to the DEBUG and run SIMULATION MANUALY!!!
+# Example of simulation of enviroemntal data
+
+time= tibble_Europe2$list_ages[[2]]$ages$age
+nforc=4;
+mean=100; 
+sdev=.15; 
+nprox=50; 
+var=20;
+range=15;
+manual.edit = T;
+breaks=c(2000,3000);
+breaks=c(5500,6500);
+jitter = T;
+rarity=T;
+
+forcing <- array(0, dim=c(length(time), nforc))
+forcing[1,] <- rnorm(nforc, mean, sdev)
+for(i in 2:length(time))
+  forcing[i,] <- rnorm(nforc, forcing[i-1,], sdev)
+for(l in 1:( length(breaks)-1 ) )
+{
+  if(l%%2 == 1) # odd
+  {
+    forcing[time>breaks[l] & time<breaks[l+1],] <-  forcing[time>breaks[l] & time<breaks[l+1],] * (1+sdev)  
+  }
+  
+  if(l%%2 == 0) # even
+  {
+    forcing[time>breaks[l] & time<breaks[l+1],] <-  forcing[time>breaks[l] & time<breaks[l+1],] * (1-sdev) 
+  }
+}
+
+forcing<- apply(forcing,2, FUN = function(x) {
+  low <- lowess(x,f=.05,iter=0)
+  return(low$y)
+}) 
+
+# choose random optima and ranges for the biota
+ecology <- c()
+for(i in 1:nprox)
+  ecology[[i]] <- list(mean=rnorm(nforc, mean, var), sd=rgamma(nforc, range, 1))
+
+# reactions of the biota to the environmental changes
+proxies <- array(1, dim=c(length(time), nprox))
+o <- c()
+
+for(i in 1:nprox)
+{
+  for(j in 1:nforc)
+    proxies[,i] <- proxies[,i] * dnorm(forcing[,j], ecology[[i]]$mean[j], ecology[[i]]$sd[j])
+  #o[i] <- weighted.mean(time, proxies[,i])
+}
+
+# order taxa by abundance
+o <- order(colSums(proxies), decreasing=TRUE)
+proxies <- proxies[,o]
 
 
-Supplementary_F1 <-ggarrange(as.data.frame(forcing) %>%
+# decrease the abundances of rare taxa
+if(rarity==T)
+{
+  for(i in 1:ncol(proxies)) {
+    proxies[,i]<- (proxies[,i] / max(1,runif(1, min = i-1, max=i)) )
+  }
+}
+
+
+# jitter the resul the pollen data
+if(jitter==T)
+{
+  proxies<- apply(proxies,2,FUN= function(x) jitter(x,factor = 1.5, amount = 0))
+  proxies[proxies < 0] <- 0
+}
+
+# return 
+data.source.age<- list(ages=data.frame(sample.id =c(1:length(time)), age=time),
+                       age_position= matrix(time, nrow = 1))
+data.source.pollen <- as.data.frame(proxies)
+row.names(data.source.pollen) <- c(1:length(time))
+
+
+
+Supplementary_F1b <-ggarrange(as.data.frame(forcing) %>%
                                mutate(AGE = time) %>%
                                pivot_longer(., cols = -c(AGE)) %>%
                                arrange(AGE,value) %>%
@@ -870,8 +949,14 @@ Supplementary_F1 <-ggarrange(as.data.frame(forcing) %>%
                                theme_classic()+
                                coord_flip(xlim=c(8000,0))+
                                scale_x_continuous(trans = "reverse")+
-                               theme(legend.position = "none")+
-                               xlab("Age (cal yr BC)"),
+                               theme(
+                                     #axis.ticks.x = element_blank(),
+                                     #axis.text.x = element_blank(),
+                                     legend.position = "none"
+                                     )+
+                                #ylab("")+
+                                ylab("value of env. variable")+
+                                xlab("Age (cal yr BC)"),
                              fc_extract(data.source.pollen, data.source.age) %>%
                                fc_smooth("none") %>%
                                fc_check(., proportion = T) %>%
@@ -885,20 +970,32 @@ Supplementary_F1 <-ggarrange(as.data.frame(forcing) %>%
                                coord_flip(xlim=c(8000,0), ylim=c(0,1))+
                                theme_classic()+
                                scale_x_continuous(trans = "reverse")+
-                               ylab("% of pollen grains")+xlab("")+
-                               theme(legend.position = "none",
+                               xlab("")+
+                               #ylab("")+
+                               ylab("% of pollen grains")+
+                               theme(
                                      axis.ticks.y = element_blank(),
-                                     axis.text.y = element_blank()),
+                                     axis.text.y = element_blank(),
+                                     #axis.ticks.x = element_blank(),
+                                     #axis.text.x = element_blank(),
+                                     legend.position = "none"),
                              ncol=2, align = "h")
 
 
+Supplementary_F1b
+
+
+Supplementary_F1 <- ggarrange(
+  Supplementary_F1a,Supplementary_F1b,
+  nrow = 2, labels=c("A","B")
+)
+
 Supplementary_F1
+
 
 ggsave("~/RESULTS/Methods/FIN/Supplementary_F1.pdf",
        plot = Supplementary_F1,
        height = 10, width = 15, units="cm")
-
-
 
 
 data_supp_fig_MW <- rbind(
@@ -937,6 +1034,23 @@ Supplementary_F2
 ggsave("~/RESULTS/Methods/FIN/Supplementary_F2.pdf",
        plot = Supplementary_F1,
        height = 15, width = 22, units="cm")
+
+
+Supplementary_F3<- tibble_Europe2[c(2,45,224),] %>%
+  ggplot(aes(y=lat, x=long, label = c("A","C","B")))+
+  borders(fill = "gray90", colour = "gray60") +
+  geom_point(size=3)+
+  geom_text(nudge_x = 1,nudge_y = -1)+
+  coord_fixed(xlim = c(-25,25), ylim=c(35,70))+
+  theme_classic()+
+  labs(x="longitude",
+       y="lattitude")
+
+Supplementary_F3
+
+ggsave("~/RESULTS/Methods/FIN/Supplementary_F3.pdf",
+       plot = Supplementary_F3,
+       height = 10, width = 15, units="cm")
 
 
 # save.image("~/DATA/temp/ENV_METHOD_20200427.RData")
