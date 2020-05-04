@@ -3,6 +3,7 @@ fc_smooth <- function(data.source,
                       N.points = 3, 
                       grim.N.max = 9,
                       range.age.max = 300,
+                      Round.result = T,
                       Debug = F)
 {
   # imput variables:
@@ -205,5 +206,10 @@ fc_smooth <- function(data.source,
     }
     p.counts[,j]<-col.res
   }
+  
+  if (Round.result == T){
+    p.counts <- round(p.counts)
+  }
+  
   return(list(Pollen=p.counts, Age=age, Age.un=data.source$Age.un, Dim.val= data.source$Dim.val))
 }

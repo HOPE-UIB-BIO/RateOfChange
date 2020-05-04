@@ -182,6 +182,14 @@ fc_ratepol <- function (data.source.pollen,
       # standardisation of pollen data to X(S.value) number of pollen grains 
       if(standardise==T) # 
       {
+        # check if all samples has S.value of pollen grains
+        data.sd$Age <- data.sd$Age[rowSums(data.sd$Pollen, na.rm = T)>=S.value,]
+        data.sd$Age.un <- data.sd$Age.un[,rowSums(data.sd$Pollen, na.rm = T)>=S.value]
+        data.sd$Pollen <- data.sd$Pollen[rowSums(data.sd$Pollen, na.rm = T)>=S.value,]
+        data.sd<- fc_check(data.sd, proportion = F, Samples = T, Debug=Debug)
+        
+        
+        # standardisation
         data.sd <- fc_standar(data.sd, S.value, Debug=Debug)
         
         if(any(rowSums(data.sd$Pollen, na.rm = T)!=S.value))
