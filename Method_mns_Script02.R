@@ -12,6 +12,7 @@ library(foreach)
 library(doParallel)
 library(scales)
 library(mgcv)
+library(maps)
 
 # ----------------------------------------------
 #             LOAD DATA & FUNCTIONS
@@ -550,7 +551,8 @@ data_site_A$filtered.counts %>%
   filter(data_site_A$list_ages$ages$age < 8000) %>%
   dim()
 
-data_site_A_pollen %>%
+fc_get_pollen_data(data_site_A, sm.type = "shep",N.taxa = 80) %>%
+  filter(age < 8000) %>%
   group_by(name) %>%
   summarise(SUM = sum(value)) %>%
   arrange(-SUM)
@@ -572,7 +574,8 @@ data_site_B$filtered.counts %>%
   as_tibble() %>%
   dim()
 
-data_site_B_pollen %>%
+fc_get_pollen_data(data_site_B, sm.type = "shep",N.taxa = 103) %>%
+  filter(age < 8000) %>%
   group_by(name) %>%
   summarise(SUM = sum(value)) %>%
   arrange(-SUM)
@@ -593,7 +596,8 @@ data_site_C$filtered.counts %>%
   filter(data_site_C$list_ages$ages$age < 8000) %>%
   dim()
 
-data_site_C_pollen %>%
+fc_get_pollen_data(data_site_C, sm.type = "shep",N.taxa = 50) %>%
+  filter(age < 8000) %>%
   group_by(name) %>%
   summarise(SUM = sum(value)) %>%
   arrange(-SUM)
@@ -609,6 +613,10 @@ data_site_D <- list(dataset.id = tibble_Europe2$dataset.id[[50]],
                     filtered.counts = tibble_Europe2$filtered.counts[[50]],
                     list_ages = tibble_Europe2$list_ages[[50]])
 
+data_site_D$filtered.counts %>%
+  filter(data_site_D$list_ages$ages$age < 8000) %>%
+  rowSums()
+
 data_site_D_pollen <-fc_get_pollen_data(data_site_D, sm.type = "shep",N.taxa = 10)
 
 data_site_D$filtered.counts %>%
@@ -616,7 +624,8 @@ data_site_D$filtered.counts %>%
   filter(data_site_D$list_ages$ages$age < 8000) %>%
   dim()
 
-data_site_D_pollen %>%
+fc_get_pollen_data(data_site_D, sm.type = "shep",N.taxa = 33) %>%
+  filter(age < 8000) %>%
   group_by(name) %>%
   summarise(SUM = sum(value)) %>%
   arrange(-SUM)
@@ -632,7 +641,6 @@ common_taxa<- c(data_site_A_pollen$name,
   unique()
 
 library (RColorBrewer)
-
 getPalette = colorRampPalette(brewer.pal(9, "Set1"))
 Palette.1<- getPalette(length(common_taxa))
 names(Palette.1)<- sort(common_taxa)  
@@ -719,13 +727,19 @@ FIG4_Site_A_1 <- data_site_A$list_ages$ages %>%
   geom_hline(yintercept = c(0,3e-4), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_density(color="gray30", fill="gray50")+
+  geom_rug(sides = "b")+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   scale_y_continuous(breaks = c(0,3e-4))+
-  coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))+
-  xlab("Age (cal yr BC)")+ylab("")+
-  theme(axis.ticks.x = element_blank(),
-        axis.text.x = element_blank())
+  labs(x="Age (cal yr BC)",
+      y="Density of samples"
+       )+
+  theme(
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.title.x = element_blank()
+    )+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))
 
 
 FIG4_Site_B_1 <- data_site_B$list_ages$ages %>%
@@ -734,13 +748,19 @@ FIG4_Site_B_1 <- data_site_B$list_ages$ages %>%
   geom_hline(yintercept = c(0,3e-4), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_density(color="gray30", fill="gray50")+
+  geom_rug(sides = "b")+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   scale_y_continuous(breaks = c(0,3e-4))+
-  coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))+
-  xlab("Age (cal yr BC)")+ylab("")+
-  theme(axis.ticks.x = element_blank(),
-        axis.text.x = element_blank())
+  labs(x="Age (cal yr BC)",
+      y="Density of samples"
+  )+
+  theme(
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.title.x = element_blank()
+  )+
+coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))
 
 FIG4_Site_C_1 <- data_site_C$list_ages$ages %>%
   filter(age < 9000) %>%
@@ -748,13 +768,19 @@ FIG4_Site_C_1 <- data_site_C$list_ages$ages %>%
   geom_hline(yintercept = c(0,3e-4), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_density(color="gray30", fill="gray50")+
+  geom_rug(sides = "b")+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   scale_y_continuous(breaks = c(0,3e-4))+
-  coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))+
-  xlab("Age (cal yr BC)")+ylab("")+
-  theme(axis.ticks.x = element_blank(),
-        axis.text.x = element_blank())
+  labs(x="Age (cal yr BC)",
+       y="Density of samples"
+  )+
+  theme(
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.title.x = element_blank()
+  )+
+coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))
 
 
 FIG4_Site_D_1 <- data_site_D$list_ages$ages %>%
@@ -763,11 +789,18 @@ FIG4_Site_D_1 <- data_site_D$list_ages$ages %>%
   geom_hline(yintercept = c(0,3e-4), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_density(color="gray30", fill="gray50")+
+  geom_rug(sides = "b")+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))+
-  scale_y_continuous(breaks = c(0,3e-4))+
-  xlab("Age (cal yr BC)")+ylab("Density of samples")
+  labs(x="Age (cal yr BC)",
+       y="Density of samples"
+  )+
+  theme(
+#    axis.ticks.x = element_blank(),
+#    axis.text.x = element_blank(),
+#    axis.title.x = element_blank()
+  )+
+coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))
 
 
 library(cowplot)
@@ -778,7 +811,6 @@ my_legend <- cowplot::get_legend(ggplot(data = data.frame(NAME=common_taxa,X=1),
                              scale_fill_manual("pollen taxa",values = Palette.1))
 
 plot(my_legend)
-
 
 
 FIG4_Site_A_2 <-  data_site_A_pollen %>%
@@ -793,15 +825,22 @@ FIG4_Site_A_2 <-  data_site_A_pollen %>%
   geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
               color="gray20", alpha=1/5, size=0.1)+
   scale_fill_manual("pollen taxa",values = Palette.1)+
-  xlab("")+ylab("")+
-  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
+  labs(
+    x="Age (cal yr BC)",
+    y="% of pollen grains"
+        )+
   theme(legend.position = "none",
         axis.ticks.x = element_blank(),
         axis.text.x = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
         strip.background = element_blank(),
-        strip.text = element_blank())+
+        strip.text = element_text(angle = 45)
+#        strip.text = element_blank()
+        )+
+  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
   facet_wrap(~name, ncol=length(common_taxa))
 
 FIG4_Site_B_2 <-  data_site_B_pollen %>%
@@ -816,17 +855,23 @@ FIG4_Site_B_2 <-  data_site_B_pollen %>%
   geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
               color="gray20", alpha=1/5, size=0.1)+
   scale_fill_manual("pollen taxa",values = Palette.1, drop=FALSE)+
-  xlab("")+ylab("")+
-  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
+  labs(
+    x="Age (cal yr BC)",
+    y="% of pollen grains"
+  )+
   theme(legend.position = "none",
         axis.ticks.x = element_blank(),
         axis.text.x = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
         strip.background = element_blank(),
-        strip.text = element_blank())+
+#        strip.text = element_text(angle = 45)
+        strip.text = element_blank()
+  )+
+  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
   facet_wrap(~name, ncol=length(common_taxa))
-
 
 FIG4_Site_C_2 <-  data_site_C_pollen %>%
   bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = -100, newage=NA)) %>%
@@ -840,15 +885,22 @@ FIG4_Site_C_2 <-  data_site_C_pollen %>%
   geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
               color="gray20", alpha=1/5, size=0.1)+
   scale_fill_manual("pollen taxa",values = Palette.1, drop=FALSE)+
-  xlab("")+ylab("")+
-  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
+  labs(
+    x="Age (cal yr BC)",
+    y="% of pollen grains"
+  )+
   theme(legend.position = "none",
         axis.ticks.x = element_blank(),
         axis.text.x = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
         strip.background = element_blank(),
-        strip.text = element_blank())+
+#        strip.text = element_text(angle = 45)
+        strip.text = element_blank()
+  )+
+  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
   facet_wrap(~name, ncol=length(common_taxa))
 
 FIG4_Site_D_2 <-  data_site_D_pollen %>%
@@ -863,15 +915,23 @@ FIG4_Site_D_2 <-  data_site_D_pollen %>%
   geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
               color="gray20", alpha=1/5, size=0.1)+
   scale_fill_manual("pollen taxa",values = Palette.1)+
-  xlab("")+ylab("% of pollen grains")+
-  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
+  labs(
+    x="Age (cal yr BC)",
+    y="% of pollen grains"
+  )+
   theme(legend.position = "none",
+#        axis.ticks.x = element_blank(),
+#        axis.text.x = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y = element_blank(),
+#        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
         strip.background = element_blank(),
-        strip.text = element_blank())+
+ #       strip.text = element_text(angle = 45)
+        strip.text = element_blank()
+  )+
+  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
   facet_wrap(~name, ncol=length(common_taxa))
-
 
 FIG4_Site_A_3 <- data_site_A_RoC %>%
 ggplot(aes(y=RUN.RoC, 
@@ -885,12 +945,18 @@ ggplot(aes(y=RUN.RoC,
   geom_line(alpha=1, size=0.5)+
   geom_point(data = filter(data_site_A_RoC, Peak.gam==T ),color="green", size=2, shape=16, alpha=2/3)+
   geom_hline(yintercept = 0, color="purple", size=0.1)+
-  xlab("")+ylab("")+
-  theme(
-    axis.ticks.x = element_blank(),
-    axis.text.x = element_blank(),
-    axis.ticks.y = element_blank(),
-    axis.text.y = element_blank())
+  labs(
+    x="Age (cal yr BC)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+     )
 
 
 FIG4_Site_B_3 <- data_Site_B_RoC %>%
@@ -905,12 +971,18 @@ FIG4_Site_B_3 <- data_Site_B_RoC %>%
   geom_line(alpha=1, size=0.5)+
   geom_point(data = filter(data_Site_B_RoC, Peak.gam==T ),color="green", size=2, shape=16, alpha=2/3)+
   geom_hline(yintercept = 0, color="purple", size=0.1)+
-  xlab("")+ylab("")+
-  theme(
-    axis.ticks.x = element_blank(),
-    axis.text.x = element_blank(),
-    axis.ticks.y = element_blank(),
-    axis.text.y = element_blank())
+  labs(
+    x="Age (cal yr BC)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+  )
 
 FIG4_Site_C_3 <- data_Site_C_RoC %>%
   ggplot(aes(y=RUN.RoC, 
@@ -924,12 +996,18 @@ FIG4_Site_C_3 <- data_Site_C_RoC %>%
   geom_line(alpha=1, size=0.5)+
   geom_point(data = filter(data_Site_C_RoC, Peak.gam==T ),color="green", size=2, shape=16, alpha=2/3)+
   geom_hline(yintercept = 0, color="purple", size=0.1)+
-  xlab("")+ylab("")+
-  theme(
-    axis.ticks.x = element_blank(),
-    axis.text.x = element_blank(),
-    axis.ticks.y = element_blank(),
-    axis.text.y = element_blank())
+  labs(
+    x="Age (cal yr BC)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+  )
 
 
 FIG4_Site_D_3 <- data_Site_D_RoC %>%
@@ -944,37 +1022,49 @@ FIG4_Site_D_3 <- data_Site_D_RoC %>%
   geom_line(alpha=1, size=0.5)+
   geom_point(data = filter(data_Site_D_RoC, Peak.gam==T ),color="green", size=2, shape=16, alpha=2/3)+
   geom_hline(yintercept = 0, color="purple", size=0.1)+
-  xlab("")+ylab("Rate of Change score")+
-  theme(axis.ticks.y = element_blank(),
-        axis.text.y = element_blank())
+  labs(
+    x="Age (cal yr BC)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+#        axis.ticks.x = element_blank(),
+#        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+#        axis.title.x  = element_blank(),
+       axis.title.y  = element_blank(),
+  )
 
-library("gridExtra")
-FIG4_Site_A <- arrangeGrob(FIG4_Site_A_1, FIG4_Site_A_2, FIG4_Site_A_3,
-                            ncol=3, layout_matrix=rbind(c(1,2,2,2,3)))
-FIG4_Site_B <- arrangeGrob(FIG4_Site_B_1, FIG4_Site_B_2, FIG4_Site_B_3,
-                            ncol=3, layout_matrix=rbind(c(1,2,2,2,3)))
-FIG4_Site_C <- arrangeGrob(FIG4_Site_C_1, FIG4_Site_C_2, FIG4_Site_C_3,
-                            ncol=3, layout_matrix=rbind(c(1,2,2,2,3)))
-FIG4_Site_D <- arrangeGrob(FIG4_Site_D_1, FIG4_Site_D_2, FIG4_Site_D_3,
-                           ncol=3, layout_matrix=rbind(c(1,2,2,2,3)))
+library(cowplot)
+FIG4_Site_A <- plot_grid(FIG4_Site_A_1, FIG4_Site_A_2, FIG4_Site_A_3,
+                         align = "h",axis = "bt", ncol = 3, rel_widths = c(1,3,1))
+FIG4_Site_B <- plot_grid(FIG4_Site_B_1, FIG4_Site_B_2, FIG4_Site_B_3,
+                         align = "h",axis = "bt", ncol = 3, rel_widths = c(1,3,1))
+FIG4_Site_C <- plot_grid(FIG4_Site_C_1, FIG4_Site_C_2, FIG4_Site_C_3,
+                         align = "h",axis = "bt", ncol = 3, rel_widths = c(1,3,1))
+FIG4_Site_D <- plot_grid(FIG4_Site_D_1, FIG4_Site_D_2, FIG4_Site_D_3,
+                         align = "h",axis = "bt", ncol = 3, rel_widths = c(1,3,1))
+
 
 FIG4_Site_comparison <- ggarrange(
-  as_ggplot(FIG4_Site_A),
-  as_ggplot(FIG4_Site_C),
-  as_ggplot(FIG4_Site_B),
-  as_ggplot(FIG4_Site_D),
+  FIG4_Site_A,
+  FIG4_Site_C,
+  FIG4_Site_B,
+  FIG4_Site_D,
   #labels = c(17334,"","",40951,"","",4012,"",""),
   labels = c("A","B","C","D"),
+  heights = c(1.8,1,1,1),
   ncol = 1, nrow = 4, legend = "none")
-
+FIG4_Site_comparison
 
 FIG4_Site_comparison_legend <- ggarrange(
   FIG4_Site_comparison,
   my_legend, 
   ncol=1, heights = c(12,2))
+FIG4_Site_comparison_legend
 
 ggsave("~/RESULTS/Methods/FIN/FIG4_Site_comparison.pdf",
-       plot = FIG4_Site_comparison_legend, 
+       plot = FIG4_Site_comparison, 
        height = 20, width = 22, units="cm")
 
 
@@ -1162,8 +1252,8 @@ ggsave("~/RESULTS/Methods/FIN/Supplementary_F2.pdf",
        height = 15, width = 22, units="cm")
 
 
-Supplementary_F3<- tibble_Europe2[c(2,45,224),] %>%
-  ggplot(aes(y=lat, x=long, label = c("A","C","B")))+
+Supplementary_F3<- tibble_Europe2[c(2,45,224,50),] %>%
+  ggplot(aes(y=lat, x=long, label = c("A","B","C","D")))+
   borders(fill = "gray90", colour = "gray60") +
   geom_point(size=3)+
   geom_text(nudge_x = 1,nudge_y = -1)+
