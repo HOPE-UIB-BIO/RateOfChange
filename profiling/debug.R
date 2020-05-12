@@ -1,22 +1,22 @@
-which(tibble_Europe2$dataset.id %in%  25318 )
+which(tibble_Europe2$dataset.id %in%  1435 )
 
 dataset.25318
 
-dataset.N <- 124
+dataset.N <- 4
 data.source.pollen <- tibble_Europe2$filtered.counts[[dataset.N]]
 data.source.age <- tibble_Europe2$list_ages[[dataset.N]]
 sm.type = "shep" 
 N.points = 5
 range.age.max = 500 
 grim.N.max = 9
-BIN = T
+Working.Unit = "MW"
 BIN.size = 500
-Shiftbin  = F
 N.shifts = 5
 rand = 1000
 standardise = T 
 S.value = 150 
 DC = "chord"
+Peak = "GAM"
 interest.treshold = 8000
 Debug = F
 

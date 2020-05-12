@@ -34,7 +34,7 @@ fc_subset_samples <- function(data.subset, BINS)
   }
 
   list.res <- list(Pollen = data.res.pollen, Age=data.res.age,Dim.val=data.subset$Dim.val )
-  list.res <- fc_check(list.res, proportion = F, Debug = F)
+  list.res <- fc_check_data(list.res, proportion = F, Debug = F)
   
   return(list.res)
 }

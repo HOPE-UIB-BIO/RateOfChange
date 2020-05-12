@@ -1,4 +1,4 @@
-# load("~/DATA/temp/ENV_METHOD_20200427.RData")
+# load("~/DATA/temp/ENV_METHOD_20200511.RData")
 
 # ----------------------------------------------
 #                     SETUP
@@ -1269,4 +1269,4 @@ ggsave("~/RESULTS/Methods/FIN/Supplementary_F3.pdf",
        height = 10, width = 15, units="cm")
 
 
-# save.image("~/DATA/temp/ENV_METHOD_20200427.RData")
+# save.image("~/DATA/temp/ENV_METHOD_20200511.RData")

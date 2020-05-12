@@ -1,25 +1,33 @@
-fc_smooth <- function(data.source, 
-                      sm.type="none",
-                      N.points = 3, 
-                      grim.N.max = 9,
-                      range.age.max = 300,
-                      Round.result = T,
-                      Debug = F)
+fc_smooth_pollen_data <- function(data.source, 
+                            sm.type="none",
+                            N.points = 3, 
+                            grim.N.max = 9,
+                            range.age.max = 300,
+                            Round.result = T,
+                            Debug = F)
 {
   # imput variables:
-  # data.source - data prepared by the function of fn_extract
-  # sm.type = type of smoothing applied smooting 
-  #     "none"    = data will not be smoothed 
-  #     "m.avg"   = moving average
-  #     "grim"    = Grimm smoothing
-  #     "age.w"   = age weithed 
-  #     "shep"    = Shepard's 5-term filter
-  #
+  # data.source - data prepared by the function of fn_extract_data
+  # sm.type = type of smoothing applied for the each of the pollen type 
+  #     "none"    = None: Pollen data is not smoothed
+  #     "m.avg"   = Moving average: Each focus value is calculated as average over N(N.points) number of levels 
+  #                   (preferably ½ N before and ½ after focus level, those values are adjusted in the beginning 
+  #                   and end of the core. N must be odd number). Note that each calculation is done from scratch 
+  #                   and results are saved separately in order to avoid cumulative rounding errors. 
+  #     "grim"    = 	Grimm’s smoothing: Similar to moving average but N is not fixed. For each level, N is selected 
+  #                   as odd number between N_a (N.points) and N_b (grim.N.max), while the maintaining the maximum age 
+  #                   difference from the selected levels as range.age.max. 
+  #     "age.w"   = 	Age weighted average:  Similar to moving average but average is weighted by the age difference 
+  #                   from the focus level and multiplied by 1/range.age.max. To avoid up-weighting levels, 
+  #                   if range.age.max/AGEDIFF exceeds 1, it is saved as 1. This means that levels closer than 
+  #                   range.age.max to the target age are given full weighting, but those farther away are downweighed 
+  #                   by an amount increasing with age difference.
+  #     "shep"    =   Shepard's 5-term filter: Smoothing over 5 points following equation: 
+  #                   V_NEW=(17*V + 12*(V_((+1) )  + V_((-1) ) )-3*(V_((+2) )  + V_((-2) )))/35 ,
+  #                   where V is focal level value. All values that result smaller than zero are saved as zero
   # N.points = Number of points for (need to be an odd number). Used for moving average, Grimm and Age-Weighted
   # grim.N.max = maximal number of samples to look in Grimm smoothing
   # range.age.max = maximal age range for both Grimm and Age-weight smoothing
-  #
-  
   
   # ----------------------------------------------
   #                     SETUP 

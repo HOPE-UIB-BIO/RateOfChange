@@ -1,8 +1,8 @@
-fc_check <- function (data.source.check, proportion = F, Debug=F, Species=T, Samples=T)
+fc_check_data <- function (data.source.check, proportion = F, Debug=F, Species=T, Samples=T)
 {
   # check if there is a sample that do not have a pollen data and delete it
   # & 
-  #check if there are any specie without pollen record and delete them
+  # check if there are any specie without pollen record and delete them
   
   kill.all <- function(data.source.check.kill, Species= Species, Samples=Samples)
   {

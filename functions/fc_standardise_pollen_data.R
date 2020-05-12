@@ -1,4 +1,4 @@
-fc_standar <- function (data.source, fc_standar.S.value, Debug=F)
+fc_standardise_pollen_data <- function (data.source, fc_standar.S.value, Debug=F)
 {
   # data.source = imput data
   # fc_standar.S.value = values to standardise number of pollen grains

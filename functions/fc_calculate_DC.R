@@ -1,10 +1,17 @@
-fc_calDC <- function (data.source, DC = "chisq", Debug = F)
+fc_calculate_DC <- function (data.source, DC = "chord", Debug = F)
 {
-  # DC = disimilarity coeficient
-  #   "euc"     = Euclidan distance
-  #   "euc.sd"  = standardised Euclidan distance
-  #   "chord"   = chord distance
-  #   "chisq    = chi-squared coeficient
+  # DC = disimilarity coeficient. Type of calculation of differences between samples/BINs
+  #   "euc"     = 	Euclidean distance: √(∑_(i=1)^n〖(A_i-B_i)〗^2 ), where A_i and B_i are values for Working Unit A and B given for species i.
+  #   "euc.sd"  = 	Standardised Euclidean distance: √(∑_(i=1)^n〖((A_i-B_i)/〖SD〗_i )〗^2 ) , 
+  #                 where A_i and B_i are values for Working Unit A and B given for species i,and 〖SD〗_i is a standard deviation for species i,
+  #                 calculated from whole sequence.
+  #   "chord"   = 	Chord distance:√(∑_(i=1)^n〖(√(A_i )-√(B_i ))〗^2 ), where A_i and B_i are values for Working Unit A and B given for species i.
+  #   "chisq    = 	Chi-squared coefficient:√(∑_(i=1)^n〖(A_i-B_i)〗^2/((A_i+B_i))), where A_i and B_i are values for Working Unit A and B 
+  #                 given for species i
+  # 
+  # Comment 1:
+  # Note that DC is calculated between each subsequent Working Units and then standardise by the time difference between them. Age of each RoC values
+  #   is determined as mean between values of Wokring Units.
   
   dat.res <- vector(mode="numeric",length = data.source$Dim.val[2]-1)
   

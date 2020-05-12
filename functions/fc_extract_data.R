@@ -1,12 +1,19 @@
-fc_extract <-  function (data.source.pollen.extract,
-                         data.source.age.extract,
-                         Debug = F)
+fc_extract_data <-  function (data.source.pollen.extract,
+                              data.source.age.extract,
+                              Debug = F)
 {
-  # data.source = load data in format of one dataset from tibble
+  # # data.source.pollen = pollen data with species as collumns and levels as rows, level ID as row names  
+  # data.source.age = list of 2: 
+  #                       $ages = datframe
+  #                                   $sample.id = unique ID of each level
+  #                                   #age = age of level
+  #                       $age_position = matrix with number of collumns as number of levels. Each column is one level
+  #                                         each row is one age sequence from bchron
+  #
   # result of function is list length 3
-  # [1] POllen data 
+  # [1] Pollen data 
   # [2] Age data with samples ordered by age
-  # [3] NUmber of pollen species and number of samples for pollen & age data
+  # [3] Number of pollen species and number of samples for pollen & age data
   # [4] Dataframe with all age uncertainties
   
   if (Debug==T)
@@ -34,7 +41,7 @@ fc_extract <-  function (data.source.pollen.extract,
   dat.merge <- list(Pollen=p.counts, Age=age, Age.un = age.un, Dim.val = dim.val)
   
   # perform check = cound number of species and samples and exclude "empty" ones
-  dat.merge <- fc_check(dat.merge, proportion = F, Debug = Debug)
+  dat.merge <- fc_check_data(dat.merge, proportion = F, Debug = Debug)
   
   row.names(dat.merge$Age) <- dat.merge$Age$sample.id
   row.names(dat.merge$Pollen) <- dat.merge$Age$sample.id
