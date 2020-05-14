@@ -124,6 +124,7 @@ fc_R_ratepol <- function (data.source.pollen,
                                         N.points = N.points,
                                         grim.N.max = grim.N.max, 
                                         range.age.max = range.age.max,
+                                       Round.result = standardise,
                                         Debug=Debug)
   
   #check data and reduce data dimentions  
@@ -360,10 +361,17 @@ fc_R_ratepol <- function (data.source.pollen,
   r.m.full <- r.m.full %>%
     arrange(RUN.Age.Pos)
   
-  # smoothing results
-  r.m.full$RUN.RoC.sm <- lowess(r.m.full$RUN.Age.Pos,r.m.full$RUN.RoC,f=.1,iter=5)$y
-  r.m.full$RUN.RoC.95q.sm <- lowess(r.m.full$RUN.Age.Pos,r.m.full$RUN.RoC.95q,f=.1,iter=5)$y
-  r.m.full$RUN.RoC.05q.sm <- lowess(r.m.full$RUN.Age.Pos,r.m.full$RUN.RoC.05q,f=.1,iter=5)$y
+  # smoothing results to avoid "waveing"
+  if (Working.Unit == "MW"){
+    r.m.full$RUN.RoC.sm <- lowess(r.m.full$RUN.Age.Pos,r.m.full$RUN.RoC,f=.1,iter=100)$y
+    r.m.full$RUN.RoC.95q.sm <- lowess(r.m.full$RUN.Age.Pos,r.m.full$RUN.RoC.95q,f=.1,iter=100)$y
+    r.m.full$RUN.RoC.05q.sm <- lowess(r.m.full$RUN.Age.Pos,r.m.full$RUN.RoC.05q,f=.1,iter=100)$y
+  } else {
+    r.m.full$RUN.RoC.sm <- r.m.full$RUN.RoC
+    r.m.full$RUN.RoC.95q.sm <- r.m.full$RUN.RoC.95q 
+    r.m.full$RUN.RoC.05q.sm <- r.m.full$RUN.RoC.05q
+  }
+  
   
   
   # ----------------------------------------------
@@ -388,12 +396,13 @@ fc_R_ratepol <- function (data.source.pollen,
   
   # SNI  
   if (Peak == "SNI"){
+    pred.gam <-  predict.gam(gam(RUN.RoC.sm~s(RUN.Age.Pos), data = r.m.full))
     # set moving window of 5 times higher than average distance between samples
     mean.age.window <- 5 * mean( diff(r.m.full$RUN.Age.Pos) )
     # calculate SNI (singal to noise ratio)
     SNI.calc <- CharSNI(data.frame(r.m.full$RUN.Age.Pos, r.m.full$RUN.RoC.sm, pred.gam),mean.age.window)
     # mark points with SNI higher than 3
-    r.m.full$Peak <- SNI.calc$SNI > 3
+    r.m.full$Peak <- SNI.calc$SNI > 3 & r.m.full$RUN.RoC.sm > pred.gam
   }
   
   # outro

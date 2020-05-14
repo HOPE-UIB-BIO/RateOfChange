@@ -27,19 +27,47 @@ time= tibble_Europe2$list_ages[[2]]$ages$age
 nforc=4;
 mean=100; 
 sdev=.15; 
-nprox=50; 
+nprox=10; 
 var=20;
 range=15;
 manual.edit = T;
 breaks=c(2000,3000);
 jitter = T;
 rarity=T;
-BIN=T; 
 BIN.size=500; 
-Shiftbin=T;
 N.shifts=5;
-rand.sets=10;
+Working.Unit="MW";
+N.datasets=100;
 interest.treshold=8000;
+
+
+
+data.source.pollen =  random.data$filtered.counts;
+data.source.age = random.data$list_ages;
+sm.type = performance.smooth[j];
+N.points = 5;
+range.age.max = 500; 
+grim.N.max = 9;
+Working.Unit = Working.Unit;
+BIN.size = BIN.size;
+N.shifts = N.shifts;
+rand = 1;
+standardise = F; 
+DC = performance.DC[j];
+interest.treshold = interest.treshold;
+Peak="GAM";
+Debug = F;
+
+
+
+
+
+
+
+
+
+
+
 
 rm(test)
 test <- fc_random_data_test(time= tibble_Europe2$list_ages[[2]]$ages$age,

@@ -43,7 +43,7 @@ fc_simulate_pollen_data <- function(time=5e3:0,
   
   # smooth env.var
   forcing<- apply(forcing,2, FUN = function(x) {
-    low <- lowess(x,f=.05,iter=0)
+    low <- lowess(x,f=.05,iter=100)
     return(low$y)
   }) 
   
