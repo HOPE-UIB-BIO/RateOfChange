@@ -1,4 +1,4 @@
-# load("~/DATA/temp/ENV_METHOD_20200511.RData")
+# load("~/DATA/temp/ENV_METHOD_20200515.RData")
 
 # ----------------------------------------------
 #                     SETUP
@@ -134,7 +134,7 @@ breaks_recent <- c(2000, 3000)
 breaks_late <- c(5500, 6500)
 
 # Number of simulated datasest of pollen data
-N_rep <- 10
+N_rep <- 100
 
 # template of time sequence with uneven distribution of points
 time_seq <- tibble_Europe2$list_ages[[2]]$ages$age
@@ -400,19 +400,8 @@ ggsave("~/RESULTS/Methods/FIN/FIG3_sum_MW_gam.pdf",
        plot = FIG3_sum_MW_gam,
        height = 12, width = 20, units="cm")
 
-data_success_sum %>%
-  filter(SEGMENT == "focus") %>%
-  filter(Position == "recent") %>%
-  group_by(SMOOTH,DC) %>%
-  summarise(
-    VALUE = mean(VALUE.M),
-    SD = mean(VALUE.SD)
-  ) %>%
-  ungroup() %>%
-  group_by(SMOOTH) %>%
-  arrange(-VALUE, .by_group=T) %>%
-  View()
 
+# focus recent
 
 data_success_sum %>%
   filter(SEGMENT == "focus") %>%
@@ -427,64 +416,7 @@ data_success_sum %>%
 
 data_success_sum %>%
   filter(SEGMENT == "focus") %>%
-  filter(Position == "late") %>%
-  group_by(SMOOTH,DC) %>%
-  summarise(
-    VALUE = mean(VALUE.M)
-  ) %>%
-  ungroup() %>%
-  group_by(SMOOTH) %>%
-  arrange(-VALUE, .by_group=T) %>%
-  View()
-
-data_success_sum %>%
-  filter(SEGMENT == "focus") %>%
-  filter(Position == "late") %>%
-  group_by(SMOOTH,DC) %>%
-  summarise(
-    SD= mean(VALUE.SD)
-  ) %>%
-  ungroup() %>%
-  group_by(SMOOTH) %>%
-  arrange(SD, .by_group=T) %>%
-  View()
-
-
-data_success_sum %>%
-  filter(SEGMENT == "empty") %>%
-  filter(Position == "late") %>%
-  group_by(smooth,DC) %>%
-  summarise(
-    VALUE = mean(VALUE.M),
-    SD = mean(VALUE.SD)
-  ) %>%
-  ungroup() %>%
-  group_by(smooth) %>%
-  arrange(SD, .by_group=T) %>%
-  View()
-
-data_success_sum %>%
-  filter(SEGMENT == "empty") %>%
-  filter(Position == "late") %>%
-  summarise(
-    VALUE = mean(VALUE.M),
-    SD = mean(VALUE.SD)
-  ) %>%
-  View()
-
-data_success_sum %>%
-  filter(SEGMENT == "empty") %>%
-  filter(Position == "late") %>%
-  group_by(smooth) %>%
-  summarise(
-    VALUE = mean(VALUE.M),
-    SD = mean(VALUE.SD)
-  ) %>%
-  View()
-
-data_success_sum %>%
-  filter(SEGMENT == "empty") %>%
-  filter(Position == "late") %>%
+  filter(Position == "recent") %>%
   group_by(DC) %>%
   summarise(
     VALUE = mean(VALUE.M),
@@ -496,8 +428,109 @@ data_success_sum %>%
 
 data_success_sum %>%
   filter(SEGMENT == "focus") %>%
-  filter(DC == "chord") %>%
-  group_by(Position, smooth) %>%
+  filter(Position == "recent") %>%
+  group_by(SMOOTH,DC) %>%
+  summarise(
+    VALUE = mean(VALUE.M),
+    SD = mean(VALUE.SD)
+  ) %>%
+  ungroup() %>%
+  group_by(SMOOTH) %>%
+  arrange(-VALUE, .by_group=T) %>%
+  View()
+
+
+
+# focus later
+
+data_success_sum %>%
+  filter(SEGMENT == "focus") %>%
+  filter(Position == "late") %>%
+  group_by(SMOOTH) %>%
+  summarise(
+    VALUE = mean(VALUE.M),
+    SD= mean(VALUE.SD)
+  ) %>%
+  ungroup() %>%
+  group_by(SMOOTH) %>%
+  arrange(-VALUE, .by_group=T) %>%
+  View()
+
+
+data_success_sum %>%
+  filter(SEGMENT == "focus") %>%
+  filter(Position == "late") %>%
+  group_by(DC) %>%
+  summarise(
+    VALUE = mean(VALUE.M),
+    SD= mean(VALUE.SD)
+  ) %>%
+  ungroup() %>%
+  group_by(DC) %>%
+  arrange(-VALUE, .by_group=T) %>%
+  View()
+
+
+
+data_success_sum %>%
+  filter(SEGMENT == "focus") %>%
+  filter(Position == "late") %>%
+  group_by(SMOOTH,DC) %>%
+  summarise(
+    VALUE = mean(VALUE.M),
+    SD= mean(VALUE.SD)
+  ) %>%
+  ungroup() %>%
+  group_by(SMOOTH) %>%
+  arrange(-VALUE, .by_group=T) %>%
+  View()
+
+
+# false positive late 
+
+
+data_success_sum %>%
+  filter(SEGMENT == "empty") %>%
+  filter(Position == "late") %>%
+  group_by(DC) %>%
+  summarise(
+    VALUE = mean(VALUE.M),
+    SD = mean(VALUE.SD)
+  ) %>%
+  View()
+
+data_success_sum %>%
+  filter(SEGMENT == "empty") %>%
+  filter(Position == "late") %>%
+  group_by(SMOOTH) %>%
+  summarise(
+    VALUE = mean(VALUE.M),
+    SD = mean(VALUE.SD)
+  ) %>%
+  View()
+
+
+
+data_success_sum %>%
+  filter(SEGMENT == "empty") %>%
+  filter(Position == "late") %>%
+  group_by(SMOOTH,DC) %>%
+  summarise(
+    VALUE = mean(VALUE.M),
+    SD = mean(VALUE.SD)
+  ) %>%
+  ungroup() %>%
+  group_by(SMOOTH) %>%
+  arrange(SD, .by_group=T) %>%
+  View()
+
+
+# SHEP
+
+data_success_sum %>%
+  filter(SEGMENT == "focus") %>%
+  filter(SMOOTH == "shep") %>%
+  group_by(Position, DC) %>%
   summarise(
     VALUE = mean(VALUE.M),
     SD = sd(VALUE.M)
@@ -506,19 +539,18 @@ data_success_sum %>%
   arrange(-VALUE) %>%
   View()
 
+
 data_success_sum %>%
   filter(SEGMENT == "empty") %>%
-  filter(DC == "chord") %>%
-  group_by(Position, smooth) %>%
+  filter(SMOOTH == "shep") %>%
+  group_by(Position, DC) %>%
   summarise(
     VALUE = mean(VALUE.M),
     SD = sd(VALUE.M)
   ) %>%
   ungroup() %>%
-  arrange(VALUE) %>%
+  arrange(-VALUE) %>%
   View()
-
-
 
 
 ############
@@ -549,54 +581,56 @@ fc_get_pollen_data(data_site_A, sm.type = "shep",N.taxa = 80) %>%
 
 #Site B
 
-which(tibble_Europe2$dataset.id %in%  40951 )
 
-data_site_B <- list(dataset.id = tibble_Europe2$dataset.id[[224]],
-                    filtered.counts = tibble_Europe2$filtered.counts[[224]],
-                    list_ages = tibble_Europe2$list_ages[[224]])
+which(tibble_Europe2$dataset.id %in%  4012 )
 
+data_site_B <- list(dataset.id = tibble_Europe2$dataset.id[[45]],
+                    filtered.counts = tibble_Europe2$filtered.counts[[45]],
+                    list_ages = tibble_Europe2$list_ages[[45]])
 
 data_site_B_pollen <-fc_get_pollen_data(data_site_B, sm.type = "shep",N.taxa = 10)
 
 data_site_B$filtered.counts %>%
-  filter(data_site_B$list_ages$ages$age < 8000) %>%
   as_tibble() %>%
+  filter(data_site_B$list_ages$ages$age < 8000) %>%
   dim()
 
-fc_get_pollen_data(data_site_B, sm.type = "shep",N.taxa = 103) %>%
+fc_get_pollen_data(data_site_B, sm.type = "shep",N.taxa = 50) %>%
   filter(age < 8000) %>%
   group_by(name) %>%
   summarise(SUM = sum(value)) %>%
   arrange(-SUM)
+
+
+
 
 
 # SITE c
 
-which(tibble_Europe2$dataset.id %in%  4012 )
+which(tibble_Europe2$dataset.id %in%  40951 )
 
-data_site_C <- list(dataset.id = tibble_Europe2$dataset.id[[45]],
-                    filtered.counts = tibble_Europe2$filtered.counts[[45]],
-                    list_ages = tibble_Europe2$list_ages[[45]])
+data_site_C <- list(dataset.id = tibble_Europe2$dataset.id[[224]],
+                    filtered.counts = tibble_Europe2$filtered.counts[[224]],
+                    list_ages = tibble_Europe2$list_ages[[224]])
+
 
 data_site_C_pollen <-fc_get_pollen_data(data_site_C, sm.type = "shep",N.taxa = 10)
 
 data_site_C$filtered.counts %>%
-  as_tibble() %>%
   filter(data_site_C$list_ages$ages$age < 8000) %>%
+  as_tibble() %>%
   dim()
 
-fc_get_pollen_data(data_site_C, sm.type = "shep",N.taxa = 50) %>%
+fc_get_pollen_data(data_site_C, sm.type = "shep",N.taxa = 103) %>%
   filter(age < 8000) %>%
   group_by(name) %>%
   summarise(SUM = sum(value)) %>%
   arrange(-SUM)
 
 
+# Site D
 
 which(tibble_Europe2$dataset.id %in%  4314 )
-which(tibble_Europe2$dataset.id %in%  41491 )
-which(tibble_Europe2$dataset.id %in%  45117 )
-
 
 data_site_D <- list(dataset.id = tibble_Europe2$dataset.id[[50]],
                     filtered.counts = tibble_Europe2$filtered.counts[[50]],
@@ -637,15 +671,14 @@ names(Palette.1)<- sort(common_taxa)
 
 # Rate of Change
 
-data_site_A_RoC <- fc_ratepol(data.source.pollen = data_site_A$filtered.counts,
+data_site_A_RoC <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts,
                               data.source.age = data_site_A$list_ages,
                               sm.type = "shep", 
                               N.points = 5,
                               range.age.max = 500, 
                               grim.N.max = 9,
-                              BIN = T,
+                              Working.Unit = "MW",
                               BIN.size = 500,
-                              Shiftbin  = T,
                               N.shifts = 5,
                               rand = 1000,
                               standardise = T, 
@@ -655,15 +688,14 @@ data_site_A_RoC <- fc_ratepol(data.source.pollen = data_site_A$filtered.counts,
                               Debug = F)
 
 
-data_Site_B_RoC <- fc_ratepol(data.source.pollen = data_site_B$filtered.counts,
+data_Site_B_RoC <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts,
                               data.source.age = data_site_B$list_ages,
                               sm.type = "shep", 
                               N.points = 5,
                               range.age.max = 500, 
                               grim.N.max = 9,
-                              BIN = T,
+                              Working.Unit = "MW",
                               BIN.size = 500,
-                              Shiftbin  = T,
                               N.shifts = 5,
                               rand = 1000,
                               standardise = T, 
@@ -673,15 +705,14 @@ data_Site_B_RoC <- fc_ratepol(data.source.pollen = data_site_B$filtered.counts,
                               Debug = F)
 
 
-data_Site_C_RoC <- fc_ratepol(data.source.pollen = data_site_C$filtered.counts,
+data_Site_C_RoC <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts,
                               data.source.age = data_site_C$list_ages,
                               sm.type = "shep", 
                               N.points = 5,
                               range.age.max = 500, 
                               grim.N.max = 9,
-                              BIN = T,
+                              Working.Unit = "MW",
                               BIN.size = 500,
-                              Shiftbin  = T,
                               N.shifts = 5,
                               rand = 1000,
                               standardise = T, 
@@ -691,15 +722,14 @@ data_Site_C_RoC <- fc_ratepol(data.source.pollen = data_site_C$filtered.counts,
                               Debug = F)
 
 
-data_Site_D_RoC <- fc_ratepol(data.source.pollen = data_site_D$filtered.counts,
-                              data.source.age = data_site_D$list_ages,
+data_Site_D_RoC <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts,
+                                data.source.age = data_site_D$list_ages,
                               sm.type = "shep", 
                               N.points = 5,
                               range.age.max = 500, 
                               grim.N.max = 9,
-                              BIN = T,
+                              Working.Unit = "MW",
                               BIN.size = 500,
-                              Shiftbin  = T,
                               N.shifts = 5,
                               rand = 1000,
                               standardise = T, 
@@ -923,16 +953,16 @@ FIG4_Site_D_2 <-  data_site_D_pollen %>%
   facet_wrap(~name, ncol=length(common_taxa))
 
 FIG4_Site_A_3 <- data_site_A_RoC %>%
-ggplot(aes(y=RUN.RoC, 
-           x= RUN.Age.Pos))+
+ggplot(aes(y=ROC, 
+           x= AGE))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,1.5))+
   geom_hline(yintercept = seq(from=0,to=1.5, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1/2, color="gray80", fill="gray80")+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
-  geom_point(data = filter(data_site_A_RoC, Peak.gam==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_point(data = . %>% filter(PEAK==T ),color="green", size=2, shape=16, alpha=2/3)+
   geom_hline(yintercept = 0, color="purple", size=0.1)+
   labs(
     x="Age (cal yr BC)",
@@ -949,16 +979,16 @@ ggplot(aes(y=RUN.RoC,
 
 
 FIG4_Site_B_3 <- data_Site_B_RoC %>%
-  ggplot(aes(y=RUN.RoC, 
-             x= RUN.Age.Pos))+
+  ggplot(aes(y=ROC, 
+             x= AGE))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,1.5))+
   geom_hline(yintercept = seq(from=0,to=1.5, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1/2, color="gray80", fill="gray80")+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
-  geom_point(data = filter(data_Site_B_RoC, Peak.gam==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
   geom_hline(yintercept = 0, color="purple", size=0.1)+
   labs(
     x="Age (cal yr BC)",
@@ -974,16 +1004,16 @@ FIG4_Site_B_3 <- data_Site_B_RoC %>%
   )
 
 FIG4_Site_C_3 <- data_Site_C_RoC %>%
-  ggplot(aes(y=RUN.RoC, 
-             x= RUN.Age.Pos))+
+  ggplot(aes(y=ROC, 
+             x= AGE))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,1.5))+
   geom_hline(yintercept = seq(from=0,to=1.5, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1/2, color="gray80", fill="gray80")+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
-  geom_point(data = filter(data_Site_C_RoC, Peak.gam==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
   geom_hline(yintercept = 0, color="purple", size=0.1)+
   labs(
     x="Age (cal yr BC)",
@@ -1000,16 +1030,16 @@ FIG4_Site_C_3 <- data_Site_C_RoC %>%
 
 
 FIG4_Site_D_3 <- data_Site_D_RoC %>%
-  ggplot(aes(y=RUN.RoC, 
-             x= RUN.Age.Pos))+
+  ggplot(aes(y=ROC, 
+             x= AGE))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,1.5))+
   geom_hline(yintercept = seq(from=0,to=1.5, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_ribbon(aes(ymin=RUN.RoC.05q, ymax=RUN.RoC.95q), alpha=1/2, color="gray80", fill="gray80")+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
-  geom_point(data = filter(data_Site_D_RoC, Peak.gam==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
   geom_hline(yintercept = 0, color="purple", size=0.1)+
   labs(
     x="Age (cal yr BC)",
@@ -1024,6 +1054,21 @@ FIG4_Site_D_3 <- data_Site_D_RoC %>%
        axis.title.y  = element_blank(),
   )
 
+
+data_site_A_RoC %>%
+  filter(PEAK == T)
+
+data_Site_B_RoC %>%
+  filter(PEAK == T)
+
+data_Site_C_RoC %>%
+  filter(PEAK == T)
+
+data_Site_D_RoC %>%
+  filter(PEAK == T)
+
+
+
 library(cowplot)
 FIG4_Site_A <- plot_grid(FIG4_Site_A_1, FIG4_Site_A_2, FIG4_Site_A_3,
                          align = "h",axis = "bt", ncol = 3, rel_widths = c(1,3,1))
@@ -1037,8 +1082,8 @@ FIG4_Site_D <- plot_grid(FIG4_Site_D_1, FIG4_Site_D_2, FIG4_Site_D_3,
 
 FIG4_Site_comparison <- ggarrange(
   FIG4_Site_A,
-  FIG4_Site_C,
   FIG4_Site_B,
+  FIG4_Site_C,
   FIG4_Site_D,
   #labels = c(17334,"","",40951,"","",4012,"",""),
   labels = c("A","B","C","D"),
@@ -1055,7 +1100,6 @@ FIG4_Site_comparison_legend
 ggsave("~/RESULTS/Methods/FIN/FIG4_Site_comparison.pdf",
        plot = FIG4_Site_comparison, 
        height = 20, width = 22, units="cm")
-
 
 
 ###############
@@ -1207,20 +1251,20 @@ ggsave("~/RESULTS/Methods/FIN/Supplementary_F1.pdf",
 
 
 data_supp_fig_MW <- rbind(
-  perform_sim_ld_recent_MW$data,
-  perform_sim_ld_late_MW$data,
-  perform_sim_hd_recent_MW$data,
-  perform_sim_hd_late_MW$data
+  perform_sim_ld_recent_MW,
+  perform_sim_ld_late_MW,
+  perform_sim_hd_recent_MW,
+  perform_sim_hd_late_MW
 )
 
 data_supp_fig_MW$Dataset_type <- c(rep("LD-R",120),rep("LD-L",120),rep("HD-R",120),rep("HD-L",120))
 
 data_supp_fig_MW <- within(data_supp_fig_MW, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
-data_supp_fig_MW <- within(data_supp_fig_MW, smooth <- factor(smooth, levels = c("none","m.avg","grim","age.w","shep")))
+data_supp_fig_MW <- within(data_supp_fig_MW, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
 data_supp_fig_MW <- within(data_supp_fig_MW, Dataset_type <- factor(Dataset_type, levels = c("LD-R","LD-L","HD-R","HD-L")))
 data_supp_fig_MW <- within(data_supp_fig_MW, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
-data_supp_fig_MW <- within(data_supp_fig_MW, SIGNIF <- factor(SIGNIF, levels = c("Peak.treshold","Peak.gam","Peak.SNI")))
-levels(data_supp_fig_MW$SIGNIF) <- c("Threshold","GAM","SNI")
+data_supp_fig_MW <- within(data_supp_fig_MW, PEAK <- factor(PEAK, levels = c("PEAK.T","PEAK.G","PEAK.S")))
+levels(data_supp_fig_MW$PEAK) <- c("Threshold","GAM","SNI")
 
 
 Supplementary_F2 <- data_supp_fig_MW %>%
@@ -1228,7 +1272,7 @@ Supplementary_F2 <- data_supp_fig_MW %>%
   geom_bar(stat="identity", position="dodge", color="gray30")+
   geom_errorbar(aes(ymin=VALUE.M-VALUE.SD,ymax=VALUE.M+VALUE.SD, group=SEGMENT),
                 position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
-  facet_grid(smooth~DC+SIGNIF)+
+  facet_grid(SMOOTH~DC+PEAK)+
   scale_fill_manual("Position in sequence", labels=c("focal area (correct detection)","outside of focal area (false positive)"),
                     values = c("darkseagreen","coral"))+
   ylab("Percentage of Peak detection")+xlab("Type of simulated dataset")+
@@ -1240,7 +1284,7 @@ Supplementary_F2 <- data_supp_fig_MW %>%
 Supplementary_F2
 
 ggsave("~/RESULTS/Methods/FIN/Supplementary_F2.pdf",
-       plot = Supplementary_F1,
+       plot = Supplementary_F2,
        height = 15, width = 22, units="cm")
 
 
@@ -1261,4 +1305,4 @@ ggsave("~/RESULTS/Methods/FIN/Supplementary_F3.pdf",
        height = 10, width = 15, units="cm")
 
 
-# save.image("~/DATA/temp/ENV_METHOD_20200511.RData")
+# save.image("~/DATA/temp/ENV_METHOD_20200515.RData")

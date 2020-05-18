@@ -30,7 +30,7 @@
 # ----------------------------------------------
 library(tidyverse)
 library(reshape2)
-library(ggpubr)
+#library(ggpubr)
 library(doSNOW)
 library(parallel)
 library(foreach)
@@ -42,11 +42,8 @@ library(maps)
 # ----------------------------------------------
 #             LOAD DATA & FUNCTIONS
 # ----------------------------------------------
-# download.file("https://www.dropbox.com/s/3hp7rv03mkg4pjz/tibble_Europe_filtered05.03.20.RData?dl=1","~/DATA/input/tibble_Europe_filtered05.03.20.RData")
 
-setwd("~/GITHUB/RateOfChange")
-
-load("~/DATA/input/tibble_Europe_filtered05.03.20.RData")
+tibble_Europe <- readRDS("~/DATA/input/Europe_data.13.05.20.rds")
 
 files.sources <- list.files("~/GITHUB/RateOfChange/functions/") 
 sapply(paste0("~/GITHUB/RateOfChange/functions/", files.sources, sep =""), source)
@@ -59,7 +56,7 @@ sapply(paste0("~/GITHUB/RateOfChange/functions/", files.sources, sep =""), sourc
 # 1) that each record need to span between ca 250-8000 years and 
 # 2) samples have more than 150 grains Contain only relevant data for analysis
 
-glimpse(tibble_Europe2)
+glimpse(tibble_Europe)
 
 # ----------------------------------------------
 #               COMPUTATION 
@@ -67,7 +64,7 @@ glimpse(tibble_Europe2)
 
 s.time <- Sys.time()
 
-tibble_Europe_Roc <-  tibble_Europe2[c(1:10),] %>%
+tibble_Europe_Roc <-  tibble_Europe %>%
   mutate(., ROC = map2(filtered.counts,list_ages,
                        .f = function(.x,.y)
                          {
@@ -97,17 +94,28 @@ f.time <- Sys.time()
 tot.time <- f.time - s.time
 tot.time
 
+
 # ----------------------------------------------
 #                 SAVE RESULT 
 # ----------------------------------------------
 
+tibble_Europe_Roc <- tibble_Europe_Roc %>%
+  dplyr::select(dataset.id, ROC) %>%
+  filter(purrr::map(ROC, is_tibble)==T)
 
-# saveRDS(tibble_Europe_Roc, file = "~/DATA/output/tibble_Europe_Roc200410.rds") 
-# loadRDS("~/DATA/output/tibble_Europe_Roc200410.rds")
+
+# saveRDS(tibble_Europe_Roc, file = "~/DATA/output/tibble_Europe_Roc200518.rds") 
+
 
 # ----------------------------------------------
 #               PLOT RESULTS 
 # ----------------------------------------------
+
+# loadRDS("~/DATA/output/tibble_Europe_Roc200518.rds")
+
+tibble_Europe_work <- tibble_Europe %>%
+  inner_join(tibble_Europe_Roc, by="dataset.id")
+
 
 # variabe definition
 age.treshold = 8000 
@@ -116,7 +124,7 @@ dataset.N = "4251"
 
 
 # Perplot
-tibble_Europe_Roc %>%
+tibble_Europe_work %>%
   select(dataset.id, collection.handle, long, lat, ROC) %>%
   unnest(cols = c(ROC)) %>%
   filter(AGE <= age.treshold) %>%

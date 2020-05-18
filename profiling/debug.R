@@ -1,10 +1,10 @@
-which(tibble_Europe2$dataset.id %in%  1435 )
+which(tibble_Europe$dataset.id %in%  1435 )
 
 dataset.25318
 
-dataset.N <- 4
-data.source.pollen <- tibble_Europe2$filtered.counts[[dataset.N]]
-data.source.age <- tibble_Europe2$list_ages[[dataset.N]]
+dataset.N <- 1
+data.source.pollen <- tibble_Europe$filtered.counts[[dataset.N]]
+data.source.age <- tibble_Europe$list_ages[[dataset.N]]
 sm.type = "shep" 
 N.points = 5
 range.age.max = 500 

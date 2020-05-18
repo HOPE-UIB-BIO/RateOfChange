@@ -23,16 +23,16 @@ fc_test_simlutated_data_succsess <- function(sim.data,
       # extract values for each PEAK significance test type
       for(l in 1:3){
         
-        for (k in 1:length(breaks.seq))
-        {
+        for (k in 1:length(breaks.seq)){
+          
           if(breaks.seq[k]=="empty")
           {
             if(k == 1){
-              target <- c(min(time),breaks[k]-window.size)  
+              target <- c(min(sim.data$AGE),breaks[k]-window.size)  
             } else{
               if(k==length(breaks.seq))
               {
-                target <- c(breaks[(k-1)/2]+window.size, max(time)) 
+                target <- c(breaks[(k-1)/2]+window.size, max(sim.data$AGE)) 
               }else{
                 target <- c(breaks[(k-1)/2]+window.size,breaks[(k+1)/2]-window.size)  
               }
