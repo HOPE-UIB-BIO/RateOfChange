@@ -1,10 +1,11 @@
-# load("~/DATA/temp/ENV_METHOD_20200515.RData")
+# load("~/DATA/temp/ENV_METHOD_20200519.RData")
 
 # ----------------------------------------------
 #                     SETUP
 # ----------------------------------------------
 library(tidyverse)
 library(reshape2)
+library(devtools)
 library(ggpubr)
 library(doSNOW)
 library(parallel)
@@ -234,6 +235,107 @@ perform_sim_hd_recent_MW<- fc_test_simlutated_data_succsess(sim_hd_recent_MW, br
 perform_sim_hd_late_MW<- fc_test_simlutated_data_succsess(sim_hd_late_MW, breaks = breaks_late)
 
 
+data_success_sum <- rbind(
+  data.frame(perform_sim_ld_recent_MW$RawData,Position="recent", Diversity= "low"),
+  data.frame(perform_sim_ld_late_MW$RawData,Position="late", Diversity= "low"),
+  data.frame(perform_sim_hd_recent_MW$RawData,Position="recent", Diversity= "high"),
+  data.frame(perform_sim_hd_late_MW$RawData,Position="late", Diversity= "high")
+) %>%
+  as_tibble()
+
+data_success_sum$VALUE.S <- data_success_sum$VALUE
+data_success_sum$VALUE.S[data_success_sum$SEGMENT=="empty"] <- 1-data_success_sum$VALUE[data_success_sum$SEGMENT=="empty"]
+
+
+data_success_sum_G <- data_success_sum %>%
+  filter(PEAK == "PEAK.G") %>%
+  ungroup() %>%
+  dplyr::select(-c(PEAK,VALUE))
+
+
+compare_models <- function(MODEL,SCOPE, order = 1){
+  
+  res.tib <- tibble(X= SCOPE, VAR =NA,.rows = length(SCOPE) )
+  
+  for (i in 1: length(SCOPE)){
+    
+    if(order == 1){
+      FORMULA <- paste(". ~ ",SCOPE[i])
+    } 
+    
+    if(order == 2){
+      FORMULA <- paste(". ~ . +",SCOPE[i])
+    }
+    
+    new.model <- update(MODEL, FORMULA)  
+    new.model.sum <- summary(new.model)
+    
+    res.tib$VAR[i] <- 1 - new.model.sum$deviance/new.model.sum$null.deviance 
+  }
+  
+  return(res.tib %>% arrange(-VAR))
+}
+
+# run 0
+
+scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE.S)))
+
+glm.0 <- glm(VALUE.S ~ (+1), family = "quasibinomial" , data = data_success_sum_G)
+
+compare_models(glm.0,scope, order = 1)
+
+glm.1 <- glm(VALUE.S ~ Position, family = "quasibinomial" , data = data_success_sum_G)
+
+anova(glm.0,glm.1, test= "F")
+
+# run 1
+
+scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE.S, Position)))
+
+compare_models(glm.1,scope, order = 2)
+
+glm.2a <- glm(VALUE.S ~ Position + SEGMENT, family = "quasibinomial" , data = data_success_sum_G)
+glm.2b <- glm(VALUE.S ~ Position * SEGMENT, family = "quasibinomial" , data = data_success_sum_G)
+
+anova(glm.1,glm.2a, test= "F")
+anova(glm.2a,glm.2b, test= "F")
+
+# run 2 
+
+scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE.S, Position, SEGMENT)))
+
+compare_models(glm.2b,scope, order = 2)
+
+glm.3a <- glm(VALUE.S ~ Position * SEGMENT + SMOOTH, family = "quasibinomial" , data = data_success_sum_G)
+glm.3b <- glm(VALUE.S ~ Position * SEGMENT * SMOOTH, family = "quasibinomial" , data = data_success_sum_G)
+
+anova(glm.2b,glm.3a, test= "F")
+anova(glm.3a,glm.3b, test= "F")
+
+# run 3
+
+scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE.S, Position, SEGMENT, SMOOTH)))
+
+compare_models(glm.3b,scope, order = 2)
+
+glm.4a <- glm(VALUE.S ~ Position * SEGMENT * SMOOTH + Diversity, family = "quasibinomial" , data = data_success_sum_G)
+glm.4b <- glm(VALUE.S ~ Position * SEGMENT * SMOOTH * Diversity, family = "quasibinomial" , data = data_success_sum_G)
+
+anova(glm.3b,glm.4a, test= "F")
+anova(glm.4a,glm.4b, test= "F")
+
+# run 4
+
+glm.5a <- glm(VALUE.S ~ Position * SEGMENT * SMOOTH * Diversity + DC, family = "quasibinomial" , data = data_success_sum_G)
+glm.5b <- glm(VALUE.S ~ Position * SEGMENT * SMOOTH * Diversity * DC, family = "quasibinomial" , data = data_success_sum_G)
+
+anova(glm.4b,glm.5a, test= "F")
+
+
+# GLM FIN
+
+glm.fin <- glm.4b
+
 # -----------------------------------------
 #
 #       MAGNITUDE COMPARISON
@@ -248,6 +350,63 @@ mag_sim_hd_recent_MW <- fc_test_simlutated_data_magnitude(sim_hd_recent_MW)
 
 mag_sim_hd_late_MW <- fc_test_simlutated_data_magnitude(sim_hd_late_MW)
 
+
+data_mag_sum <- rbind(
+  data.frame(mag_sim_ld_recent_MW,Position="recent",Diversity="low"),
+  data.frame(mag_sim_ld_late_MW,Position="late",Diversity="low"),
+  data.frame(mag_sim_hd_recent_MW,Position="recent",Diversity="high"),
+  data.frame(mag_sim_hd_late_MW,Position="late",Diversity="high")
+) %>% as_tibble()
+
+
+# run 0
+
+scope <- names(data_mag_sum %>% dplyr::select(-c(dataset.ID,RoC_max)))
+
+M.glm.0 <- glm(RoC_max ~ (+1), family = "gaussian" , data = data_mag_sum)
+
+compare_models(M.glm.0,scope, order = 1)
+
+M.glm.1 <- glm(RoC_max ~ DC, family = "gaussian" , data = data_mag_sum)
+
+anova(M.glm.0,M.glm.1, test= "Chisq")
+
+# run 1
+
+scope <- names(data_mag_sum %>% dplyr::select(-c(dataset.ID,RoC_max,DC)))
+
+compare_models(M.glm.1,scope, order = 2)
+
+M.glm.2a <- glm(RoC_max ~ DC + Diversity, family = "gaussian" , data = data_mag_sum)
+M.glm.2b <- glm(RoC_max ~ DC * Diversity, family = "gaussian" , data = data_mag_sum)
+
+anova(M.glm.1,M.glm.2a, test= "Chisq")
+anova(M.glm.2a,M.glm.2b, test= "Chisq")
+
+# run 2
+
+scope <- names(data_mag_sum %>% dplyr::select(-c(dataset.ID,RoC_max,DC,Diversity)))
+
+compare_models(M.glm.2b,scope, order = 2)
+
+M.glm.3a <- glm(RoC_max ~ DC * Diversity + Position, family = "gaussian" , data = data_mag_sum)
+M.glm.3b <- glm(RoC_max ~ DC * Diversity * Position, family = "gaussian" , data = data_mag_sum)
+
+anova(M.glm.2b,M.glm.3a, test= "Chisq")
+anova(M.glm.3a,M.glm.3b, test= "Chisq")
+
+# run 3
+
+M.glm.4a <- glm(RoC_max ~ DC * Diversity * Position + SMOOTH, family = "gaussian" , data = data_mag_sum)
+M.glm.4b <- glm(RoC_max ~ DC * Diversity * Position * SMOOTH, family = "gaussian" , data = data_mag_sum)
+
+
+anova(M.glm.3b,M.glm.4a, test= "Chisq")
+anova(M.glm.4a,M.glm.4b, test= "Chisq")
+
+# glm.fin
+
+M.glm.fin <- M.glm.4b
 
 # ----------------------------------------------
 #
@@ -330,228 +489,154 @@ ggsave("~/RESULTS/Methods/FIN/FIG1_visual_example_BIN.pdf",
 ##############
 #   FIG 2
 #############
+M.glm.fin
 
-data_mag_sum <- rbind(
-  data.frame(mag_sim_ld_recent_MW,Position="recent",Diversity="low"),
-  data.frame(mag_sim_ld_late_MW,Position="late",Diversity="low"),
-  data.frame(mag_sim_hd_recent_MW,Position="recent",Diversity="high"),
-  data.frame(mag_sim_hd_late_MW,Position="late",Diversity="high")
-) %>% as_tibble()
+formula(M.glm.fin)
 
-data_mag_sum$Dataset_type <- c(rep("LD-R",20),rep("LD-L",20),rep("HD-R",20),rep("HD-L",20))
+data_mag_summmary <- data_mag_sum %>%
+  group_by(DC, Diversity, Position, SMOOTH) %>%
+  summarise(N= n(),
+            RoC_max.m = mean(RoC_max),
+            RoC_max_SD =  sd(RoC_max, na.rm = T),
+            RoC_max_SE =  sd(RoC_max)/sqrt(N),
+            RoC_max_05 = quantile(RoC_max,0.025),
+            RoC_max_95 = quantile(RoC_max,0.975)
+            )
 
-data_mag_sum <- within(data_mag_sum, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
-data_mag_sum <- within(data_mag_sum, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
-data_mag_sum <- within(data_mag_sum, Dataset_type <- factor(Dataset_type, levels = c("LD-R","LD-L","HD-R","HD-L")))
 
-FIG2_mag_MW  <- data_mag_sum %>%
-  ggplot(aes(y=RoC_max,fill=Dataset_type,x=Dataset_type))+
+data_mag_summmary <- within(data_mag_summmary, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
+data_mag_summmary <- within(data_mag_summmary, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
+
+data_mag_summmary <- within(data_mag_summmary, Position <- factor(Position, levels = c("recent","late")))
+levels(data_mag_summmary$Position) <- c("high levels density","low level density")
+
+data_mag_summmary <- within(data_mag_summmary, Diversity <- factor(Diversity, levels = c("low","high")))
+levels(data_mag_summmary$Diversity) <- c("low diversity","high diversity")
+
+
+FIG2_mag_MW  <- data_mag_summmary %>%
+  ggplot(aes(y=RoC_max.m,fill=SMOOTH,x=Position))+
   geom_bar(stat="identity", position = "dodge", color="gray30")+
-  geom_errorbar(aes(ymax=RoC_max+RoC_max_SD, ymin=RoC_max-RoC_max_SD), 
+  geom_errorbar(aes(ymax=RoC_max.m+RoC_max_SE, ymin=RoC_max.m-RoC_max_SE), 
                 position = position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
-  facet_grid(DC~SMOOTH, scales = "free_y")+
+  facet_grid(DC~Diversity, scales = "free_y")+
   theme_classic()+
-  theme(axis.text.x = element_text(angle = -45,hjust = 0.3, vjust = 0.2 ),
-        legend.position = "none")+
-  xlab("Type of simulated dataset")+ylab("Maximum Rate of Change score")
+  theme(legend.position = "bottom")+
+  labs(x= "",
+       y= "Mean maximum Rate-of-Change score",
+       fill = "Smoothing")
 
 FIG2_mag_MW
 
 ggsave("~/RESULTS/Methods/FIN/FIG2_mag_MW.pdf",
        plot = FIG2_mag_MW,
-       height = 12, width = 20, units="cm")
+       height = 15, width = 20, units="cm")
 
 ##############
 #   FIG 3
 #############
 
-data_success_sum <- rbind(
-  data.frame(perform_sim_ld_recent_MW,Position="recent", Diversity= "low"),
-  data.frame(perform_sim_ld_late_MW,Position="late", Diversity= "low"),
-  data.frame(perform_sim_hd_recent_MW,Position="recent", Diversity= "high"),
-  data.frame(perform_sim_hd_late_MW,Position="late", Diversity= "high")
-) %>%
-  as_tibble() %>%
-  filter(PEAK=="PEAK.G")
+data_success_summary <- data_success_sum %>%
+  group_by(Position, SEGMENT, SMOOTH, Diversity) %>%
+  summarise(VALUE.M = mean(VALUE, na.rm = T),
+            VALUE.SD = sd(VALUE, na.rm = T),
+            VALUE.SE = sd(VALUE, na.rm = T)/sqrt(n()),
+            VALUE.05 = quantile(VALUE,0.025, na.rm = T),
+            VALUE.95 = quantile(VALUE,0.975, na.rm = T)
+  ) %>%
+  ungroup()
 
-data_success_sum$Dataset_type <- c(rep("LD-R",40),rep("LD-L",40),rep("HD-R",40),rep("HD-L",40))
-data_success_sum <- within(data_success_sum, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
-data_success_sum <- within(data_success_sum, Dataset_type <- factor(Dataset_type, levels = c("LD-R","LD-L","HD-R","HD-L")))
-data_success_sum <- within(data_success_sum, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
-data_success_sum <- within(data_success_sum, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
+data_success_summary <- within(data_success_summary, Position <- factor(Position, levels = c("recent","late")))
+levels(data_success_summary$Position) <- c("high levels density","low level density")
+data_success_summary <- within(data_success_summary, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
+levels(data_success_summary$SEGMENT) <- c("focal area (correct detection)","outside of focal area (false positive)")
+data_success_summary <- within(data_success_summary, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
+data_success_summary <- within(data_success_summary, Diversity <- factor(Diversity, levels = c("low","high")))
+levels(data_success_summary$Diversity) <- c("low diversity","high diversity")
 
-
-FIG3_sum_MW_gam <- data_success_sum %>%
-  ggplot(aes(y=VALUE.M,x=Dataset_type,fill=SEGMENT, group=SEGMENT))+
+FIG3_sum_MW_gam  <-data_success_summary %>%
+  ggplot(aes(y=VALUE.M,x=Position,fill=SMOOTH, group=SMOOTH))+
   geom_bar(stat="identity", position="dodge", color="gray30")+
-  geom_errorbar(aes(ymin=VALUE.M-VALUE.SD,ymax=VALUE.M+VALUE.SD, group=SEGMENT),
+  geom_errorbar(aes(ymin=VALUE.M-VALUE.SE,ymax=VALUE.M+VALUE.SE, group=SMOOTH),
                 position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
-  facet_grid(SMOOTH~DC)+
-  scale_fill_manual("Position in sequence", labels=c("focal area (correct detection)","outside of focal area (false positive)"),
-                    values = c("darkseagreen","coral"))+
-  ylab("Percentage of Peak detection")+xlab("Type of simulated dataset")+
+  facet_grid(SEGMENT~Diversity)+
+  labs(y="Percentage of Peak detection",
+       x="",
+       fill = "Smoothing")+
   theme_classic()+
-  theme(axis.text.x = element_text(angle = -45,hjust = 0.3, vjust = 0.2 ),
-        legend.position = "bottom")
+  coord_cartesian(ylim=c(0,1))+
+  theme(legend.position = "bottom")
+
 
 FIG3_sum_MW_gam
 
 ggsave("~/RESULTS/Methods/FIN/FIG3_sum_MW_gam.pdf",
        plot = FIG3_sum_MW_gam,
-       height = 12, width = 20, units="cm")
+       height = 15, width = 20, units="cm")
 
 
-# focus recent
+# SUPP
 
-data_success_sum %>%
-  filter(SEGMENT == "focus") %>%
-  filter(Position == "recent") %>%
-  group_by(SMOOTH) %>%
+formula(glm.fin)
+
+ggarrange(
+  data_success_sum %>%
+  group_by(Position) %>%
   summarise(
-    VALUE = mean(VALUE.M),
-    SD = mean(VALUE.SD)
-  ) %>%
-  View()
-
-
-data_success_sum %>%
-  filter(SEGMENT == "focus") %>%
-  filter(Position == "recent") %>%
-  group_by(DC) %>%
-  summarise(
-    VALUE = mean(VALUE.M),
-    SD = mean(VALUE.SD)
-  ) %>%
-  View()
-
-
-
-data_success_sum %>%
-  filter(SEGMENT == "focus") %>%
-  filter(Position == "recent") %>%
-  group_by(SMOOTH,DC) %>%
-  summarise(
-    VALUE = mean(VALUE.M),
-    SD = mean(VALUE.SD)
+    VALUE = mean(VALUE.S),
+    SD = sd(VALUE.S),
+    SE = SD/sqrt(n())
   ) %>%
   ungroup() %>%
-  group_by(SMOOTH) %>%
-  arrange(-VALUE, .by_group=T) %>%
-  View()
-
-
-
-# focus later
-
+  ggplot(aes(x=Position, y=VALUE))+
+  geom_bar(stat = "identity", color="gray50", fill= "gray80")+
+  geom_errorbar(aes(ymin=VALUE-SE, ymax=VALUE+SE), width=0.2, size=0.5, color="gray50")+
+  theme_classic()+
+  coord_cartesian(ylim=c(0,1)) 
+  ,
 data_success_sum %>%
-  filter(SEGMENT == "focus") %>%
-  filter(Position == "late") %>%
-  group_by(SMOOTH) %>%
+  group_by(SEGMENT) %>%
   summarise(
-    VALUE = mean(VALUE.M),
-    SD= mean(VALUE.SD)
+    VALUE = mean(VALUE.S),
+    SD = sd(VALUE.S),
+    SE = SD/sqrt(n())
   ) %>%
   ungroup() %>%
-  group_by(SMOOTH) %>%
-  arrange(-VALUE, .by_group=T) %>%
-  View()
-
-
+  ggplot(aes(x=SEGMENT, y=VALUE))+
+  geom_bar(stat = "identity", color="gray50", fill= "gray80")+
+  geom_errorbar(aes(ymin=VALUE-SE, ymax=VALUE+SE), width=0.2, size=0.5, color="gray50")+
+  theme_classic()+
+  coord_cartesian(ylim=c(0,1))
+,
 data_success_sum %>%
-  filter(SEGMENT == "focus") %>%
-  filter(Position == "late") %>%
-  group_by(DC) %>%
-  summarise(
-    VALUE = mean(VALUE.M),
-    SD= mean(VALUE.SD)
-  ) %>%
-  ungroup() %>%
-  group_by(DC) %>%
-  arrange(-VALUE, .by_group=T) %>%
-  View()
-
-
-
-data_success_sum %>%
-  filter(SEGMENT == "focus") %>%
-  filter(Position == "late") %>%
-  group_by(SMOOTH,DC) %>%
-  summarise(
-    VALUE = mean(VALUE.M),
-    SD= mean(VALUE.SD)
-  ) %>%
-  ungroup() %>%
-  group_by(SMOOTH) %>%
-  arrange(-VALUE, .by_group=T) %>%
-  View()
-
-
-# false positive late 
-
-
-data_success_sum %>%
-  filter(SEGMENT == "empty") %>%
-  filter(Position == "late") %>%
-  group_by(DC) %>%
-  summarise(
-    VALUE = mean(VALUE.M),
-    SD = mean(VALUE.SD)
-  ) %>%
-  View()
-
-data_success_sum %>%
-  filter(SEGMENT == "empty") %>%
-  filter(Position == "late") %>%
   group_by(SMOOTH) %>%
   summarise(
-    VALUE = mean(VALUE.M),
-    SD = mean(VALUE.SD)
-  ) %>%
-  View()
-
-
-
-data_success_sum %>%
-  filter(SEGMENT == "empty") %>%
-  filter(Position == "late") %>%
-  group_by(SMOOTH,DC) %>%
-  summarise(
-    VALUE = mean(VALUE.M),
-    SD = mean(VALUE.SD)
+    VALUE = mean(VALUE.S),
+    SD = sd(VALUE.S),
+    SE = SD/sqrt(n())
   ) %>%
   ungroup() %>%
-  group_by(SMOOTH) %>%
-  arrange(SD, .by_group=T) %>%
-  View()
-
-
-# SHEP
-
+  ggplot(aes(x=SMOOTH, y=VALUE))+
+  geom_bar(stat = "identity", color="gray50", fill= "gray80")+
+  geom_errorbar(aes(ymin=VALUE-SE, ymax=VALUE+SE), width=0.2, size=0.5, color="gray50")+
+  theme_classic()+
+  coord_cartesian(ylim=c(0,1))
+,
 data_success_sum %>%
-  filter(SEGMENT == "focus") %>%
-  filter(SMOOTH == "shep") %>%
-  group_by(Position, DC) %>%
+  group_by(Diversity) %>%
   summarise(
-    VALUE = mean(VALUE.M),
-    SD = sd(VALUE.M)
+    VALUE = mean(VALUE.S),
+    SD = sd(VALUE.S),
+    SE = SD/sqrt(n())
   ) %>%
   ungroup() %>%
-  arrange(-VALUE) %>%
-  View()
-
-
-data_success_sum %>%
-  filter(SEGMENT == "empty") %>%
-  filter(SMOOTH == "shep") %>%
-  group_by(Position, DC) %>%
-  summarise(
-    VALUE = mean(VALUE.M),
-    SD = sd(VALUE.M)
-  ) %>%
-  ungroup() %>%
-  arrange(-VALUE) %>%
-  View()
-
+  ggplot(aes(x=Diversity, y=VALUE))+
+  geom_bar(stat = "identity", color="gray50", fill= "gray80")+
+  geom_errorbar(aes(ymin=VALUE-SE, ymax=VALUE+SE), width=0.2, size=0.5, color="gray50")+
+  theme_classic()+
+  coord_cartesian(ylim=c(0,1))
+, nrow = 2, ncol = 2
+)
 
 ############
 #   FIG 4
@@ -1305,4 +1390,4 @@ ggsave("~/RESULTS/Methods/FIN/Supplementary_F3.pdf",
        height = 10, width = 15, units="cm")
 
 
-# save.image("~/DATA/temp/ENV_METHOD_20200515.RData")
+# save.image("~/DATA/temp/ENV_METHOD_20200519.RData")

@@ -9,7 +9,11 @@ fc_test_simlutated_data_succsess <- function(sim.data,
     unique() %>%
     length()
   
+  pb <- txtProgressBar(min = 0, max = N.datasets, style = 3)
+  
   for (i in 1: N.datasets){
+    
+    setTxtProgressBar(pb, i)
     
     for(j in 1:20){
       
@@ -78,8 +82,10 @@ fc_test_simlutated_data_succsess <- function(sim.data,
     }
   }
   
+  close(pb)
+  
   # summary of randomisation
-  FIN.data <- sum.temp.res %>%
+  SUM.data <- sum.temp.res %>%
     group_by(SMOOTH,DC,PEAK,SEGMENT) %>%
     summarise(VALUE.M = mean(VALUE, na.rm = T),
               VALUE.SD = sd(VALUE, na.rm = T),
@@ -88,5 +94,5 @@ fc_test_simlutated_data_succsess <- function(sim.data,
     ) %>%
     ungroup()
   
-  return(FIN.data)    
+  return(list(RawData =sum.temp.res, SumData =SUM.data))    
 }
