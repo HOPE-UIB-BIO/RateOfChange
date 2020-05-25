@@ -1,4 +1,4 @@
-# load("~/DATA/temp/ENV_METHOD_20200519.RData")
+# load("~/DATA/temp/ENV_METHOD_20200525.RData")
 
 # ----------------------------------------------
 #                     SETUP
@@ -14,6 +14,7 @@ library(doParallel)
 library(scales)
 library(mgcv)
 library(maps)
+library(RColorBrewer)
 
 # ----------------------------------------------
 #             LOAD DATA & FUNCTIONS
@@ -243,14 +244,20 @@ data_success_sum <- rbind(
 ) %>%
   as_tibble()
 
-data_success_sum$VALUE.S <- data_success_sum$VALUE
-data_success_sum$VALUE.S[data_success_sum$SEGMENT=="empty"] <- 1-data_success_sum$VALUE[data_success_sum$SEGMENT=="empty"]
+data_success_sum <- within(data_success_sum, Position <- factor(Position, levels = c("recent","late")))
+levels(data_success_sum$Position) <- c("high level density","low level density")
+
+data_success_sum <- within(data_success_sum, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
+
+data_success_sum <- within(data_success_sum, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
+
+data_success_sum <- within(data_success_sum, Diversity <- factor(Diversity, levels = c("low","high")))
+levels(data_success_sum$Diversity) <- c("low diversity","high diversity")
 
 
-data_success_sum_G <- data_success_sum %>%
-  filter(PEAK == "PEAK.G") %>%
-  ungroup() %>%
-  dplyr::select(-c(PEAK,VALUE))
+
+#data_success_sum$VALUE.S <- data_success_sum$VALUE
+#data_success_sum$VALUE.S[data_success_sum$SEGMENT=="empty"] <- 1-data_success_sum$VALUE[data_success_sum$SEGMENT=="empty"]
 
 
 compare_models <- function(MODEL,SCOPE, order = 1){
@@ -276,58 +283,64 @@ compare_models <- function(MODEL,SCOPE, order = 1){
   return(res.tib %>% arrange(-VAR))
 }
 
+
+## FOCUS
+
+data_success_sum_G <- data_success_sum %>%
+  filter(PEAK == "PEAK.G") %>%
+  filter(SEGMENT == "focus") %>%
+  ungroup() %>%
+  dplyr::select(-c(PEAK,VALUE.S,SEGMENT))
+
+
 # run 0
 
-scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE.S)))
+scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE)))
 
-glm.0 <- glm(VALUE.S ~ (+1), family = "quasibinomial" , data = data_success_sum_G)
+glm.0 <- glm(VALUE ~ (+1), family = "quasibinomial" , data = data_success_sum_G)
 
 compare_models(glm.0,scope, order = 1)
 
-glm.1 <- glm(VALUE.S ~ Position, family = "quasibinomial" , data = data_success_sum_G)
+glm.1 <- glm(VALUE ~ Position, family = "quasibinomial" , data = data_success_sum_G)
 
 anova(glm.0,glm.1, test= "F")
 
+
 # run 1
 
-scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE.S, Position)))
+scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE, Position)))
 
 compare_models(glm.1,scope, order = 2)
 
-glm.2a <- glm(VALUE.S ~ Position + SEGMENT, family = "quasibinomial" , data = data_success_sum_G)
-glm.2b <- glm(VALUE.S ~ Position * SEGMENT, family = "quasibinomial" , data = data_success_sum_G)
+glm.2a <- glm(VALUE ~ Position + SMOOTH, family = "quasibinomial" , data = data_success_sum_G)
+glm.2b <- glm(VALUE ~ Position * SMOOTH, family = "quasibinomial" , data = data_success_sum_G)
 
 anova(glm.1,glm.2a, test= "F")
 anova(glm.2a,glm.2b, test= "F")
 
 # run 2 
 
-scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE.S, Position, SEGMENT)))
+scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE, Position, SMOOTH)))
 
 compare_models(glm.2b,scope, order = 2)
 
-glm.3a <- glm(VALUE.S ~ Position * SEGMENT + SMOOTH, family = "quasibinomial" , data = data_success_sum_G)
-glm.3b <- glm(VALUE.S ~ Position * SEGMENT * SMOOTH, family = "quasibinomial" , data = data_success_sum_G)
+glm.3a <- glm(VALUE ~ Position * SMOOTH + DC, family = "quasibinomial" , data = data_success_sum_G)
+glm.3b <- glm(VALUE ~ Position * SMOOTH * DC, family = "quasibinomial" , data = data_success_sum_G)
 
 anova(glm.2b,glm.3a, test= "F")
-anova(glm.3a,glm.3b, test= "F")
 
 # run 3
 
-scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE.S, Position, SEGMENT, SMOOTH)))
+glm.4a <- glm(VALUE ~ Position * SMOOTH + Diversity , family = "quasibinomial" , data = data_success_sum_G)
+glm.4b <- glm(VALUE ~ Position * SMOOTH * Diversity , family = "quasibinomial" , data = data_success_sum_G)
 
-compare_models(glm.3b,scope, order = 2)
-
-glm.4a <- glm(VALUE.S ~ Position * SEGMENT * SMOOTH + Diversity, family = "quasibinomial" , data = data_success_sum_G)
-glm.4b <- glm(VALUE.S ~ Position * SEGMENT * SMOOTH * Diversity, family = "quasibinomial" , data = data_success_sum_G)
-
-anova(glm.3b,glm.4a, test= "F")
+anova(glm.2b,glm.4a, test= "F")
 anova(glm.4a,glm.4b, test= "F")
 
-# run 4
+# run 3
 
-glm.5a <- glm(VALUE.S ~ Position * SEGMENT * SMOOTH * Diversity + DC, family = "quasibinomial" , data = data_success_sum_G)
-glm.5b <- glm(VALUE.S ~ Position * SEGMENT * SMOOTH * Diversity * DC, family = "quasibinomial" , data = data_success_sum_G)
+glm.5a <- glm(VALUE ~ Position * SMOOTH * Diversity + DC, family = "quasibinomial" , data = data_success_sum_G)
+glm.5b <- glm(VALUE ~ Position * SMOOTH * Diversity * DC , family = "quasibinomial" , data = data_success_sum_G)
 
 anova(glm.4b,glm.5a, test= "F")
 
@@ -335,6 +348,66 @@ anova(glm.4b,glm.5a, test= "F")
 # GLM FIN
 
 glm.fin <- glm.4b
+
+formula(glm.fin)
+
+
+## EMPTY
+
+data_success_sum_G <- data_success_sum %>%
+  filter(PEAK == "PEAK.G") %>%
+  filter(SEGMENT == "empty") %>%
+  ungroup() %>%
+  dplyr::select(-c(PEAK,VALUE.S,SEGMENT))
+
+
+# run 0
+
+scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE)))
+
+glm.0 <- glm(VALUE ~ (+1), family = "quasibinomial" , data = data_success_sum_G)
+
+compare_models(glm.0,scope, order = 1)
+
+glm.1 <- glm(VALUE ~ Position, family = "quasibinomial" , data = data_success_sum_G)
+
+anova(glm.0,glm.1, test= "F")
+
+# run 1
+
+scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE, Position)))
+
+compare_models(glm.1,scope, order = 2)
+
+glm.2a <- glm(VALUE ~ Position + SMOOTH, family = "quasibinomial" , data = data_success_sum_G)
+glm.2b <- glm(VALUE ~ Position * SMOOTH, family = "quasibinomial" , data = data_success_sum_G)
+
+anova(glm.1,glm.2a, test= "F")
+anova(glm.2a,glm.2b, test= "F")
+
+# run 2 
+
+scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE, Position, SMOOTH)))
+
+compare_models(glm.2a,scope, order = 2)
+
+glm.3a <- glm(VALUE ~ Position + SMOOTH + Diversity, family = "quasibinomial" , data = data_success_sum_G)
+glm.3b <- glm(VALUE ~ (Position + SMOOTH) * Diversity, family = "quasibinomial" , data = data_success_sum_G)
+
+anova(glm.2a,glm.3a, test= "F")
+anova(glm.3a,glm.3b, test= "F")
+
+# run 3
+
+glm.4a <- glm(VALUE ~ (Position + SMOOTH) * Diversity + DC, family = "quasibinomial" , data = data_success_sum_G)
+glm.4b <- glm(VALUE ~ (Position + SMOOTH) * Diversity * DC, family = "quasibinomial" , data = data_success_sum_G)
+
+anova(glm.3b,glm.4a, test= "F")
+anova(glm.4a,glm.4b, test= "F")
+
+glm.fin.e <- glm.4b
+
+formula(glm.fin.e)
 
 # -----------------------------------------
 #
@@ -413,6 +486,20 @@ M.glm.fin <- M.glm.4b
 #               FIGURES 
 #
 # ----------------------------------------------
+
+Color.legen_01 <- brewer.pal(n = levels(data_mag_summmary$SMOOTH) %>% length(), name = 'Set2')
+names(Color.legen_01) <- levels(data_mag_summmary$SMOOTH)
+
+
+Color.legen_02 <- brewer.pal(n = levels(data_mag_summmary$DC) %>% length(), name = 'Set3')
+names(Color.legen_02) <- levels(data_mag_summmary$DC)
+
+Color.legen_03 <- brewer.pal(n = levels(data_mag_summmary$Position) %>% length(), name = 'Set1')
+names(Color.legen_03) <- levels(data_mag_summmary$Position)
+
+Color.legen_04 <- brewer.pal(n = levels(data_mag_summmary$Diversity) %>% length(), name = 'Paired')
+names(Color.legen_04) <- levels(data_mag_summmary$Diversity)
+
 
 ##############
 #   FIG 1
@@ -513,14 +600,14 @@ levels(data_mag_summmary$Position) <- c("high levels density","low level density
 data_mag_summmary <- within(data_mag_summmary, Diversity <- factor(Diversity, levels = c("low","high")))
 levels(data_mag_summmary$Diversity) <- c("low diversity","high diversity")
 
-
 FIG2_mag_MW  <- data_mag_summmary %>%
-  ggplot(aes(y=RoC_max.m,fill=SMOOTH,x=Position))+
+  ggplot(aes(y=RoC_max.m,x=Position, fill=SMOOTH))+
   geom_bar(stat="identity", position = "dodge", color="gray30")+
   geom_errorbar(aes(ymax=RoC_max.m+RoC_max_SE, ymin=RoC_max.m-RoC_max_SE), 
                 position = position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
   facet_grid(DC~Diversity, scales = "free_y")+
   theme_classic()+
+  scale_fill_manual(values = Color.legen_01)+
   theme(legend.position = "bottom")+
   labs(x= "",
        y= "Mean maximum Rate-of-Change score",
@@ -536,8 +623,12 @@ ggsave("~/RESULTS/Methods/FIN/FIG2_mag_MW.pdf",
 #   FIG 3
 #############
 
+formula(glm.fin)
+
 data_success_summary <- data_success_sum %>%
-  group_by(Position, SEGMENT, SMOOTH, Diversity) %>%
+  filter(SEGMENT == "focus") %>%
+  ungroup() %>%
+  group_by(Position, SMOOTH, Diversity) %>%
   summarise(VALUE.M = mean(VALUE, na.rm = T),
             VALUE.SD = sd(VALUE, na.rm = T),
             VALUE.SE = sd(VALUE, na.rm = T)/sqrt(n()),
@@ -546,97 +637,78 @@ data_success_summary <- data_success_sum %>%
   ) %>%
   ungroup()
 
-data_success_summary <- within(data_success_summary, Position <- factor(Position, levels = c("recent","late")))
-levels(data_success_summary$Position) <- c("high levels density","low level density")
-data_success_summary <- within(data_success_summary, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
-levels(data_success_summary$SEGMENT) <- c("focal area (correct detection)","outside of focal area (false positive)")
-data_success_summary <- within(data_success_summary, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
-data_success_summary <- within(data_success_summary, Diversity <- factor(Diversity, levels = c("low","high")))
-levels(data_success_summary$Diversity) <- c("low diversity","high diversity")
 
-FIG3_sum_MW_gam  <-data_success_summary %>%
-  ggplot(aes(y=VALUE.M,x=Position,fill=SMOOTH, group=SMOOTH))+
+
+FIG3_sum_MW_gam_A  <-data_success_summary %>%
+  ggplot(aes(y=VALUE.M,x=SMOOTH,fill=SMOOTH, group=SMOOTH))+
   geom_bar(stat="identity", position="dodge", color="gray30")+
   geom_errorbar(aes(ymin=VALUE.M-VALUE.SE,ymax=VALUE.M+VALUE.SE, group=SMOOTH),
                 position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
-  facet_grid(SEGMENT~Diversity)+
+  facet_grid(Diversity~Position)+
   labs(y="Percentage of Peak detection",
-       x="",
-       fill = "Smoothing")+
+       x="Smoothing",
+       fill = "Smoothing",
+       title = "focal area (correct detection)")+
   theme_classic()+
-  coord_cartesian(ylim=c(0,1))+
-  theme(legend.position = "bottom")
+  coord_cartesian(ylim=c(0,0.75))+
+  scale_fill_manual(values = Color.legen_01)+
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        legend.position = "none")
 
+FIG3_sum_MW_gam_A
+
+formula(glm.fin.e)
+
+data_success_summary_E <- data_success_sum %>%
+  filter(SEGMENT == "empty") %>%
+  ungroup() %>%
+  group_by(Position, SMOOTH, Diversity, DC) %>%
+  summarise(VALUE.M = mean(VALUE, na.rm = T),
+            VALUE.SD = sd(VALUE, na.rm = T),
+            VALUE.SE = sd(VALUE, na.rm = T)/sqrt(n()),
+            VALUE.05 = quantile(VALUE,0.025, na.rm = T),
+            VALUE.95 = quantile(VALUE,0.975, na.rm = T)
+  ) %>%
+  ungroup()
+
+
+FIG3_sum_MW_gam_B  <-data_success_summary_E %>%
+  ggplot(aes(y=VALUE.M,x=SMOOTH,fill=DC, group=DC))+
+  geom_bar(stat="identity", position="dodge", color="gray30")+
+  geom_errorbar(aes(ymin=VALUE.M-VALUE.SE,ymax=VALUE.M+VALUE.SE, group=DC),
+                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
+  facet_grid(Diversity~Position)+
+  labs(y="Percentage of Peak detection",
+       x="Smoothing",
+       fill = "DC",
+       title = "outside of focal area (false positive)")+
+  theme_classic()+
+  coord_cartesian(ylim=c(0,0.3))+
+  scale_fill_manual(values = Color.legen_02)+
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        legend.position = "right")
+
+FIG3_sum_MW_gam_B
+
+FIG3_sum_MW_gam <- ggarrange(
+  FIG3_sum_MW_gam_A,
+  FIG3_sum_MW_gam_B,
+  nrow = 1, widths = c(0.8,1)
+)
 
 FIG3_sum_MW_gam
 
+FIG3_sum_MW_gam_fin <- annotate_figure(FIG3_sum_MW_gam, left = "Percentage of Peak detection", bottom = " Smoothing") 
+
+FIG3_sum_MW_gam_fin
+
 ggsave("~/RESULTS/Methods/FIN/FIG3_sum_MW_gam.pdf",
-       plot = FIG3_sum_MW_gam,
-       height = 15, width = 20, units="cm")
+       plot = FIG3_sum_MW_gam_fin,
+       height = 12, width = 25, units="cm")
 
 
-# SUPP
-
-formula(glm.fin)
-
-ggarrange(
-  data_success_sum %>%
-  group_by(Position) %>%
-  summarise(
-    VALUE = mean(VALUE.S),
-    SD = sd(VALUE.S),
-    SE = SD/sqrt(n())
-  ) %>%
-  ungroup() %>%
-  ggplot(aes(x=Position, y=VALUE))+
-  geom_bar(stat = "identity", color="gray50", fill= "gray80")+
-  geom_errorbar(aes(ymin=VALUE-SE, ymax=VALUE+SE), width=0.2, size=0.5, color="gray50")+
-  theme_classic()+
-  coord_cartesian(ylim=c(0,1)) 
-  ,
-data_success_sum %>%
-  group_by(SEGMENT) %>%
-  summarise(
-    VALUE = mean(VALUE.S),
-    SD = sd(VALUE.S),
-    SE = SD/sqrt(n())
-  ) %>%
-  ungroup() %>%
-  ggplot(aes(x=SEGMENT, y=VALUE))+
-  geom_bar(stat = "identity", color="gray50", fill= "gray80")+
-  geom_errorbar(aes(ymin=VALUE-SE, ymax=VALUE+SE), width=0.2, size=0.5, color="gray50")+
-  theme_classic()+
-  coord_cartesian(ylim=c(0,1))
-,
-data_success_sum %>%
-  group_by(SMOOTH) %>%
-  summarise(
-    VALUE = mean(VALUE.S),
-    SD = sd(VALUE.S),
-    SE = SD/sqrt(n())
-  ) %>%
-  ungroup() %>%
-  ggplot(aes(x=SMOOTH, y=VALUE))+
-  geom_bar(stat = "identity", color="gray50", fill= "gray80")+
-  geom_errorbar(aes(ymin=VALUE-SE, ymax=VALUE+SE), width=0.2, size=0.5, color="gray50")+
-  theme_classic()+
-  coord_cartesian(ylim=c(0,1))
-,
-data_success_sum %>%
-  group_by(Diversity) %>%
-  summarise(
-    VALUE = mean(VALUE.S),
-    SD = sd(VALUE.S),
-    SE = SD/sqrt(n())
-  ) %>%
-  ungroup() %>%
-  ggplot(aes(x=Diversity, y=VALUE))+
-  geom_bar(stat = "identity", color="gray50", fill= "gray80")+
-  geom_errorbar(aes(ymin=VALUE-SE, ymax=VALUE+SE), width=0.2, size=0.5, color="gray50")+
-  theme_classic()+
-  coord_cartesian(ylim=c(0,1))
-, nrow = 2, ncol = 2
-)
 
 ############
 #   FIG 4
@@ -685,9 +757,6 @@ fc_get_pollen_data(data_site_B, sm.type = "shep",N.taxa = 50) %>%
   group_by(name) %>%
   summarise(SUM = sum(value)) %>%
   arrange(-SUM)
-
-
-
 
 
 # SITE c
@@ -768,7 +837,7 @@ data_site_A_RoC <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts
                               rand = 1000,
                               standardise = T, 
                               S.value = 150, 
-                              DC = "chord",
+                              DC = "euc.sd",
                               interest.treshold = age_lim,
                               Debug = F)
 
@@ -785,7 +854,7 @@ data_Site_B_RoC <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts
                               rand = 1000,
                               standardise = T, 
                               S.value = 150, 
-                              DC = "chord",
+                              DC = "euc.sd",
                               interest.treshold = age_lim,
                               Debug = F)
 
@@ -802,7 +871,7 @@ data_Site_C_RoC <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts
                               rand = 1000,
                               standardise = T, 
                               S.value = 150, 
-                              DC = "chord",
+                              DC = "euc.sd",
                               interest.treshold = age_lim,
                               Debug = F)
 
@@ -819,7 +888,7 @@ data_Site_D_RoC <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts
                               rand = 1000,
                               standardise = T, 
                               S.value = 150, 
-                              DC = "chord",
+                              DC = "euc.sd",
                               interest.treshold = age_lim,
                               Debug = F)
 
@@ -1042,8 +1111,8 @@ ggplot(aes(y=ROC,
            x= AGE))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim = c(age_lim,0), ylim = c(0,1.5))+
-  geom_hline(yintercept = seq(from=0,to=1.5, by=0.5), color="gray80", size=0.1)+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,20))+
+  geom_hline(yintercept = seq(from=0,to=20, by=5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1068,8 +1137,8 @@ FIG4_Site_B_3 <- data_Site_B_RoC %>%
              x= AGE))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim = c(age_lim,0), ylim = c(0,1.5))+
-  geom_hline(yintercept = seq(from=0,to=1.5, by=0.5), color="gray80", size=0.1)+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,20))+
+  geom_hline(yintercept = seq(from=0,to=20, by=5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1093,8 +1162,8 @@ FIG4_Site_C_3 <- data_Site_C_RoC %>%
              x= AGE))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim = c(age_lim,0), ylim = c(0,1.5))+
-  geom_hline(yintercept = seq(from=0,to=1.5, by=0.5), color="gray80", size=0.1)+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,20))+
+  geom_hline(yintercept = seq(from=0,to=20, by=5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1119,8 +1188,8 @@ FIG4_Site_D_3 <- data_Site_D_RoC %>%
              x= AGE))+
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim = c(age_lim,0), ylim = c(0,1.5))+
-  geom_hline(yintercept = seq(from=0,to=1.5, by=0.5), color="gray80", size=0.1)+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,20))+
+  geom_hline(yintercept = seq(from=0,to=20, by=5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1186,10 +1255,13 @@ ggsave("~/RESULTS/Methods/FIN/FIG4_Site_comparison.pdf",
        plot = FIG4_Site_comparison, 
        height = 20, width = 22, units="cm")
 
-
 ###############
 # SUPLEMENTARY 
 ###############
+
+##########
+# FIG S1 #
+########## 
 
 # Example of simulation of enviroemntal data
 
@@ -1276,7 +1348,7 @@ row.names(data.source.pollen) <- c(1:length(time))
 
 
 
-Supplementary_F1b <-ggarrange(as.data.frame(forcing) %>%
+Supplementary_F1a <-ggarrange(as.data.frame(forcing) %>%
                                mutate(AGE = time) %>%
                                pivot_longer(., cols = -c(AGE)) %>%
                                arrange(AGE,value) %>%
@@ -1319,7 +1391,7 @@ Supplementary_F1b <-ggarrange(as.data.frame(forcing) %>%
                              ncol=2, align = "h")
 
 
-Supplementary_F1b
+Supplementary_F1a
 
 
 Supplementary_F1 <- ggarrange(
@@ -1334,6 +1406,10 @@ ggsave("~/RESULTS/Methods/FIN/Supplementary_F1.pdf",
        plot = Supplementary_F1,
        height = 10, width = 15, units="cm")
 
+
+##########
+# FIG S2 #
+########## 
 
 data_supp_fig_MW <- rbind(
   perform_sim_ld_recent_MW,
@@ -1372,8 +1448,309 @@ ggsave("~/RESULTS/Methods/FIN/Supplementary_F2.pdf",
        plot = Supplementary_F2,
        height = 15, width = 22, units="cm")
 
+##########
+# FIG S3 #
+########## 
 
-Supplementary_F3<- tibble_Europe2[c(2,45,224,50),] %>%
+
+formula(glm.fin)
+
+
+Success_supp_A <- ggarrange(
+  data_success_sum %>%
+    ungroup() %>%
+    filter(PEAK == "PEAK.G") %>%
+    filter(SEGMENT == "focus") %>%
+    group_by(Position) %>%
+    summarise(
+      VALUE.M = mean(VALUE),
+      SD = sd(VALUE),
+      SE = SD/sqrt(n())
+    ) %>%
+    ungroup() %>%
+    ggplot(aes(x=Position, y=VALUE.M))+
+    geom_bar(aes(fill=Position), stat = "identity", color="gray50")+
+    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
+    theme_classic()+
+    scale_fill_manual(values = Color.legen_03)+
+    coord_cartesian(ylim=c(0,1))+
+    labs(x="desnisty of levels",
+         y="Percentage of Peak detection"
+    )+
+    theme(legend.position = "none", 
+          axis.title.y = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.title.x = element_blank())
+  ,
+  data_success_sum %>%
+    ungroup() %>%
+    filter(PEAK == "PEAK.G") %>%
+    filter(SEGMENT == "focus") %>%
+    group_by(SMOOTH) %>%
+    summarise(
+      VALUE.M = mean(VALUE),
+      SD = sd(VALUE),
+      SE = SD/sqrt(n())
+    ) %>%
+    ungroup() %>%
+    ggplot(aes(x=SMOOTH, y=VALUE.M))+
+    geom_bar(aes(fill = SMOOTH),stat = "identity", color="gray50")+
+    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
+    theme_classic()+
+    scale_fill_manual(values = Color.legen_01)+
+    coord_cartesian(ylim=c(0,1))+
+    labs(x="Smoothing",
+         y="Percentage of Peak detection")+
+    theme(legend.position = "none",
+          axis.ticks.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.y = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.title.x = element_blank())
+  ,
+  data_success_sum %>%
+    ungroup() %>%
+    filter(PEAK == "PEAK.G") %>%
+    filter(SEGMENT == "focus") %>%
+    group_by(Diversity) %>%
+    summarise(
+      VALUE.M = mean(VALUE),
+      SD = sd(VALUE),
+      SE = SD/sqrt(n())
+    ) %>%
+    ungroup() %>%
+    ggplot(aes(x=Diversity, y=VALUE.M))+
+    geom_bar(aes(fill=Diversity), stat = "identity", color="gray50")+
+    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
+    theme_classic()+
+    scale_fill_manual(values=Color.legen_04)+
+    coord_cartesian(ylim=c(0,1))+
+    labs(x= "Diversity of pollen taxa",
+         y= "Percentage of Peak detection")+
+    theme(legend.position = "none",
+          axis.ticks.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.y = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.title.x = element_blank())
+  ,
+  data_success_sum %>%
+    ungroup() %>%
+    filter(PEAK == "PEAK.G") %>%
+    filter(SEGMENT == "focus") %>%
+    group_by(DC) %>%
+    summarise(
+      VALUE.M = mean(VALUE),
+      SD = sd(VALUE),
+      SE = SD/sqrt(n())
+    ) %>%
+    ungroup() %>%
+    ggplot(aes(x=DC, y=VALUE.M))+
+    geom_bar(aes(fill=DC),stat = "identity", color="gray50", )+
+    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
+    theme_classic()+
+    scale_fill_manual(values = Color.legen_02)+
+    coord_cartesian(ylim=c(0,1))+
+    labs(x= "Dissimilarity coeficient",
+         y= "Percentage of Peak detection")+
+    theme(legend.position = "none", 
+          axis.ticks.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.y = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.title.x = element_blank())
+  , nrow = 1, ncol = 4
+)
+
+Success_supp_A
+
+Success_supp_A_a <- annotate_figure(Success_supp_A, top = "focal area (correct detection)")
+
+Success_supp_A_a
+
+formula(glm.fin.e)
+
+Success_supp_B <- ggarrange(
+  data_success_sum %>%
+    ungroup() %>%
+    filter(PEAK == "PEAK.G") %>%
+    filter(SEGMENT == "empty") %>%
+    group_by(Position) %>%
+    summarise(
+      VALUE.M = mean(VALUE),
+      SD = sd(VALUE),
+      SE = SD/sqrt(n())
+    ) %>%
+    ungroup() %>%
+    ggplot(aes(x=Position, y=VALUE.M))+
+    geom_bar(aes(fill=Position), stat = "identity", color="gray50")+
+    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
+    theme_classic()+
+    scale_fill_manual(values = Color.legen_03)+
+    coord_cartesian(ylim=c(0,1))+
+    labs(x="desnisty of levels",
+         y="Percentage of Peak detection"
+    )+
+    theme(legend.position = "none", 
+          axis.title.y = element_blank())
+  ,
+  data_success_sum %>%
+    ungroup() %>%
+    filter(PEAK == "PEAK.G") %>%
+    filter(SEGMENT == "empty") %>%
+    group_by(SMOOTH) %>%
+    summarise(
+      VALUE.M = mean(VALUE),
+      SD = sd(VALUE),
+      SE = SD/sqrt(n())
+    ) %>%
+    ungroup() %>%
+    ggplot(aes(x=SMOOTH, y=VALUE.M))+
+    geom_bar(aes(fill = SMOOTH),stat = "identity", color="gray50")+
+    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
+    theme_classic()+
+    scale_fill_manual(values = Color.legen_01)+
+    coord_cartesian(ylim=c(0,1))+
+    labs(x="Smoothing",
+         y="Percentage of Peak detection")+
+    theme(legend.position = "none",
+          axis.ticks.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.y = element_blank())
+  ,
+  data_success_sum %>%
+    ungroup() %>%
+    filter(PEAK == "PEAK.G") %>%
+    filter(SEGMENT == "empty") %>%
+    group_by(Diversity) %>%
+    summarise(
+      VALUE.M = mean(VALUE),
+      SD = sd(VALUE),
+      SE = SD/sqrt(n())
+    ) %>%
+    ungroup() %>%
+    ggplot(aes(x=Diversity, y=VALUE.M))+
+    geom_bar(aes(fill=Diversity), stat = "identity", color="gray50")+
+    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
+    theme_classic()+
+    scale_fill_manual(values=Color.legen_04)+
+    coord_cartesian(ylim=c(0,1))+
+    labs(x= "Diversity of pollen taxa",
+         y= "Percentage of Peak detection")+
+    theme(legend.position = "none",
+          axis.ticks.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.y = element_blank())
+  ,
+  data_success_sum %>%
+    ungroup() %>%
+    filter(PEAK == "PEAK.G") %>%
+    filter(SEGMENT == "empty") %>%
+    group_by(DC) %>%
+    summarise(
+      VALUE.M = mean(VALUE),
+      SD = sd(VALUE),
+      SE = SD/sqrt(n())
+    ) %>%
+    ungroup() %>%
+    ggplot(aes(x=DC, y=VALUE.M))+
+    geom_bar(aes(fill=DC),stat = "identity", color="gray50", )+
+    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
+    theme_classic()+
+    scale_fill_manual(values = Color.legen_02)+
+    coord_cartesian(ylim=c(0,1))+
+    labs(x= "Dissimilarity coeficient",
+         y= "Percentage of Peak detection")+
+    theme(legend.position = "none", 
+          axis.ticks.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.y = element_blank())
+  , nrow = 1, ncol = 4
+)
+
+
+Success_supp_B
+
+Success_supp_B_a <- annotate_figure(Success_supp_B, top="outside of focal area (false positive)")
+
+Success_supp_B_a
+
+Success_supp <- ggarrange(
+  Success_supp_A_a,
+  Success_supp_B_a,
+  nrow = 2
+)
+
+Success_supp
+
+Supplementary_F3 <- annotate_figure(Success_supp, left = "Percentage of Peak detection")
+
+Supplementary_F3
+
+ggsave("~/RESULTS/Methods/FIN/Supplementary_F3.pdf",
+       plot = Supplementary_F3,
+       height = 12, width = 25, units="cm")
+
+
+##########
+# FIG S4 #
+########## 
+
+
+
+Supplementary_F4 <- data_success_sum %>%
+  ungroup() %>%
+  filter(PEAK == "PEAK.G") %>%
+  filter(SEGMENT == "empty") %>%
+  group_by(DC, SMOOTH) %>%
+  summarise(
+    VALUE.M = mean(VALUE),
+    SD = sd(VALUE),
+    SE = SD/sqrt(n())
+  ) %>%
+  ungroup() %>% 
+  ggplot(aes(x=SMOOTH, y= VALUE.M, group= DC, fill= DC))+
+  geom_bar(stat = "identity", position = position_dodge(), color="gray30")+
+  geom_errorbar(aes(ymin = VALUE.M-SE, ymax= VALUE.M+SE), position = position_dodge(width=0.9), color="gray50",width=0.2, size=0.5)+
+  #coord_cartesian(ylim=c(0.62, 0.75))+
+  theme_classic()+
+  scale_fill_manual(values = Color.legen_02)+
+  labs(x= "Smoothing",
+       y= "Percentage of Peak detection",
+       title = "outside of focal area (false positive)")+
+  theme()
+
+Supplementary_F4
+
+data_success_sum %>%
+  ungroup() %>%
+  filter(PEAK == "PEAK.G") %>%
+  filter(SEGMENT == "empty") %>%
+  group_by(DC, SMOOTH) %>%
+  summarise(
+    VALUE.M = mean(VALUE),
+    SD = sd(VALUE),
+    SE = SD/sqrt(n())
+  ) %>%
+  ungroup() %>%
+  View()
+
+
+ggsave("~/RESULTS/Methods/FIN/Supplementary_F4.pdf",
+       plot = Supplementary_F4,
+       height = 12, width = 25, units="cm")
+
+
+
+##########
+# FIG S5 #
+########## 
+
+Supplementary_F5<- tibble_Europe2[c(2,45,224,50),] %>%
   ggplot(aes(y=lat, x=long, label = c("A","B","C","D")))+
   borders(fill = "gray90", colour = "gray60") +
   geom_point(size=3)+
@@ -1383,11 +1760,14 @@ Supplementary_F3<- tibble_Europe2[c(2,45,224,50),] %>%
   labs(x="longitude",
        y="lattitude")
 
-Supplementary_F3
+Supplementary_F5
 
-ggsave("~/RESULTS/Methods/FIN/Supplementary_F3.pdf",
-       plot = Supplementary_F3,
+ggsave("~/RESULTS/Methods/FIN/Supplementary_F5.pdf",
+       plot = Supplementary_F5,
        height = 10, width = 15, units="cm")
 
+####################################
+#               SAVE               #
+####################################
 
-# save.image("~/DATA/temp/ENV_METHOD_20200519.RData")
+# save.image("~/DATA/temp/ENV_METHOD_20200525.RData")
