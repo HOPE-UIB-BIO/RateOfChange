@@ -357,21 +357,14 @@ fc_R_ratepol <- function (data.source.pollen,
       filter(RUN.Age.Pos<=interest.treshold)
   }
   
-  # sort samples by age
+  # sort samples by age and add smoothing to avoid "waveing"
   r.m.full <- r.m.full %>%
-    arrange(RUN.Age.Pos)
-  
-  # smoothing results to avoid "waveing"
-  if (Working.Unit == "MW"){
-    r.m.full$RUN.RoC.sm <- lowess(r.m.full$RUN.Age.Pos,r.m.full$RUN.RoC,f=.1,iter=100)$y
-    r.m.full$RUN.RoC.95q.sm <- lowess(r.m.full$RUN.Age.Pos,r.m.full$RUN.RoC.95q,f=.1,iter=100)$y
-    r.m.full$RUN.RoC.05q.sm <- lowess(r.m.full$RUN.Age.Pos,r.m.full$RUN.RoC.05q,f=.1,iter=100)$y
-  } else {
-    r.m.full$RUN.RoC.sm <- r.m.full$RUN.RoC
-    r.m.full$RUN.RoC.95q.sm <- r.m.full$RUN.RoC.95q 
-    r.m.full$RUN.RoC.05q.sm <- r.m.full$RUN.RoC.05q
-  }
-  
+    arrange(RUN.Age.Pos) %>%
+    mutate (
+      RUN.RoC.sm =  lowess(RUN.Age.Pos,RUN.RoC,f=.1,iter=100)$y,
+      RUN.RoC.95q.sm = lowess(RUN.Age.Pos,RUN.RoC.95q,f=.1,iter=100)$y,
+      RUN.RoC.05q.sm = lowess(RUN.Age.Pos,RUN.RoC.05q,f=.1,iter=100)$y
+    )
   
   
   # ----------------------------------------------
@@ -383,26 +376,32 @@ fc_R_ratepol <- function (data.source.pollen,
     # treshold for RoC peaks is set as median of all RoC in dataset
     r.treshold <- median(r.m.full$RUN.RoC.sm)
     # mark peaks which have 95% quantile above the treshold asPeak.treshold
-    r.m.full$Peak <- r.m.full$RUN.RoC.05q.sm>r.treshold
+    r.m.full<- r.m.full %>%
+      mutate(Peak = RUN.RoC.05q.sm > r.treshold)
   }
   
   # GAM  
   if(Peak == "GAM"){
     # mark points that are abowe the GAM model (exactly 1.5 SD higher than GAM prediction)
-    pred.gam <-  predict.gam(gam(RUN.RoC.sm~s(RUN.Age.Pos), data = r.m.full))
-    pred.gam.diff <- r.m.full$RUN.RoC.sm - pred.gam
-    r.m.full$Peak <- (pred.gam.diff) > 1.5*sd(pred.gam.diff)
+    r.m.full<- r.m.full %>%
+      mutate(
+        pred.gam = predict.gam(gam(RUN.RoC.sm~s(RUN.Age.Pos,k=3), data = .)),
+        pred.gam.diff = RUN.RoC.sm - pred.gam,
+        Peak = (pred.gam.diff) > 1.5*sd(pred.gam.diff)
+        )
   }
   
   # SNI  
   if (Peak == "SNI"){
-    pred.gam <-  predict.gam(gam(RUN.RoC.sm~s(RUN.Age.Pos), data = r.m.full))
     # set moving window of 5 times higher than average distance between samples
     mean.age.window <- 5 * mean( diff(r.m.full$RUN.Age.Pos) )
+    # create GAM 
+    pred.gam <-  predict.gam(gam(RUN.RoC.sm~s(RUN.Age.Pos,k=3), data = r.m.full))
     # calculate SNI (singal to noise ratio)
     SNI.calc <- CharSNI(data.frame(r.m.full$RUN.Age.Pos, r.m.full$RUN.RoC.sm, pred.gam),mean.age.window)
     # mark points with SNI higher than 3
-    r.m.full$Peak <- SNI.calc$SNI > 3 & r.m.full$RUN.RoC.sm > pred.gam
+    r.m.full <- r.m.full %>%
+      mutate( Peak = SNI.calc$SNI > 3 & r.m.full$RUN.RoC.sm > pred.gam )
   }
   
   # outro
