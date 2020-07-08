@@ -66,7 +66,7 @@ fc_simulate_pollen_data_in_all_methods <- function(time=0:10e3,
       
       # GAM  
         # mark points that are abowe the GAM model (exactly 1.5 SD higher than GAM prediction)
-        pred.gam <-  predict.gam(gam(ROC~s(AGE), data = data.temp))
+        pred.gam <-  predict.gam(gam(ROC~s(AGE,k=3), data = data.temp))
         pred.gam.diff <- data.temp$ROC - pred.gam
         data.temp$PEAK.G <- (pred.gam.diff) > 1.5*sd(pred.gam.diff)
       

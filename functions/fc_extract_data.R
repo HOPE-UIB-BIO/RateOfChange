@@ -25,7 +25,7 @@ fc_extract_data <-  function (data.source.pollen.extract,
   
   # extract both important tables a) age data, b) pollen data
   age <- data.source.age.extract$ages
-  p.counts <- data.source.pollen.extract[,-1]
+  p.counts <- data.source.pollen.extract
   age.un <- data.frame(data.source.age.extract$age_position)
   names(age.un) <- age$sample.id
   
