@@ -15,18 +15,509 @@ library(scales)
 library(mgcv)
 library(maps)
 library(RColorBrewer)
+library(MuMIn)
+library(glmmTMB)
+library(emmeans)
+
+theme_set(theme_classic())
 
 # ----------------------------------------------
-#             LOAD DATA & FUNCTIONS
+#                 LOAD DATA 
 # ----------------------------------------------
-# download.file("https://www.dropbox.com/s/3hp7rv03mkg4pjz/tibble_Europe_filtered05.03.20.RData?dl=1","~/input/DATA/tibble_Europe_filtered05.03.20.RData")
 
-load("~/DATA/input/tibble_Europe_filtered05.03.20.RData")
+Hope_smooth <- readRDS("~/DATA/input/HOPE_data_smooth20200728.RDS")
 
 files.sources <- list.files("~/GITHUB/RateOfChange/functions/") 
 sapply(paste0("~/GITHUB/RateOfChange/functions/", files.sources, sep =""), source)
 
-glimpse(tibble_Europe2)
+# ----------------------------------------------
+#             DEFINITION OF VARIBLES
+# ----------------------------------------------
+
+# Number of simulated enviromental variables
+N_env <- 4
+
+# diversity of pollen taxat in simulated data
+low_diversity <- 5
+high_diversity <- 50
+
+# position of the enviromental change in the sequence 
+breaks_recent <- c(2000, 3000)
+breaks_late <- c(5500, 6500)
+
+# Number of simulated datasest of pollen data
+N_rep <- 100
+
+# template of time sequence with uneven distribution of points
+time_seq <- Hope_smooth$list_ages[[413]]$ages$age
+
+# maximal time of focus 
+age_lim <- 8000
+
+
+# -----------------------------------------
+#
+#             STATISTICAL COMP
+# 
+# -----------------------------------------
+
+# data simulation
+
+sim_ld_recent <- fc_simulate_pollen_data_in_multiple_datasets(time=time_seq, 
+                                                              nforc=N_env, 
+                                                              mean=100, 
+                                                              sdev=.15, 
+                                                              nprox=low_diversity, 
+                                                              var=20, 
+                                                              range=15,
+                                                              manual.edit = T,
+                                                              breaks=breaks_recent,
+                                                              jitter = T,
+                                                              rarity=T,
+                                                              N.datasets=N_rep)
+
+sim_ld_recent_levels <- fc_simulate_pollen_data_in_all_methods(sim_ld_recent,
+                                                           Working.Unit="levels", 
+                                                           interest.treshold=8000)
+
+sim_ld_recent_BINs <- fc_simulate_pollen_data_in_all_methods(sim_ld_recent,
+                                                           Working.Unit="BINs", 
+                                                           BIN.size=500,
+                                                           interest.treshold=8000)
+
+sim_ld_recent_MW <- fc_simulate_pollen_data_in_all_methods(sim_ld_recent,
+                                                           Working.Unit="MW", 
+                                                           BIN.size=500, 
+                                                           N.shifts=5,
+                                                           interest.treshold=8000)
+
+
+sim_ld_late <- fc_simulate_pollen_data_in_multiple_datasets(time=time_seq, 
+                                                              nforc=N_env, 
+                                                              mean=100, 
+                                                              sdev=.15, 
+                                                              nprox=high_diversity, 
+                                                              var=20, 
+                                                              range=15,
+                                                              manual.edit = T,
+                                                              breaks=breaks_late,
+                                                              jitter = T,
+                                                              rarity=T,
+                                                              N.datasets=N_rep)
+
+sim_ld_late_levels <- fc_simulate_pollen_data_in_all_methods(sim_ld_late,
+                                                               Working.Unit="levels", 
+                                                               interest.treshold=8000)
+
+sim_ld_late_BINs <- fc_simulate_pollen_data_in_all_methods(sim_ld_late,
+                                                             Working.Unit="BINs", 
+                                                             BIN.size=500,
+                                                             interest.treshold=8000)
+
+sim_ld_late_MW <- fc_simulate_pollen_data_in_all_methods(sim_ld_late,
+                                                           Working.Unit="MW", 
+                                                           BIN.size=500, 
+                                                           N.shifts=5,
+                                                           interest.treshold=8000)
+
+sim_hd_recent <- fc_simulate_pollen_data_in_multiple_datasets(time=time_seq, 
+                                                              nforc=N_env, 
+                                                              mean=100, 
+                                                              sdev=.15, 
+                                                              nprox=high_diversity, 
+                                                              var=20, 
+                                                              range=15,
+                                                              manual.edit = T,
+                                                              breaks=breaks_recent,
+                                                              jitter = T,
+                                                              rarity=T,
+                                                              N.datasets=N_rep)
+
+sim_hd_recent_levels <- fc_simulate_pollen_data_in_all_methods(sim_hd_recent,
+                                                               Working.Unit="levels", 
+                                                               interest.treshold=8000)
+
+sim_hd_recent_BINs <- fc_simulate_pollen_data_in_all_methods(sim_hd_recent,
+                                                             Working.Unit="BINs", 
+                                                             BIN.size=500,
+                                                             interest.treshold=8000)
+
+sim_hd_recent_MW <- fc_simulate_pollen_data_in_all_methods(sim_hd_recent,
+                                                           Working.Unit="MW", 
+                                                           BIN.size=500, 
+                                                           N.shifts=5,
+                                                           interest.treshold=8000)
+
+
+sim_hd_late <- fc_simulate_pollen_data_in_multiple_datasets(time=time_seq, 
+                                                            nforc=N_env, 
+                                                            mean=100, 
+                                                            sdev=.15, 
+                                                            nprox=high_diversity, 
+                                                            var=20, 
+                                                            range=15,
+                                                            manual.edit = T,
+                                                            breaks=breaks_late,
+                                                            jitter = T,
+                                                            rarity=T,
+                                                            N.datasets=N_rep)
+
+sim_hd_late_levels <- fc_simulate_pollen_data_in_all_methods(sim_hd_late,
+                                                             Working.Unit="levels", 
+                                                             interest.treshold=8000)
+
+sim_hd_late_BINs <- fc_simulate_pollen_data_in_all_methods(sim_hd_late,
+                                                           Working.Unit="BINs", 
+                                                           BIN.size=500,
+                                                           interest.treshold=8000)
+
+sim_hd_late_MW <- fc_simulate_pollen_data_in_all_methods(sim_hd_late,
+                                                         Working.Unit="MW", 
+                                                         BIN.size=500, 
+                                                         N.shifts=5,
+                                                         interest.treshold=8000)
+
+# -----------------------------------------
+#
+#       SUCCESS COMPARISON
+# 
+# -----------------------------------------
+
+perform_sim_ld_recent_MW <- fc_test_simlutated_data_succsess(sim_ld_recent_MW, breaks = breaks_recent)
+perform_sim_ld_late_MW <- fc_test_simlutated_data_succsess(sim_ld_late_MW, breaks = breaks_late)
+perform_sim_hd_recent_MW <- fc_test_simlutated_data_succsess(sim_hd_recent_MW, breaks = breaks_recent)
+perform_sim_hd_late_MW <- fc_test_simlutated_data_succsess(sim_hd_late_MW, breaks = breaks_late)
+
+perform_sim_ld_recent_BINs <- fc_test_simlutated_data_succsess(sim_ld_recent_BINs, breaks = breaks_recent)
+perform_sim_ld_late_BINs <- fc_test_simlutated_data_succsess(sim_ld_late_BINs, breaks = breaks_late)
+perform_sim_hd_recent_BINs <- fc_test_simlutated_data_succsess(sim_hd_recent_BINs, breaks = breaks_recent)
+perform_sim_hd_late_BINs <- fc_test_simlutated_data_succsess(sim_hd_late_BINs, breaks = breaks_late)
+
+perform_sim_ld_recent_levels <- fc_test_simlutated_data_succsess(sim_ld_recent_levels, breaks = breaks_recent)
+perform_sim_ld_late_levels <- fc_test_simlutated_data_succsess(sim_ld_late_levels, breaks = breaks_late)
+perform_sim_hd_recent_levels <- fc_test_simlutated_data_succsess(sim_hd_recent_levels, breaks = breaks_recent)
+perform_sim_hd_late_levels <- fc_test_simlutated_data_succsess(sim_hd_late_levels, breaks = breaks_late)
+
+data_success_sum <- rbind(
+  data.frame(perform_sim_ld_recent_MW$RawData,Position="recent", Diversity= "low", WU="MW"),
+  data.frame(perform_sim_ld_late_MW$RawData,Position="late", Diversity= "low", WU="MW"),
+  data.frame(perform_sim_hd_recent_MW$RawData,Position="recent", Diversity= "high", WU="MW"),
+  data.frame(perform_sim_hd_late_MW$RawData,Position="late", Diversity= "high", WU="MW"),
+  data.frame(perform_sim_ld_recent_BINs$RawData,Position="recent", Diversity= "low", WU="BINs"),
+  data.frame(perform_sim_ld_late_BINs$RawData,Position="late", Diversity= "low", WU="BINs"),
+  data.frame(perform_sim_hd_recent_BINs$RawData,Position="recent", Diversity= "high", WU="BINs"),
+  data.frame(perform_sim_hd_late_BINs$RawData,Position="late", Diversity= "high", WU="BINs"),
+  data.frame(perform_sim_ld_recent_levels$RawData,Position="recent", Diversity= "low", WU="levels"),
+  data.frame(perform_sim_ld_late_levels$RawData,Position="late", Diversity= "low", WU="levels"),
+  data.frame(perform_sim_hd_recent_levels$RawData,Position="recent", Diversity= "high", WU="levels"),
+  data.frame(perform_sim_hd_late_levels$RawData,Position="late", Diversity= "high", WU="levels")
+) %>%
+  as_tibble()
+
+data_success_sum <- within(data_success_sum, Position <- factor(Position, levels = c("recent","late")))
+levels(data_success_sum$Position) <- c("high density level","low density level")
+
+data_success_sum <- within(data_success_sum, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
+levels(data_success_sum$SMOOTH) <- c("None","M.avg","Grimm","Age.w","Shep")
+
+data_success_sum <- within(data_success_sum, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
+levels(data_success_sum$DC) <- c("Euc","Euc.sd","Chord","Chisq")
+
+data_success_sum <- within(data_success_sum, Diversity <- factor(Diversity, levels = c("low","high")))
+levels(data_success_sum$Diversity) <- c("low richness","high richness")
+
+#data_success_sum <- within(data_success_sum, WU <- factor(WU, levels = c("levels","BINs","MW")))
+
+
+# Produce FIG S2 !!!
+
+## FOCUS
+
+data_success_sum_G_MW <- data_success_sum %>%
+  filter(PEAK == "PEAK.G") %>%
+  filter(SEGMENT == "focus") %>%
+  filter(WU == "MW") %>%
+  ungroup() %>%
+  dplyr::select(-c(PEAK,SEGMENT,WU))
+
+mod_success <-  glmmTMB(VALUE~WU*PEAK*DC*Position*Diversity*SMOOTH+(WU|dataset.ID),
+                 data=data_success_sum%>%
+                   filter(SEGMENT == "focus"),
+                 family=betabinomial(link = "logit"))
+
+mod_success_sum_G_WM_dd <- dredge(mod_success_sum_G_WM, trace = T)
+
+mod_success_sum_G_WM_formula <- as.formula(VALUE ~ DC + Position + Diversity + SMOOTH + 
+                                             Position:Diversity + Position:SMOOTH + Diversity:SMOOTH + Position:Diversity:SMOOTH +
+                                        (1|dataset.ID)) 
+
+mod_success_sum_G_WM_fin <- glmmTMB(mod_success_sum_G_WM_formula,
+                                    data=data_success_sum_G_MW,
+                                    family=betabinomial(link = "logit"))
+
+mod_success_sum_G_WM_fin_cells <- emmeans(mod_success_sum_G_WM_fin, ~ DC + Position + Diversity + SMOOTH + 
+                                            Position:Diversity + Position:SMOOTH + Diversity:SMOOTH + Position:Diversity:SMOOTH,
+                                          type = "response")
+
+
+mod_success_sum_G_WM_fin_cells %>%
+  as_tibble() %>%
+  ggplot(aes(y=prob,x=Position, color=Diversity,fill=Diversity, ymin=lower.CL, ymax=upper.CL))+
+  facet_grid(DC~SMOOTH)+
+  geom_hline(yintercept = seq(0,1,0.2), color="gray90")+
+  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
+  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+  geom_point(shape=15,position = position_dodge(width = 0.5))+
+  coord_cartesian(ylim = c(0.4,1))
+
+
+emmeans(mod_success_sum_G_WM_fin, ~ DC,
+        type = "response") %>%
+  as_tibble() %>%
+  ggplot(aes(y=prob, x=DC,color=DC,fill=DC, ymin=lower.CL, ymax= upper.CL))+
+  geom_hline(yintercept = seq(0,1,0.2), color="gray90")+
+  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
+  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+  geom_point(shape=15,position = position_dodge(width = 0.5))+
+  coord_cartesian(ylim = c(0.7,1))
+
+
+emmeans(mod_success_sum_G_WM_fin, ~ SMOOTH,
+        type = "response") %>%
+  as_tibble() %>%
+  ggplot(aes(y=prob, x=SMOOTH,color=SMOOTH,fill=SMOOTH, ymin=lower.CL, ymax= upper.CL))+
+  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
+  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+  geom_point(shape=15,position = position_dodge(width = 0.5))+
+  coord_cartesian(ylim = c(0.7,1))
+
+emmeans(mod_success_sum_G_WM_fin, ~ DC * SMOOTH,
+        type = "response") %>%
+  as_tibble() %>%
+  arrange(-prob)
+
+
+# Level density & diversity comparison
+
+# calculate model for levels
+mod_success_sum_G_levels_fin <- glmmTMB(mod_success_sum_G_WM_formula,
+                                        data=data_success_sum %>%
+                                          filter(PEAK == "PEAK.G") %>%
+                                          filter(SEGMENT == "focus") %>%
+                                          filter(WU == "levels") %>%
+                                          ungroup() %>%
+                                          dplyr::select(-c(PEAK,SEGMENT,WU)),
+                                        family=betabinomial(link = "logit"))
+# calculate model for bins
+mod_success_sum_G_BINs_fin <- glmmTMB(mod_success_sum_G_WM_formula,
+                                      data=data_success_sum %>%
+                                        filter(PEAK == "PEAK.G") %>%
+                                        filter(SEGMENT == "focus") %>%
+                                        filter(WU == "BINs") %>%
+                                        ungroup() %>%
+                                        dplyr::select(-c(PEAK,SEGMENT,WU)),
+                                      family=betabinomial(link = "logit"))
+
+
+
+rbind(tibble(emmeans(mod_success_sum_G_levels_fin, ~ Position,
+                     type = "response") %>%
+               as_tibble(),WU = "levels"),
+      tibble(emmeans(mod_success_sum_G_BINs_fin, ~ Position,
+                     type = "response") %>%
+               as_tibble(),WU = "BINs"),
+      tibble(emmeans(mod_success_sum_G_WM_fin, ~ Position,
+                     type = "response") %>%
+               as_tibble(),WU = "MW")
+) %>%
+  mutate(WU = factor(WU, levels = c("levels","BINs","MW"))) %>%
+  ggplot(aes(y=prob, x=Position,color=Position,fill=Position, ymin=lower.CL, ymax= upper.CL))+
+  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
+  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+  geom_point(shape=15,position = position_dodge(width = 0.5))+
+  facet_grid(~WU)+
+  coord_cartesian(ylim = c(0.5,1))
+  
+
+
+rbind(tibble(emmeans(mod_success_sum_G_levels_fin, ~ Diversity,
+                     type = "response") %>%
+               as_tibble(),WU = "levels"),
+      tibble(emmeans(mod_success_sum_G_BINs_fin, ~ Diversity,
+                     type = "response") %>%
+               as_tibble(),WU = "BINs"),
+      tibble(emmeans(mod_success_sum_G_WM_fin, ~ Diversity,
+                     type = "response") %>%
+               as_tibble(),WU = "MW")
+) %>%
+  mutate(WU = factor(WU, levels = c("levels","BINs","MW"))) %>%
+  ggplot(aes(y=prob, x=Diversity,color=Diversity,fill=Diversity, ymin=lower.CL, ymax= upper.CL))+
+  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
+  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+  geom_point(shape=15,position = position_dodge(width = 0.5))+
+  facet_grid(~WU)+
+  coord_cartesian(ylim = c(0.5,1))
+
+  
+
+
+
+## EMPTY
+
+data_false_sum_G_MW <- data_success_sum %>%
+  filter(PEAK == "PEAK.G") %>%
+  filter(SEGMENT == "empty") %>%
+  filter(WU == "MW") %>%
+  ungroup() %>%
+  dplyr::select(-c(PEAK,SEGMENT,WU))
+
+mod_false_sum_G_WM <-  glmmTMB(VALUE~DC*Position*Diversity*SMOOTH+(1|dataset.ID),
+                                 data=data_false_sum_G_MW,
+                                 family=betabinomial(link = "logit"))
+
+mod_false_sum_G_WM_dd <- dredge(mod_false_sum_G_WM)
+
+
+mod_false_sum_G_WM_formula <- as.formula(VALUE ~ Position + SMOOTH + 
+                                              Position:SMOOTH +
+                                             (1|dataset.ID)) 
+
+mod_false_sum_G_WM_fin <- glmmTMB(mod_false_sum_G_WM_formula,
+                                    data=data_false_sum_G_MW,
+                                    family=betabinomial(link = "logit"))
+
+mod_false_sum_G_WM_fin_cells <- emmeans(mod_false_sum_G_WM_fin, ~ Position + SMOOTH  +  Position:SMOOTH,
+                                          type = "response")
+
+mod_false_sum_G_WM_fin_cells %>%
+  as_tibble() %>%
+  ggplot(aes(y=prob,x=Position,color=Position, fill=Position, ymin=lower.CL, ymax=upper.CL))+
+  facet_grid(~SMOOTH)+
+  geom_hline(yintercept = seq(0,1,0.2), color="gray90")+
+  geom_bar(stat = "identity", color="gray60", orientation="x", width = 0.5)+
+  geom_errorbar(width=0.2,)+
+  geom_point(shape=15)+
+  coord_cartesian(ylim = c(0,0.2))
+
+
+emmeans(mod_false_sum_G_WM_fin, ~ SMOOTH,
+        type = "response") %>%
+  as_tibble() %>%
+  ggplot(aes(y=prob, x=SMOOTH,color=SMOOTH,fill=SMOOTH, ymin=lower.CL, ymax= upper.CL))+
+  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
+  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+  geom_point(shape=15,position = position_dodge(width = 0.5))+
+  coord_cartesian(ylim = c(0,0.1))
+
+
+emmeans(mod_false_sum_G_WM_fin, ~ Position,
+        type = "response") %>%
+  as_tibble() %>%
+  ggplot(aes(y=prob, x=Position,color=Position,fill=Position, ymin=lower.CL, ymax= upper.CL))+
+  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
+  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+  geom_point(shape=15,position = position_dodge(width = 0.5))+
+  coord_cartesian(ylim = c(0,0.1))
+
+
+# -----------------------------------------
+#
+#       MAGNITUDE COMPARISON
+# 
+# -----------------------------------------
+
+mag_sim_ld_recent_MW <- fc_test_simlutated_data_magnitude(sim_ld_recent_MW)
+mag_sim_ld_late_MW <- fc_test_simlutated_data_magnitude(sim_ld_late_MW)
+mag_sim_hd_recent_MW <- fc_test_simlutated_data_magnitude(sim_hd_recent_MW)
+mag_sim_hd_late_MW <- fc_test_simlutated_data_magnitude(sim_hd_late_MW)
+
+mag_sim_ld_recent_BINs <- fc_test_simlutated_data_magnitude(sim_ld_recent_BINs)
+mag_sim_ld_late_BINs <- fc_test_simlutated_data_magnitude(sim_ld_late_BINs)
+mag_sim_hd_recent_BINs <- fc_test_simlutated_data_magnitude(sim_hd_recent_BINs)
+mag_sim_hd_late_BINs <- fc_test_simlutated_data_magnitude(sim_hd_late_BINs)
+
+mag_sim_ld_recent_levels <- fc_test_simlutated_data_magnitude(sim_ld_recent_levels)
+mag_sim_ld_late_levels <- fc_test_simlutated_data_magnitude(sim_ld_late_levels)
+mag_sim_hd_recent_levels <- fc_test_simlutated_data_magnitude(sim_hd_recent_levels)
+mag_sim_hd_late_levels <- fc_test_simlutated_data_magnitude(sim_hd_late_levels)
+
+
+data_mag_sum <- rbind(
+  data.frame(mag_sim_ld_recent_MW,Position="recent",Diversity="low",WU = "MW"),
+  data.frame(mag_sim_ld_late_MW,Position="late",Diversity="low",WU = "MW"),
+  data.frame(mag_sim_hd_recent_MW,Position="recent",Diversity="high",WU = "MW"),
+  data.frame(mag_sim_hd_late_MW,Position="late",Diversity="high",WU = "MW"),
+  data.frame(mag_sim_ld_recent_BINs,Position="recent",Diversity="low",WU = "BINs"),
+  data.frame(mag_sim_ld_late_BINs,Position="late",Diversity="low",WU = "BINs"),
+  data.frame(mag_sim_hd_recent_BINs,Position="recent",Diversity="high",WU = "BINs"),
+  data.frame(mag_sim_hd_late_BINs,Position="late",Diversity="high",WU = "BINs"),
+  data.frame(mag_sim_ld_recent_levels,Position="recent",Diversity="low",WU = "levels"),
+  data.frame(mag_sim_ld_late_levels,Position="late",Diversity="low",WU = "levels"),
+  data.frame(mag_sim_hd_recent_levels,Position="recent",Diversity="high",WU = "levels"),
+  data.frame(mag_sim_hd_late_levels,Position="late",Diversity="high",WU = "levels")
+) %>% as_tibble()
+
+data_mag_sum <- within(data_mag_sum, Position <- factor(Position, levels = c("recent","late")))
+levels(data_mag_sum$Position) <- c("high density level","low density level")
+
+data_mag_sum <- within(data_mag_sum, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
+levels(data_mag_sum$SMOOTH) <- c("None","M.avg","Grimm","Age.w","Shep")
+
+data_mag_sum <- within(data_mag_sum, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
+levels(data_mag_sum$DC) <- c("Euc","Euc.sd","Chord","Chisq")
+
+data_mag_sum <- within(data_mag_sum, Diversity <- factor(Diversity, levels = c("low","high")))
+levels(data_mag_sum$Diversity) <- c("low richness","high richness")
+
+data_mag_sum_MW <- data_mag_sum %>%
+  filter(WU == "MW") %>%
+  ungroup() %>%
+  dplyr::select(-c(WU))
+
+
+mod_mag_MW_max <-  glmmTMB(RoC_max~DC*Position*Diversity*SMOOTH+(1|dataset.ID),
+                           data=data_mag_sum_MW,
+                           family=Gamma(link = "inverse"))
+
+mod_mag_MW_max_dd <- dredge(mod_mag_MW_max)
+
+mod_mag_MW_upq <-  glmmTMB(RoC_upq~DC*Position*Diversity*SMOOTH+(1|dataset.ID),
+                           data=data_mag_sum_MW,
+                           family=Gamma(link = "inverse"))
+
+mod_mag_MW_upq_dd <- dredge(mod_mag_MW_upq)
+
+
+mod_mag_MW_median <-  glmmTMB(RoC_median~DC*Position*Diversity*SMOOTH+(1|dataset.ID),
+                           data=data_mag_sum_MW,
+                           family=Gamma(link = "inverse"))
+
+mod_mag_MW_median_dd <- dredge(mod_mag_MW_median)
+
+
+# ----------------------------------------------
+#
+#               FIGURES 
+#
+# ----------------------------------------------
+
+Color.legen_smooth <- brewer.pal(n = unique(data_mag_sum$SMOOTH) %>% length(), name = 'Set2')
+names(Color.legen_smooth) <- levels(data_mag_sum$SMOOTH)
+
+
+Color.legen_DC <- brewer.pal(n = unique(data_mag_sum$DC) %>% length(), name = 'Set3')
+names(Color.legen_DC) <- levels(data_mag_sum$DC)
+
+Color.legen_Position <- brewer.pal(n = unique(data_mag_sum$Position) %>% length(), name = 'Set1')
+names(Color.legen_Position) <- levels(data_mag_sum$Position)
+
+Color.legen_Diversity <- brewer.pal(n = unique(data_mag_sum$Diversity) %>% length(), name = 'Paired')
+names(Color.legen_Diversity) <- levels(data_mag_sum$Diversity)
+
+
+##############
+#   FIG 1
+#############
 
 fc_calculate_RoC_comparison <- function(data, Working.Unit, BIN.size, N.shifts, rand ,interest.treshold){
   
@@ -36,20 +527,20 @@ fc_calculate_RoC_comparison <- function(data, Working.Unit, BIN.size, N.shifts, 
   for(i in 1:20)
   {
     data.temp<- fc_R_ratepol( data.source.pollen =  data$filtered.counts,
-                            data.source.age = data$list_ages,
-                            sm.type = performance.smooth[i],
-                            N.points = 5,
-                            range.age.max = 500, 
-                            grim.N.max = 9,
-                            Working.Unit = Working.Unit,
-                            BIN.size = BIN.size,
-                            N.shifts = N.shifts,
-                            rand = rand,
-                            standardise = F, 
-                            S.value = 150 ,
-                            DC = performance.DC[i],
-                            interest.treshold = interest.treshold,
-                            Debug = F) %>%
+                              data.source.age = data$list_ages,
+                              sm.type = performance.smooth[i],
+                              N.points = 5,
+                              range.age.max = 500, 
+                              grim.N.max = 9,
+                              Working.Unit = Working.Unit,
+                              BIN.size = BIN.size,
+                              N.shifts = N.shifts,
+                              rand = rand,
+                              standardise = F, 
+                              S.value = 150 ,
+                              DC = performance.DC[i],
+                              interest.treshold = interest.treshold,
+                              Debug = F) %>%
       as_tibble()
     
     # PEAK detection 
@@ -61,7 +552,8 @@ fc_calculate_RoC_comparison <- function(data, Working.Unit, BIN.size, N.shifts, 
     
     # GAM  
     # mark points that are abowe the GAM model (exactly 1.5 SD higher than GAM prediction)
-    pred.gam <-  predict.gam(gam(ROC~s(AGE,k=3), data = data.temp))
+    pred.gam <-  predict.gam(gam(ROC~s(AGE,k=3), data = data.temp, family = "Gamma",
+                                 correlation = corCAR1(form = ~ AGE), method = "REML"), type="response")
     pred.gam.diff <- data.temp$ROC - pred.gam
     data.temp$PEAK.G <- (pred.gam.diff) > 1.5*sd(pred.gam.diff)
     
@@ -88,24 +580,13 @@ fc_calculate_RoC_comparison <- function(data, Working.Unit, BIN.size, N.shifts, 
 
 fc_get_pollen_data <- function (data, sm.type, N.taxa)
 {
-  data_f <- data$filtered.counts %>%
-    rownames_to_column() %>%
-    inner_join(data$list_ages$ages %>% mutate(sample.id=as.character(sample.id)), by=c("rowname" = "sample.id"))
+  # remove the sample ID
+  if (is.numeric(unlist(data$filtered.counts[,1]))==F){
+    data$filtered.counts <- data$filtered.counts[,-1]
+  }
   
-  data_f_crit <- data_f$age <8500
-    
-  age_f <- data$list_ages
   
-  age_f$ages <- age_f$ages[data_f_crit,]
-  age_f$age_position <- age_f$age_position[,data_f_crit]
-  age_f$age_quantile <- age_f$age_quantile[,data_f_crit]  
-  
-  data_f <- data_f[data_f_crit,]
-  
-  data_f <- data_f %>%
-    dplyr::select(-c(rowname,age,depth))
-  
-  Common.list <- data_f %>%
+  Common.list <- data$filtered.counts %>%
     colSums() %>% 
     sort(decreasing = T) %>%
     .subset(.,1:N.taxa) %>%
@@ -115,12 +596,12 @@ fc_get_pollen_data <- function (data, sm.type, N.taxa)
     sub(")",".",.) %>%
     sub(".\\(","..",.) 
   
-  data.ext <-  fc_extract_data(data_f,
-                          age_f) %>%
+  data.ext <-  fc_extract_data(data$filtered.counts,
+                               data$list_ages) %>%
     fc_smooth_pollen_data(.,sm.type = sm.type,
-              N.points = 5,
-              grim.N.max = 9,
-              range.age.max = 500) %>%
+                          N.points = 5,
+                          grim.N.max = 9,
+                          range.age.max = 500) %>%
     fc_check_data(.,proportion = T)
   
   plot.data <- data.ext$Pollen %>%
@@ -134,402 +615,6 @@ fc_get_pollen_data <- function (data, sm.type, N.taxa)
 }
 
 
-# ----------------------------------------------
-#             DEFINITION OF VARIBLES
-# ----------------------------------------------
-
-# Number of simulated enviromental variables
-N_env <- 4
-
-# diversity of pollen taxat in simulated data
-low_diversity <- 5
-high_diversity <- 50
-
-# position of the enviromental change in the sequence 
-breaks_recent <- c(2000, 3000)
-breaks_late <- c(5500, 6500)
-
-# Number of simulated datasest of pollen data
-N_rep <- 100
-
-# template of time sequence with uneven distribution of points
-time_seq <- tibble_Europe2$list_ages[[2]]$ages$age
-
-# maximal time of focus 
-age_lim <- 8000
-
-
-# -----------------------------------------
-#
-#             STATISTICAL COMP
-# 
-# -----------------------------------------
-
-# data simulation
-
-sim_ld_recent_MW <- fc_simulate_pollen_data_in_all_methods(time=time_seq, 
-                                                           nforc=N_env, 
-                                                           mean=100, 
-                                                           sdev=.15, 
-                                                           nprox=low_diversity, 
-                                                           var=20, 
-                                                           range=15,
-                                                           manual.edit = T,
-                                                           breaks=breaks_recent,
-                                                           jitter = T,
-                                                           rarity=T,
-                                                           Working.Unit="MW", 
-                                                           BIN.size=500, 
-                                                           N.shifts=5, 
-                                                           N.datasets=N_rep, 
-                                                           interest.treshold=8000)
-
-sim_ld_late_MW <- fc_simulate_pollen_data_in_all_methods(time=time_seq, 
-                                                           nforc=N_env, 
-                                                           mean=100, 
-                                                           sdev=.15, 
-                                                           nprox=low_diversity, 
-                                                           var=20, 
-                                                           range=15,
-                                                           manual.edit = T,
-                                                           breaks=breaks_late,
-                                                           jitter = T,
-                                                           rarity=T,
-                                                           Working.Unit="MW", 
-                                                           BIN.size=500, 
-                                                           N.shifts=5, 
-                                                           N.datasets=N_rep, 
-                                                           interest.treshold=8000)
-
-sim_hd_recent_MW <- fc_simulate_pollen_data_in_all_methods(time=time_seq, 
-                                                           nforc=N_env, 
-                                                           mean=100, 
-                                                           sdev=.15, 
-                                                           nprox=high_diversity, 
-                                                           var=20, 
-                                                           range=15,
-                                                           manual.edit = T,
-                                                           breaks=breaks_recent,
-                                                           jitter = T,
-                                                           rarity=T,
-                                                           Working.Unit="MW", 
-                                                           BIN.size=500, 
-                                                           N.shifts=5, 
-                                                           N.datasets=N_rep, 
-                                                           interest.treshold=8000)
-
-sim_hd_late_MW <- fc_simulate_pollen_data_in_all_methods(time=time_seq, 
-                                                         nforc=N_env, 
-                                                         mean=100, 
-                                                         sdev=.15, 
-                                                         nprox=high_diversity, 
-                                                         var=20, 
-                                                         range=15,
-                                                         manual.edit = T,
-                                                         breaks=breaks_late,
-                                                         jitter = T,
-                                                         rarity=T,
-                                                         Working.Unit="MW", 
-                                                         BIN.size=500, 
-                                                         N.shifts=5, 
-                                                         N.datasets=N_rep, 
-                                                         interest.treshold=8000)
-
-# -----------------------------------------
-#
-#       SUCCESS COMPARISON
-# 
-# -----------------------------------------
-
-perform_sim_ld_recent_MW<- fc_test_simlutated_data_succsess(sim_ld_recent_MW, breaks = breaks_recent)
-
-perform_sim_ld_late_MW<- fc_test_simlutated_data_succsess(sim_ld_late_MW, breaks = breaks_late)
-
-perform_sim_hd_recent_MW<- fc_test_simlutated_data_succsess(sim_hd_recent_MW, breaks = breaks_recent)
-
-perform_sim_hd_late_MW<- fc_test_simlutated_data_succsess(sim_hd_late_MW, breaks = breaks_late)
-
-
-data_success_sum <- rbind(
-  data.frame(perform_sim_ld_recent_MW$RawData,Position="recent", Diversity= "low"),
-  data.frame(perform_sim_ld_late_MW$RawData,Position="late", Diversity= "low"),
-  data.frame(perform_sim_hd_recent_MW$RawData,Position="recent", Diversity= "high"),
-  data.frame(perform_sim_hd_late_MW$RawData,Position="late", Diversity= "high")
-) %>%
-  as_tibble()
-
-data_success_sum <- within(data_success_sum, Position <- factor(Position, levels = c("recent","late")))
-levels(data_success_sum$Position) <- c("high density level","low density level")
-
-data_success_sum <- within(data_success_sum, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
-levels(data_success_sum$SMOOTH) <- c("None","M.avg","Grimm","Age.w","Shep")
-
-data_success_sum <- within(data_success_sum, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
-levels(data_success_sum$DC) <- c("Euc","Euc.sd","Chord","Chisq")
-
-data_success_sum <- within(data_success_sum, Diversity <- factor(Diversity, levels = c("low","high")))
-levels(data_success_sum$Diversity) <- c("low richness","high richness")
-
-
-compare_models <- function(MODEL,SCOPE, order = 1, type = "glm" ){
-  
-  res.tib <- tibble(X= SCOPE, VAR =NA,.rows = length(SCOPE) )
-  
-  for (i in 1: length(SCOPE)){
-    
-    if(order == 1){
-      FORMULA <- paste(". ~ ",SCOPE[i])
-    } 
-    
-    if(order == 2){
-      FORMULA <- paste(". ~ . +",SCOPE[i])
-    }
-    
-    new.model <- update(MODEL, FORMULA)  
-    new.model.sum <- summary(new.model)
-    
-    if(type == "glm"){
-      res.tib$VAR[i] <- 1 - new.model.sum$deviance/new.model.sum$null.deviance  
-    }
-    
-    if(type == "lm"){
-      res.tib$VAR[i] <-  new.model.sum$r.squared
-    }
-     
-    if(type == "glmmTMB"){
-      res.tib$VAR[i] <- new.model.sum$AICtab 
-    }
-  }
-  
-  return(res.tib %>% arrange(-VAR))
-}
-
-
-## FOCUS
-
-data_success_sum_G <- data_success_sum %>%
-  filter(PEAK == "PEAK.G") %>%
-  filter(SEGMENT == "focus") %>%
-  ungroup() %>%
-  dplyr::select(-c(PEAK,SEGMENT))
-
-
-# run 0
-
-scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE)))
-
-glm.0 <- glm(VALUE ~ (+1), family = "quasibinomial" , data = data_success_sum_G)
-
-compare_models(glm.0,scope, order = 1)
-
-glm.1 <- glm(VALUE ~ Position, family = "quasibinomial" , data = data_success_sum_G)
-
-anova(glm.0,glm.1, test= "F")
-
-
-# run 1
-
-scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE, Position)))
-
-compare_models(glm.1,scope, order = 2)
-
-glm.2a <- glm(VALUE ~ Position + SMOOTH, family = "quasibinomial" , data = data_success_sum_G)
-glm.2b <- glm(VALUE ~ Position * SMOOTH, family = "quasibinomial" , data = data_success_sum_G)
-
-anova(glm.1,glm.2a, test= "F")
-anova(glm.2a,glm.2b, test= "F")
-
-# run 2 
-
-scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE, Position, SMOOTH)))
-
-compare_models(glm.2a,scope, order = 2)
-
-glm.3a <- glm(VALUE ~ Position + SMOOTH + Diversity, family = "quasibinomial" , data = data_success_sum_G)
-glm.3b <- glm(VALUE ~ (Position + SMOOTH) * Diversity, family = "quasibinomial" , data = data_success_sum_G)
-
-anova(glm.2a,glm.3a, test= "F")
-anova(glm.3a,glm.3b, test= "F")
-# run 3
-
-glm.4a <- glm(VALUE ~ (Position + SMOOTH) * Diversity + DC , family = "quasibinomial" , data = data_success_sum_G)
-glm.4b <- glm(VALUE ~ (Position + SMOOTH) * Diversity * DC, family = "quasibinomial" , data = data_success_sum_G)
-
-anova(glm.3b,glm.4a, test= "F")
-
-
-# GLM FIN
-
-glm.fin <- glm.3b
-
-formula(glm.fin)
-
-
-## EMPTY
-
-data_success_sum_G <- data_success_sum %>%
-  filter(PEAK == "PEAK.G") %>%
-  filter(SEGMENT == "empty") %>%
-  ungroup() %>%
-  dplyr::select(-c(PEAK,SEGMENT))
-
-
-# run 0
-
-scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE)))
-
-glm.0 <- glm(VALUE ~ (+1), family = "quasibinomial" , data = data_success_sum_G)
-
-compare_models(glm.0,scope, order = 1)
-
-glm.1 <- glm(VALUE ~ Position, family = "quasibinomial" , data = data_success_sum_G)
-
-anova(glm.0,glm.1, test= "F")
-
-# run 1
-
-scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE, Position)))
-
-compare_models(glm.1,scope, order = 2)
-
-glm.2a <- glm(VALUE ~ Position + SMOOTH, family = "quasibinomial" , data = data_success_sum_G)
-glm.2b <- glm(VALUE ~ Position * SMOOTH, family = "quasibinomial" , data = data_success_sum_G)
-
-anova(glm.1,glm.2a, test= "F")
-anova(glm.2a,glm.2b, test= "F")
-
-# run 2 
-
-scope <- names(data_success_sum_G %>% dplyr::select(-c(dataset.ID,VALUE, Position, SMOOTH)))
-
-compare_models(glm.2b,scope, order = 2)
-
-glm.3a <- glm(VALUE ~ Position * SMOOTH + DC, family = "quasibinomial" , data = data_success_sum_G)
-glm.3b <- glm(VALUE ~ Position * SMOOTH * DC, family = "quasibinomial" , data = data_success_sum_G)
-
-anova(glm.2b,glm.3a, test= "F")
-anova(glm.3a,glm.3b, test= "F")
-
-# run 3
-
-glm.4a <- glm(VALUE ~ Position * SMOOTH *  DC + Diversity , family = "quasibinomial" , data = data_success_sum_G)
-glm.4b <- glm(VALUE ~ Position * SMOOTH *  DC * Diversity, family = "quasibinomial" , data = data_success_sum_G)
-
-anova(glm.3b,glm.4a, test= "F")
-
-
-glm.fin.e <- glm.3b
-
-formula(glm.fin.e)
-
-# -----------------------------------------
-#
-#       MAGNITUDE COMPARISON
-# 
-# -----------------------------------------
-
-mag_sim_ld_recent_MW <- fc_test_simlutated_data_magnitude(sim_ld_recent_MW)
-
-mag_sim_ld_late_MW <- fc_test_simlutated_data_magnitude(sim_ld_late_MW)
-
-mag_sim_hd_recent_MW <- fc_test_simlutated_data_magnitude(sim_hd_recent_MW)
-
-mag_sim_hd_late_MW <- fc_test_simlutated_data_magnitude(sim_hd_late_MW)
-
-
-data_mag_sum <- rbind(
-  data.frame(mag_sim_ld_recent_MW,Position="recent",Diversity="low"),
-  data.frame(mag_sim_ld_late_MW,Position="late",Diversity="low"),
-  data.frame(mag_sim_hd_recent_MW,Position="recent",Diversity="high"),
-  data.frame(mag_sim_hd_late_MW,Position="late",Diversity="high")
-) %>% as_tibble()
-
-data_mag_sum <- within(data_mag_sum, Position <- factor(Position, levels = c("recent","late")))
-levels(data_mag_sum$Position) <- c("high density level","low density level")
-
-data_mag_sum <- within(data_mag_sum, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
-levels(data_mag_sum$SMOOTH) <- c("None","M.avg","Grimm","Age.w","Shep")
-
-data_mag_sum <- within(data_mag_sum, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
-levels(data_mag_sum$DC) <- c("Euc","Euc.sd","Chord","Chisq")
-
-data_mag_sum <- within(data_mag_sum, Diversity <- factor(Diversity, levels = c("low","high")))
-levels(data_mag_sum$Diversity) <- c("low richness","high richness")
-
-
-
-# run 0
-
-scope <- names(data_mag_sum %>% dplyr::select(-c(dataset.ID,RoC_max)))
-
-M.glm.0 <- glm(RoC_max ~ (+1),family="Gamma", data = data_mag_sum)
-
-compare_models(M.glm.0,scope, order = 1, type = "glm")
-
-M.glm.1 <- glm(RoC_max ~ DC,family="Gamma", data = data_mag_sum)
-
-anova(M.glm.0,M.glm.1, test= "Chisq")
-
-# run 1
-
-scope <- names(data_mag_sum %>% dplyr::select(-c(dataset.ID,RoC_max,DC)))
-
-compare_models(M.glm.1,scope, order = 2, type="glm")
-
-M.glm.2a <- glm(RoC_max ~ DC + Diversity, family="Gamma", data = data_mag_sum)
-M.glm.2b <- glm(RoC_max ~ DC * Diversity, family = "Gamma" , data = data_mag_sum)
-
-anova(M.glm.1,M.glm.2a, test= "Chisq")
-anova(M.glm.2a,M.glm.2b, test= "Chisq")
-
-# run 2
-
-scope <- names(data_mag_sum %>% dplyr::select(-c(dataset.ID,RoC_max,DC,Diversity)))
-
-compare_models(M.glm.2b,scope, order = 2, type="glm")
-
-M.glm.3a <- glm(RoC_max ~ DC * Diversity + Position, family = "Gamma" , data = data_mag_sum)
-M.glm.3b <- glm(RoC_max ~ DC * Diversity * Position, family = "Gamma" , data = data_mag_sum)
-
-anova(M.glm.2b,M.glm.3a, test= "Chisq")
-anova(M.glm.3a,M.glm.3b, test= "Chisq")
-
-# run 3
-
-M.glm.4a <- glm(RoC_max ~ DC * Diversity * Position + SMOOTH, family = "Gamma" , data = data_mag_sum)
-M.glm.4b <- glm(RoC_max ~ DC * Diversity * Position * SMOOTH, family = "Gamma" , data = data_mag_sum)
-
-
-anova(M.glm.3b,M.glm.4a, test= "Chisq")
-
-# glm.fin
-
-M.glm.fin <- M.glm.3b
-
-# ----------------------------------------------
-#
-#               FIGURES 
-#
-# ----------------------------------------------
-
-Color.legen_smooth <- brewer.pal(n = unique(data_mag_sum$SMOOTH) %>% length(), name = 'Set2')
-names(Color.legen_smooth) <- levels(data_mag_sum$SMOOTH)
-
-
-Color.legen_DC <- brewer.pal(n = unique(data_mag_sum$DC) %>% length(), name = 'Set3')
-names(Color.legen_DC) <- levels(data_mag_sum$DC)
-
-Color.legen_Position <- brewer.pal(n = unique(data_mag_sum$Position) %>% length(), name = 'Set1')
-names(Color.legen_Position) <- levels(data_mag_sum$Position)
-
-Color.legen_Diversity <- brewer.pal(n = unique(data_mag_sum$Diversity) %>% length(), name = 'Paired')
-names(Color.legen_Diversity) <- levels(data_mag_sum$Diversity)
-
-
-##############
-#   FIG 1
-#############
-
 data_example <- list(dataset.id = tibble_Europe2$dataset.id[[2]],
                      filtered.counts = tibble_Europe2$filtered.counts[[2]],
                      list_ages = tibble_Europe2$list_ages[[2]])
@@ -538,18 +623,17 @@ data_example_MW <- fc_calculate_RoC_comparison(data_example,
                                                Working.Unit = "MW",
                                                BIN.size = 500,
                                                N.shifts = 5,
-                                               rand = 10,
+                                               rand = 10000,
                                                interest.treshold =  age_lim)
 data_example_MW.fresh <- data_example_MW
-
+data_example_MW <- data_example_MW.fresh
 
 
 data_example_MW <- within(data_example_MW, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
 levels(data_example_MW$DC) <- c("Euc","Euc.sd","Chord","Chisq")
 
-data_example_MW <- within(data_example_MW, SMOOTH <- factor(SMOOTH, levels = c("none","n.avg","grim","age.w","shep")))
+data_example_MW <- within(data_example_MW, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
 levels(data_example_MW$SMOOTH)<-c("None","M.avg","Grimm","Age.w","Shep")
-
 
 
 FIG1_visual_example_MW <- data_example_MW %>%
@@ -754,21 +838,21 @@ ggsave("~/RESULTS/Methods/FIN/FIG23_mag_plus_success.pdf",
 
 
 #SITE A
-which(tibble_Europe2$dataset.id %in%  17334 )
 
-data_site_A <- list(dataset.id = tibble_Europe2$dataset.id[[2]],
-                    filtered.counts = tibble_Europe2$filtered.counts[[2]],
-                    list_ages = tibble_Europe2$list_ages[[2]])
 
-data_site_A_pollen <-fc_get_pollen_data(data_site_A, sm.type = "none",N.taxa = 10)
+which(Hope_smooth$dataset.id %in%  17334 )
+
+data_site_A <- list(dataset.id = Hope_smooth$dataset.id[[413]],
+                    filtered.counts = Hope_smooth$filtered.counts[[413]],
+                    list_ages = Hope_smooth$list_ages[[413]])
+
+data_site_A_pollen <-fc_get_pollen_data(data_site_A, sm.type = "none",N.taxa = 5)
 
 data_site_A$filtered.counts %>%
   as_tibble() %>%
-  filter(data_site_A$list_ages$ages$age < 8000) %>%
   dim()
 
 fc_get_pollen_data(data_site_A, sm.type = "none",N.taxa = 80) %>%
-  filter(age < 8000) %>%
   group_by(name) %>%
   summarise(SUM = sum(value)) %>%
   arrange(-SUM)
@@ -776,22 +860,20 @@ fc_get_pollen_data(data_site_A, sm.type = "none",N.taxa = 80) %>%
 
 #Site B
 
+which(Hope_smooth$dataset.id %in%  4012 )
 
-which(tibble_Europe2$dataset.id %in%  4012 )
 
-data_site_B <- list(dataset.id = tibble_Europe2$dataset.id[[45]],
-                    filtered.counts = tibble_Europe2$filtered.counts[[45]],
-                    list_ages = tibble_Europe2$list_ages[[45]])
+data_site_B <- list(dataset.id = Hope_smooth$dataset.id[[84]],
+                    filtered.counts = Hope_smooth$filtered.counts[[84]],
+                    list_ages = Hope_smooth$list_ages[[84]])
 
-data_site_B_pollen <-fc_get_pollen_data(data_site_B, sm.type = "shep",N.taxa = 10)
+data_site_B_pollen <-fc_get_pollen_data(data_site_B, sm.type = "none", N.taxa = 10)
 
 data_site_B$filtered.counts %>%
   as_tibble() %>%
-  filter(data_site_B$list_ages$ages$age < 8000) %>%
   dim()
 
-fc_get_pollen_data(data_site_B, sm.type = "shep",N.taxa = 50) %>%
-  filter(age < 8000) %>%
+fc_get_pollen_data(data_site_B, sm.type = "none",N.taxa = 50) %>%
   group_by(name) %>%
   summarise(SUM = sum(value)) %>%
   arrange(-SUM)
@@ -799,22 +881,21 @@ fc_get_pollen_data(data_site_B, sm.type = "shep",N.taxa = 50) %>%
 
 # SITE c
 
-which(tibble_Europe2$dataset.id %in%  40951 )
-
-data_site_C <- list(dataset.id = tibble_Europe2$dataset.id[[224]],
-                    filtered.counts = tibble_Europe2$filtered.counts[[224]],
-                    list_ages = tibble_Europe2$list_ages[[224]])
+which(Hope_smooth$dataset.id %in%  40951 )
 
 
-data_site_C_pollen <-fc_get_pollen_data(data_site_C, sm.type = "shep",N.taxa = 10)
+data_site_C <- list(dataset.id = Hope_smooth$dataset.id[[273]],
+                    filtered.counts = Hope_smooth$filtered.counts[[273]],
+                    list_ages = Hope_smooth$list_ages[[273]])
+
+
+data_site_C_pollen <-fc_get_pollen_data(data_site_C, sm.type = "none",N.taxa = 5)
 
 data_site_C$filtered.counts %>%
-  filter(data_site_C$list_ages$ages$age < 8000) %>%
   as_tibble() %>%
   dim()
 
-fc_get_pollen_data(data_site_C, sm.type = "shep",N.taxa = 103) %>%
-  filter(age < 8000) %>%
+fc_get_pollen_data(data_site_C, sm.type = "none",N.taxa = 103) %>%
   group_by(name) %>%
   summarise(SUM = sum(value)) %>%
   arrange(-SUM)
@@ -822,25 +903,21 @@ fc_get_pollen_data(data_site_C, sm.type = "shep",N.taxa = 103) %>%
 
 # Site D
 
-which(tibble_Europe2$dataset.id %in%  4314 )
 
-data_site_D <- list(dataset.id = tibble_Europe2$dataset.id[[50]],
-                    filtered.counts = tibble_Europe2$filtered.counts[[50]],
-                    list_ages = tibble_Europe2$list_ages[[50]])
+which(Hope_smooth$dataset.id %in%  45314 )
 
-data_site_D$filtered.counts %>%
-  filter(data_site_D$list_ages$ages$age < 8000) %>%
-  rowSums()
+data_site_D <- list(dataset.id = Hope_smooth$dataset.id[[299]],
+                    filtered.counts = Hope_smooth$filtered.counts[[299]],
+                    list_ages = Hope_smooth$list_ages[[299]])
 
-data_site_D_pollen <-fc_get_pollen_data(data_site_D, sm.type = "shep",N.taxa = 10)
+
+data_site_D_pollen <-fc_get_pollen_data(data_site_D, sm.type = "none",N.taxa = 5)
 
 data_site_D$filtered.counts %>%
   as_tibble() %>%
-  filter(data_site_D$list_ages$ages$age < 8000) %>%
   dim()
 
-fc_get_pollen_data(data_site_D, sm.type = "shep",N.taxa = 33) %>%
-  filter(age < 8000) %>%
+fc_get_pollen_data(data_site_D, sm.type = "none",N.taxa = 44) %>%
   group_by(name) %>%
   summarise(SUM = sum(value)) %>%
   arrange(-SUM)
@@ -1449,35 +1526,43 @@ ggsave("~/RESULTS/Methods/FIN/Supplementary_F1.pdf",
        plot = Supplementary_F1_fin,
        height = 10, width = 15, units="cm")
 
-
 ##########
 # FIG S2 #
 ########## 
 
-data_supp_fig_MW <- rbind(
-  perform_sim_ld_recent_MW$SumData,
-  perform_sim_ld_late_MW$SumData,
-  perform_sim_hd_recent_MW$SumData,
-  perform_sim_hd_late_MW$SumData
+data_supp_fig <- rbind(
+  data.frame(perform_sim_ld_recent_MW$SumData,WU = "MW"),
+  data.frame(perform_sim_ld_late_MW$SumData,WU="MW"),
+  data.frame(perform_sim_hd_recent_MW$SumData,WU="MW"),
+  data.frame(perform_sim_hd_late_MW$SumData,WU="MW"),
+  data.frame(perform_sim_ld_recent_BINs$SumData,WU = "BINs"),
+  data.frame(perform_sim_ld_late_BINs$SumData,WU="BINs"),
+  data.frame(perform_sim_hd_recent_BINs$SumData,WU="BINs"),
+  data.frame(perform_sim_hd_late_BINs$SumData,WU="BINs"),
+  data.frame(perform_sim_ld_recent_levels$SumData,WU = "levels"),
+  data.frame(perform_sim_ld_late_levels$SumData,WU="levels"),
+  data.frame(perform_sim_hd_recent_levels$SumData,WU="levels"),
+  data.frame(perform_sim_hd_late_levels$SumData,WU="levels")
 )
 
-data_supp_fig_MW$Dataset_type <- c(rep("LR-R",120),rep("LR-L",120),rep("HR-R",120),rep("HR-L",120))
-data_supp_fig_MW <- within(data_supp_fig_MW, Dataset_type <- factor(Dataset_type, levels = c("LR-R","LR-L","HR-R","HR-L")))
+data_supp_fig$Dataset_type <- rep(c(rep("LR-R",120),rep("LR-L",120),rep("HR-R",120),rep("HR-L",120)),3)
+data_supp_fig <- within(data_supp_fig, Dataset_type <- factor(Dataset_type, levels = c("LR-R","LR-L","HR-R","HR-L")))
 
-data_supp_fig_MW <- within(data_supp_fig_MW, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
-levels(data_supp_fig_MW$DC) <- c("Euc","Euc.sd","Chord","Chisq")
-
-
-data_supp_fig_MW <- within(data_supp_fig_MW, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
-levels(data_supp_fig_MW$SMOOTH) <- c("None","M.avg","Grimm","Age.w","Shep")
+data_supp_fig <- within(data_supp_fig, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
+levels(data_supp_fig$DC) <- c("Euc","Euc.sd","Chord","Chisq")
 
 
-data_supp_fig_MW <- within(data_supp_fig_MW, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
-data_supp_fig_MW <- within(data_supp_fig_MW, PEAK <- factor(PEAK, levels = c("PEAK.T","PEAK.G","PEAK.S")))
-levels(data_supp_fig_MW$PEAK) <- c("Threshold","GAM","SNI")
+data_supp_fig <- within(data_supp_fig, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
+levels(data_supp_fig$SMOOTH) <- c("None","M.avg","Grimm","Age.w","Shep")
 
 
-Supplementary_F2 <- data_supp_fig_MW %>%
+data_supp_fig <- within(data_supp_fig, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
+data_supp_fig <- within(data_supp_fig, PEAK <- factor(PEAK, levels = c("PEAK.T","PEAK.G","PEAK.S")))
+levels(data_supp_fig$PEAK) <- c("Threshold","GAM","SNI")
+
+
+Supplementary_F2a <- data_supp_fig %>%
+  filter(WU == "MW") %>%
   ggplot(aes(y=VALUE.M,x=Dataset_type,fill=SEGMENT, group=SEGMENT))+
   geom_bar(stat="identity", position="dodge", color="gray30")+
   geom_errorbar(aes(ymin=VALUE.M-VALUE.SD,ymax=VALUE.M+VALUE.SD, group=SEGMENT),
@@ -1487,15 +1572,53 @@ Supplementary_F2 <- data_supp_fig_MW %>%
                     values = c("darkseagreen","coral"))+
   ylab("Proportion of peak detection")+xlab("Type of simulated dataset")+
   theme_classic()+
+  coord_cartesian(ylim = c(0,1))+
   theme(legend.position = "bottom")+
   theme(axis.text.x = element_text(angle = -45,hjust = 0.3, vjust = 0.2 ))
 
 
-Supplementary_F2
+Supplementary_F2a
 
 ggsave("~/RESULTS/Methods/FIN/Supplementary_F2.pdf",
        plot = Supplementary_F2,
        height = 15, width = 22, units="cm")
+
+Supplementary_F2b <- data_supp_fig %>%
+  filter(WU == "BINs") %>%
+  ggplot(aes(y=VALUE.M,x=Dataset_type,fill=SEGMENT, group=SEGMENT))+
+  geom_bar(stat="identity", position="dodge", color="gray30")+
+  geom_errorbar(aes(ymin=VALUE.M-VALUE.SD,ymax=VALUE.M+VALUE.SD, group=SEGMENT),
+                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
+  facet_grid(SMOOTH~DC+PEAK)+
+  scale_fill_manual("Position in sequence", labels=c("Focal area (correct detection)","Outside of focal area (false positive)"),
+                    values = c("darkseagreen","coral"))+
+  ylab("Proportion of peak detection")+xlab("Type of simulated dataset")+
+  theme_classic()+
+  coord_cartesian(ylim = c(0,1))+
+  theme(legend.position = "bottom")+
+  theme(axis.text.x = element_text(angle = -45,hjust = 0.3, vjust = 0.2 ))
+
+
+Supplementary_F2b
+
+Supplementary_F2c <- data_supp_fig %>%
+  filter(WU == "levels") %>%
+  ggplot(aes(y=VALUE.M,x=Dataset_type,fill=SEGMENT, group=SEGMENT))+
+  geom_bar(stat="identity", position="dodge", color="gray30")+
+  geom_errorbar(aes(ymin=VALUE.M-VALUE.SD,ymax=VALUE.M+VALUE.SD, group=SEGMENT),
+                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
+  facet_grid(SMOOTH~DC+PEAK)+
+  scale_fill_manual("Position in sequence", labels=c("Focal area (correct detection)","Outside of focal area (false positive)"),
+                    values = c("darkseagreen","coral"))+
+  ylab("Proportion of peak detection")+xlab("Type of simulated dataset")+
+  theme_classic()+
+  coord_cartesian(ylim = c(0,1))+
+  theme(legend.position = "bottom")+
+  theme(axis.text.x = element_text(angle = -45,hjust = 0.3, vjust = 0.2 ))
+
+
+Supplementary_F2c
+
 
 ##########
 # FIG S3 #
@@ -2312,4 +2435,4 @@ ggsave("~/RESULTS/Methods/FIN/Supplementary_F6D.pdf",
 #               SAVE               #
 ####################################
 
-# save.image("~/DATA/temp/ENV_METHOD_2020708.RData")
+# save.image("~/DATA/temp/ENV_METHOD_2020730.RData")

@@ -385,7 +385,8 @@ fc_R_ratepol <- function (data.source.pollen,
     # mark points that are abowe the GAM model (exactly 1.5 SD higher than GAM prediction)
     r.m.full<- r.m.full %>%
       mutate(
-        pred.gam = predict.gam(gam(RUN.RoC.sm~s(RUN.Age.Pos,k=3), data = .)),
+        pred.gam = predict.gam(gam(RUN.RoC.sm~s(RUN.Age.Pos,k=3), data = ., family = "Gamma",
+                                   correlation = corCAR1(form = ~ RUN.Age.Pos), method = "REML"), type="response"),
         pred.gam.diff = RUN.RoC.sm - pred.gam,
         Peak = (pred.gam.diff) > 1.5*sd(pred.gam.diff)
         )
@@ -396,7 +397,8 @@ fc_R_ratepol <- function (data.source.pollen,
     # set moving window of 5 times higher than average distance between samples
     mean.age.window <- 5 * mean( diff(r.m.full$RUN.Age.Pos) )
     # create GAM 
-    pred.gam <-  predict.gam(gam(RUN.RoC.sm~s(RUN.Age.Pos,k=3), data = r.m.full))
+    pred.gam <-  predict.gam(gam(RUN.RoC.sm~s(RUN.Age.Pos,k=3), data = r.m.full, family = "Gamma",
+                                 correlation = corCAR1(form = ~ RUN.Age.Pos), method = "REML"), type="response")
     # calculate SNI (singal to noise ratio)
     SNI.calc <- CharSNI(data.frame(r.m.full$RUN.Age.Pos, r.m.full$RUN.RoC.sm, pred.gam),mean.age.window)
     # mark points with SNI higher than 3

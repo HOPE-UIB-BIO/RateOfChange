@@ -1,18 +1,7 @@
-fc_simulate_pollen_data_in_all_methods <- function(time=0:10e3, 
-                                                   nforc=4, 
-                                                   mean=100, 
-                                                   sdev=.15, 
-                                                   nprox=10, 
-                                                   var=20, 
-                                                   range=15,
-                                                   manual.edit = T,
-                                                   breaks=c(2000,3000),
-                                                   jitter = T,
-                                                   rarity=T,
+fc_simulate_pollen_data_in_all_methods <- function(random.data,
                                                    Working.Unit="levels", 
                                                    BIN.size=500, 
                                                    N.shifts=5, 
-                                                   N.datasets=100, 
                                                    interest.treshold=8000){
   
   
@@ -22,24 +11,13 @@ fc_simulate_pollen_data_in_all_methods <- function(time=0:10e3,
   
   breaks.seq <- c("empty",rep(c("focus","empty"),length(breaks)))
   
+  N.datasets <- nrow(random.data)
+  
   for(i in 1:N.datasets) {
     
-    # create random data
-    random.data <- fc_simulate_pollen_data(time=time,
-                                           nforc = nforc, 
-                                           mean = mean, 
-                                           sdev=sdev,
-                                           nprox = nprox,
-                                           var=var,
-                                           range = range,
-                                           manual.edit = manual.edit,
-                                           breaks = breaks,
-                                           jitter = jitter,
-                                           rarity = rarity)
-    
     for(j in 1:20){
-      data.temp<- fc_R_ratepol( data.source.pollen =  random.data$filtered.counts,
-                                data.source.age = random.data$list_ages,
+      data.temp<- fc_R_ratepol( data.source.pollen =  random.data$filtered.counts[[i]],
+                                data.source.age = random.data$list_ages[[i]],
                                 sm.type = performance.smooth[j],
                                 N.points = 5,
                                 range.age.max = 500, 
@@ -51,7 +29,7 @@ fc_simulate_pollen_data_in_all_methods <- function(time=0:10e3,
                                 standardise = F, 
                                 DC = performance.DC[j],
                                 interest.treshold = interest.treshold,
-                                Peak="GAM",
+                                Peak="Threshold",
                                 Debug = F) %>%
         as_tibble() %>%
         select(-PEAK)
@@ -66,7 +44,10 @@ fc_simulate_pollen_data_in_all_methods <- function(time=0:10e3,
       
       # GAM  
         # mark points that are abowe the GAM model (exactly 1.5 SD higher than GAM prediction)
-        pred.gam <-  predict.gam(gam(ROC~s(AGE,k=3), data = data.temp))
+        suppressWarnings(try(pred.gam <-  predict.gam(gam(ROC~s(AGE,k=3), data = data.temp, family = "Gamma",
+                                                          correlation = corCAR1(form = ~ AGE), method = "REML"), type="response"),
+                             silent =T))
+        
         pred.gam.diff <- data.temp$ROC - pred.gam
         data.temp$PEAK.G <- (pred.gam.diff) > 1.5*sd(pred.gam.diff)
       

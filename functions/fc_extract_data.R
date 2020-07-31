@@ -29,6 +29,11 @@ fc_extract_data <-  function (data.source.pollen.extract,
   age.un <- data.frame(data.source.age.extract$age_position)
   names(age.un) <- age$sample.id
   
+  # remove the sample ID
+  if (is.numeric(unlist(p.counts[,1]))==F){
+    p.counts <- p.counts[,-1]
+  }
+  
   # create a new variableswould be used all latter analysys
   # Newgae is a value of interpolated time (time which start with 0)
   age$newage <-age$age

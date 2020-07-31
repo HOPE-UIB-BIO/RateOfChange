@@ -1,8 +1,8 @@
-which(tibble_Europe$dataset.id %in%  1435 )
+which(tibble_Europe$dataset.id %in%  17334 )
 
 dataset.25318
 
-dataset.N <- 1
+dataset.N <- 2
 data.source.pollen <- tibble_Europe$filtered.counts[[dataset.N]]
 data.source.age <- tibble_Europe$list_ages[[dataset.N]]
 sm.type = "shep" 
@@ -12,7 +12,7 @@ grim.N.max = 9
 Working.Unit = "MW"
 BIN.size = 500
 N.shifts = 5
-rand = 1000
+rand = 99
 standardise = T 
 S.value = 150 
 DC = "chord"
@@ -40,6 +40,8 @@ Working.Unit="MW";
 N.datasets=100;
 interest.treshold=8000;
 
+
+random.data = sim_ld_recent
 
 
 data.source.pollen =  random.data$filtered.counts;
