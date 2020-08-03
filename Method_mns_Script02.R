@@ -1,4 +1,4 @@
-# load("~/DATA/temp/ENV_METHOD_2020708.RData")
+# load("C:/Users/omo084/OneDrive - University of Bergen/PRIVATE/ROC_method/ENV_METHOD_2020730.RData")
 
 # ----------------------------------------------
 #                     SETUP
@@ -226,198 +226,242 @@ levels(data_success_sum$DC) <- c("Euc","Euc.sd","Chord","Chisq")
 data_success_sum <- within(data_success_sum, Diversity <- factor(Diversity, levels = c("low","high")))
 levels(data_success_sum$Diversity) <- c("low richness","high richness")
 
-#data_success_sum <- within(data_success_sum, WU <- factor(WU, levels = c("levels","BINs","MW")))
+data_success_sum <- within(data_success_sum, WU <- factor(WU, levels = c("levels","BINs","MW")))
 
 
 # Produce FIG S2 !!!
 
+# cluster setup
+
+nrCores <- detectCores()
+
 ## FOCUS
 
-data_success_sum_G_MW <- data_success_sum %>%
-  filter(PEAK == "PEAK.G") %>%
+data_success_focus <- data_success_sum %>%
   filter(SEGMENT == "focus") %>%
-  filter(WU == "MW") %>%
   ungroup() %>%
-  dplyr::select(-c(PEAK,SEGMENT,WU))
+  dplyr::select(-c(SEGMENT))
 
-mod_success <-  glmmTMB(VALUE~WU*PEAK*DC*Position*Diversity*SMOOTH+(WU|dataset.ID),
-                 data=data_success_sum%>%
-                   filter(SEGMENT == "focus"),
-                 family=betabinomial(link = "logit"))
+mod_success_focus <-  glmmTMB(VALUE~WU*PEAK*Position*Diversity+(WU|dataset.ID),
+                           data=data_success_focus,
+                           family=betabinomial(link = "logit"))
 
-mod_success_sum_G_WM_dd <- dredge(mod_success_sum_G_WM, trace = T)
+cl <- makeCluster(nrCores-1)
+registerDoParallel(cl); 
+clusterExport(cl,c("data_success_focus","nrCores"),envir=environment());
+clusterEvalQ(cl,library("glmmTMB"))
 
-mod_success_sum_G_WM_formula <- as.formula(VALUE ~ DC + Position + Diversity + SMOOTH + 
-                                             Position:Diversity + Position:SMOOTH + Diversity:SMOOTH + Position:Diversity:SMOOTH +
-                                        (1|dataset.ID)) 
+mod_success_focus_dd <- pdredge(mod_success_focus,cluster = cl, trace = T)
 
-mod_success_sum_G_WM_fin <- glmmTMB(mod_success_sum_G_WM_formula,
-                                    data=data_success_sum_G_MW,
-                                    family=betabinomial(link = "logit"))
-
-mod_success_sum_G_WM_fin_cells <- emmeans(mod_success_sum_G_WM_fin, ~ DC + Position + Diversity + SMOOTH + 
-                                            Position:Diversity + Position:SMOOTH + Diversity:SMOOTH + Position:Diversity:SMOOTH,
-                                          type = "response")
-
-
-mod_success_sum_G_WM_fin_cells %>%
+emmeans(mod_success_focus, ~ WU*PEAK*Position*Diversity,
+        type = "response") %>%
   as_tibble() %>%
-  ggplot(aes(y=prob,x=Position, color=Diversity,fill=Diversity, ymin=lower.CL, ymax=upper.CL))+
+  mutate(PEAK = factor(PEAK, levels = c("PEAK.T","PEAK.G","PEAK.S"))) %>%
+  mutate(PEAK = fct_recode(PEAK, 
+                           "Threshold" = "PEAK.T",
+                           "GAM" = "PEAK.G",
+                           "SNI" = "PEAK.S")) %>%
+  ggplot(aes(y=prob,x=Position,color=Diversity, fill=Diversity, ymin=lower.CL, ymax=upper.CL))+
+  facet_grid(WU~PEAK)+
+  geom_hline(yintercept = seq(0,1,0.2), color="gray90")+
+  geom_bar(stat = "identity", color="gray60", orientation="x", width = 0.5, position = position_dodge(width = 0.5))+
+  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+  geom_point(shape=15, position = position_dodge(width = 0.5))+
+  coord_cartesian(ylim = c(0,1))
+
+
+data_success_focus_MW_G <- data_success_sum %>%
+  filter(SEGMENT == "focus") %>%
+  filter(WU == "MW") %>% 
+  filter(PEAK == "PEAK.G") %>%
+  ungroup() %>%
+  dplyr::select(-c(SEGMENT,WU,PEAK))
+
+mod_success_focus_MW_G <-  glmmTMB(VALUE~Position*Diversity*DC*SMOOTH+(1|dataset.ID),
+                                   data=data_success_focus_MW_G,
+                                   family=betabinomial(link = "logit"))
+
+cl <- makeCluster(nrCores-1)
+registerDoParallel(cl); 
+clusterExport(cl,c("data_success_focus_MW_G","nrCores"),envir=environment());
+clusterEvalQ(cl,library("glmmTMB"))
+
+mod_success_focus_MW_G_dd <- pdredge(mod_success_focus_MW_G,cluster = cl, trace = T)
+
+
+mod_success_focus_MW_G_sub <- glmmTMB(VALUE~Position+Diversity+DC+SMOOTH+
+                                        Diversity:Position+DC:Position+Position:SMOOTH+DC:Diversity+Diversity:SMOOTH+
+                                        Diversity:Position:SMOOTH+
+                                        (1|dataset.ID),
+                                      data=data_success_focus_MW_G,
+                                      family=betabinomial(link = "logit"),
+                                      control = glmmTMBControl(parallel = nrCores-1))
+
+
+## EMPTY 
+
+data_success_false <- data_success_sum %>%
+  filter(SEGMENT == "empty") %>%
+  ungroup() %>%
+  dplyr::select(-c(SEGMENT))
+
+mod_success_false <-  glmmTMB(VALUE~WU*PEAK*Position*Diversity+(WU|dataset.ID),
+                              data=data_success_false,
+                              family=betabinomial(link = "logit"))
+
+cl <- makeCluster(nrCores-1)
+registerDoParallel(cl); 
+clusterExport(cl,c("data_success_false","nrCores"),envir=environment());
+clusterEvalQ(cl,library("glmmTMB"))
+
+mod_success_false_dd <- pdredge(mod_success_false,cluster = cl, trace = T)
+
+emmeans(mod_success_false, ~ WU*PEAK*Position*Diversity, type = "response") %>%
+  as_tibble() %>%
+  mutate(PEAK = factor(PEAK, levels = c("PEAK.T","PEAK.G","PEAK.S"))) %>%
+  mutate(PEAK = fct_recode(PEAK, 
+                           "Threshold" = "PEAK.T",
+                           "GAM" = "PEAK.G",
+                           "SNI" = "PEAK.S")) %>%
+  ggplot(aes(y=prob,x=Position,color=Diversity, fill=Diversity, ymin=lower.CL, ymax=upper.CL))+
+  facet_grid(WU~PEAK)+
+  geom_hline(yintercept = seq(0,1,0.2), color="gray90")+
+  geom_bar(stat = "identity", color="gray60", orientation="x", width = 0.5, position = position_dodge(width = 0.5))+
+  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+  geom_point(shape=15, position = position_dodge(width = 0.5))+
+  coord_cartesian(ylim = c(0,1))
+
+data_success_false_MW_G <- data_success_sum %>%
+  filter(SEGMENT == "empty") %>%
+  filter(WU == "MW") %>% 
+  filter(PEAK == "PEAK.G") %>%
+  ungroup() %>%
+  dplyr::select(-c(SEGMENT,WU,PEAK))
+
+mod_success_false_MW_G <-  glmmTMB(VALUE~Position*Diversity*DC*SMOOTH+(1|dataset.ID),
+                                   data=data_success_false_MW_G,
+                                   family=betabinomial(link = "logit"))
+
+cl <- makeCluster(nrCores-1)
+registerDoParallel(cl); 
+clusterExport(cl,c("data_success_false_MW_G","nrCores"),envir=environment());
+clusterEvalQ(cl,library("glmmTMB"))
+
+mod_success_false_MW_G_dd <- pdredge(mod_success_false_MW_G,cluster = cl, trace = T)
+
+mod_success_false_MW_G_sub <- glmmTMB(VALUE~Position+Diversity+DC+SMOOTH+
+                                        Position:Diversity+Position:SMOOTH+
+                                        (1|dataset.ID),
+                                      data=data_success_false_MW_G,
+                                      family=betabinomial(link = "logit"),
+                                      control = glmmTMBControl(parallel = nrCores-1,
+                                                               optArgs = list(method="BFGS"),
+                                                               optimizer = optim)
+                                      )
+
+
+
+#Figures
+
+rbind(tibble(emmeans(mod_success_focus, ~ WU*PEAK*Position*Diversity,
+                     type = "response") %>%
+               as_tibble(),METHOD = "CORRECT"),
+      tibble(emmeans(mod_success_false, ~ WU*PEAK*Position*Diversity, type = "response") %>%
+               as_tibble(), METHOD = "FALSE")
+) %>%
+  mutate(PEAK = factor(PEAK, levels = c("PEAK.T","PEAK.G","PEAK.S"))) %>%
+  mutate(PEAK = fct_recode(PEAK, 
+                           "Threshold" = "PEAK.T",
+                           "GAM" = "PEAK.G",
+                           "SNI" = "PEAK.S")) %>%
+  mutate(PD = paste(Position,Diversity, sep = " - ")) %>%
+  ggplot(aes(y=prob,x=PD,color=METHOD, fill=METHOD, ymin=lower.CL, ymax=upper.CL))+
+  facet_grid(WU~PEAK)+
+  geom_hline(yintercept = seq(0,1,0.2), color="gray90")+
+  geom_bar(stat = "identity",color="gray60", orientation="x", width = 0.5, position = position_dodge(width = 0.5))+
+  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+  geom_point(shape=15, position = position_dodge(width = 0.5))+
+  coord_cartesian(ylim = c(0,1))+
+  theme(axis.text.x = element_text(angle = -45, hjust = -0.05, vjust = 1))+
+  labs(y="Proportion of peak detection",
+       x= "",
+       fill="detection",
+       color="detection")
+
+ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ DC,
+                  type = "response") %>%
+            as_tibble() %>%
+            ggplot(aes(y=prob, x=DC,color=DC,fill=DC, ymin=lower.CL, ymax= upper.CL))+
+            geom_hline(yintercept = seq(0,1,0.1), color="gray90")+
+            geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
+            geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+            geom_point(shape=15,position = position_dodge(width = 0.5))+
+            coord_cartesian(ylim = c(0.7,1))+
+            labs(y="",x=""),
+          emmeans(mod_success_false_MW_G_sub, ~ DC,
+                  type = "response") %>%
+            as_tibble() %>%
+            ggplot(aes(y=prob, x=DC,color=DC,fill=DC, ymin=lower.CL, ymax= upper.CL))+
+            geom_hline(yintercept = seq(0,1,0.01), color="gray90")+
+            geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
+            geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+            geom_point(shape=15,position = position_dodge(width = 0.5))+
+            coord_cartesian(ylim = c(0,0.03))+
+            labs(y="",x=""),
+          nrow = 1, common.legend = T, legend = "none",
+          labels = c("Correct detections","False positives")
+) %>% annotate_figure(left = "Proportion of peak detection")
+
+
+ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ SMOOTH,
+                  type = "response") %>%
+            as_tibble() %>%
+            ggplot(aes(y=prob, x=SMOOTH,color=SMOOTH,fill=SMOOTH, ymin=lower.CL, ymax= upper.CL))+
+            geom_hline(yintercept = seq(0,1,0.1), color="gray90")+
+            geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
+            geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+            geom_point(shape=15,position = position_dodge(width = 0.5))+
+            coord_cartesian(ylim = c(0.7,1))+
+            labs(y="",x=""),
+          emmeans(mod_success_false_MW_G_sub, ~ SMOOTH,
+                  type = "response") %>%
+            as_tibble() %>%
+            ggplot(aes(y=prob, x=SMOOTH,color=SMOOTH,fill=SMOOTH, ymin=lower.CL, ymax= upper.CL))+
+            geom_hline(yintercept = seq(0,1,0.01), color="gray90")+
+            geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
+            geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+            geom_point(shape=15,position = position_dodge(width = 0.5))+
+            coord_cartesian(ylim = c(0,0.03))+
+            labs(y="",x=""),
+          nrow = 1, common.legend = T, legend = "none",
+          labels = c("Correct detections","False positives")
+) %>% annotate_figure(left = "Proportion of peak detection")
+
+
+
+rbind(tibble(emmeans(mod_success_focus_MW_G_sub, ~ Position+Diversity+DC+SMOOTH+
+                       Diversity:Position+DC:Position+Position:SMOOTH+DC:Diversity+Diversity:SMOOTH+
+                       Diversity:Position:SMOOTH,
+                     type = "response") %>%
+               as_tibble(), METHOD = "CORRECT"),
+      tibble(emmeans(mod_success_false_MW_G_sub, ~Position+Diversity+DC+SMOOTH+
+                       Position:Diversity+Position:SMOOTH,
+                     type = "response") %>%
+               as_tibble(), METHOD = "FALSE")) %>%
+  mutate(PD = paste(Position,Diversity, sep = " - ")) %>%
+  ggplot(aes(y=prob,x=PD, color=METHOD,fill=METHOD, ymin=lower.CL, ymax=upper.CL))+
   facet_grid(DC~SMOOTH)+
   geom_hline(yintercept = seq(0,1,0.2), color="gray90")+
   geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
   geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
   geom_point(shape=15,position = position_dodge(width = 0.5))+
-  coord_cartesian(ylim = c(0.4,1))
+  coord_cartesian(ylim = c(0,1))+
+  theme(axis.text.x = element_text(angle = -45, hjust = -0.05, vjust = 1))+
+  labs(y="Proportion of peak detection",
+       x= "",
+       fill="detection",
+       color="detection")
 
-
-emmeans(mod_success_sum_G_WM_fin, ~ DC,
-        type = "response") %>%
-  as_tibble() %>%
-  ggplot(aes(y=prob, x=DC,color=DC,fill=DC, ymin=lower.CL, ymax= upper.CL))+
-  geom_hline(yintercept = seq(0,1,0.2), color="gray90")+
-  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
-  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
-  geom_point(shape=15,position = position_dodge(width = 0.5))+
-  coord_cartesian(ylim = c(0.7,1))
-
-
-emmeans(mod_success_sum_G_WM_fin, ~ SMOOTH,
-        type = "response") %>%
-  as_tibble() %>%
-  ggplot(aes(y=prob, x=SMOOTH,color=SMOOTH,fill=SMOOTH, ymin=lower.CL, ymax= upper.CL))+
-  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
-  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
-  geom_point(shape=15,position = position_dodge(width = 0.5))+
-  coord_cartesian(ylim = c(0.7,1))
-
-emmeans(mod_success_sum_G_WM_fin, ~ DC * SMOOTH,
-        type = "response") %>%
-  as_tibble() %>%
-  arrange(-prob)
-
-
-# Level density & diversity comparison
-
-# calculate model for levels
-mod_success_sum_G_levels_fin <- glmmTMB(mod_success_sum_G_WM_formula,
-                                        data=data_success_sum %>%
-                                          filter(PEAK == "PEAK.G") %>%
-                                          filter(SEGMENT == "focus") %>%
-                                          filter(WU == "levels") %>%
-                                          ungroup() %>%
-                                          dplyr::select(-c(PEAK,SEGMENT,WU)),
-                                        family=betabinomial(link = "logit"))
-# calculate model for bins
-mod_success_sum_G_BINs_fin <- glmmTMB(mod_success_sum_G_WM_formula,
-                                      data=data_success_sum %>%
-                                        filter(PEAK == "PEAK.G") %>%
-                                        filter(SEGMENT == "focus") %>%
-                                        filter(WU == "BINs") %>%
-                                        ungroup() %>%
-                                        dplyr::select(-c(PEAK,SEGMENT,WU)),
-                                      family=betabinomial(link = "logit"))
-
-
-
-rbind(tibble(emmeans(mod_success_sum_G_levels_fin, ~ Position,
-                     type = "response") %>%
-               as_tibble(),WU = "levels"),
-      tibble(emmeans(mod_success_sum_G_BINs_fin, ~ Position,
-                     type = "response") %>%
-               as_tibble(),WU = "BINs"),
-      tibble(emmeans(mod_success_sum_G_WM_fin, ~ Position,
-                     type = "response") %>%
-               as_tibble(),WU = "MW")
-) %>%
-  mutate(WU = factor(WU, levels = c("levels","BINs","MW"))) %>%
-  ggplot(aes(y=prob, x=Position,color=Position,fill=Position, ymin=lower.CL, ymax= upper.CL))+
-  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
-  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
-  geom_point(shape=15,position = position_dodge(width = 0.5))+
-  facet_grid(~WU)+
-  coord_cartesian(ylim = c(0.5,1))
-  
-
-
-rbind(tibble(emmeans(mod_success_sum_G_levels_fin, ~ Diversity,
-                     type = "response") %>%
-               as_tibble(),WU = "levels"),
-      tibble(emmeans(mod_success_sum_G_BINs_fin, ~ Diversity,
-                     type = "response") %>%
-               as_tibble(),WU = "BINs"),
-      tibble(emmeans(mod_success_sum_G_WM_fin, ~ Diversity,
-                     type = "response") %>%
-               as_tibble(),WU = "MW")
-) %>%
-  mutate(WU = factor(WU, levels = c("levels","BINs","MW"))) %>%
-  ggplot(aes(y=prob, x=Diversity,color=Diversity,fill=Diversity, ymin=lower.CL, ymax= upper.CL))+
-  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
-  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
-  geom_point(shape=15,position = position_dodge(width = 0.5))+
-  facet_grid(~WU)+
-  coord_cartesian(ylim = c(0.5,1))
-
-  
-
-
-
-## EMPTY
-
-data_false_sum_G_MW <- data_success_sum %>%
-  filter(PEAK == "PEAK.G") %>%
-  filter(SEGMENT == "empty") %>%
-  filter(WU == "MW") %>%
-  ungroup() %>%
-  dplyr::select(-c(PEAK,SEGMENT,WU))
-
-mod_false_sum_G_WM <-  glmmTMB(VALUE~DC*Position*Diversity*SMOOTH+(1|dataset.ID),
-                                 data=data_false_sum_G_MW,
-                                 family=betabinomial(link = "logit"))
-
-mod_false_sum_G_WM_dd <- dredge(mod_false_sum_G_WM)
-
-
-mod_false_sum_G_WM_formula <- as.formula(VALUE ~ Position + SMOOTH + 
-                                              Position:SMOOTH +
-                                             (1|dataset.ID)) 
-
-mod_false_sum_G_WM_fin <- glmmTMB(mod_false_sum_G_WM_formula,
-                                    data=data_false_sum_G_MW,
-                                    family=betabinomial(link = "logit"))
-
-mod_false_sum_G_WM_fin_cells <- emmeans(mod_false_sum_G_WM_fin, ~ Position + SMOOTH  +  Position:SMOOTH,
-                                          type = "response")
-
-mod_false_sum_G_WM_fin_cells %>%
-  as_tibble() %>%
-  ggplot(aes(y=prob,x=Position,color=Position, fill=Position, ymin=lower.CL, ymax=upper.CL))+
-  facet_grid(~SMOOTH)+
-  geom_hline(yintercept = seq(0,1,0.2), color="gray90")+
-  geom_bar(stat = "identity", color="gray60", orientation="x", width = 0.5)+
-  geom_errorbar(width=0.2,)+
-  geom_point(shape=15)+
-  coord_cartesian(ylim = c(0,0.2))
-
-
-emmeans(mod_false_sum_G_WM_fin, ~ SMOOTH,
-        type = "response") %>%
-  as_tibble() %>%
-  ggplot(aes(y=prob, x=SMOOTH,color=SMOOTH,fill=SMOOTH, ymin=lower.CL, ymax= upper.CL))+
-  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
-  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
-  geom_point(shape=15,position = position_dodge(width = 0.5))+
-  coord_cartesian(ylim = c(0,0.1))
-
-
-emmeans(mod_false_sum_G_WM_fin, ~ Position,
-        type = "response") %>%
-  as_tibble() %>%
-  ggplot(aes(y=prob, x=Position,color=Position,fill=Position, ymin=lower.CL, ymax= upper.CL))+
-  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
-  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
-  geom_point(shape=15,position = position_dodge(width = 0.5))+
-  coord_cartesian(ylim = c(0,0.1))
 
 
 # -----------------------------------------
@@ -469,49 +513,104 @@ levels(data_mag_sum$DC) <- c("Euc","Euc.sd","Chord","Chisq")
 data_mag_sum <- within(data_mag_sum, Diversity <- factor(Diversity, levels = c("low","high")))
 levels(data_mag_sum$Diversity) <- c("low richness","high richness")
 
+cl <- makeCluster(nrCores-1)
+registerDoParallel(cl); 
+clusterExport(cl,c("data_mag_sum","nrCores"),envir=environment());
+clusterEvalQ(cl,library("glmmTMB"))
+
+# upper quantile
+mod_mag_MW_upq <-  glmmTMB(RoC_upq~WU+Position+Diversity+DC+SMOOTH+ #5
+                             WU:Position+WU:Diversity+WU:DC+WU:SMOOTH+ #4
+                             Position:Diversity+Position:DC+Position:SMOOTH+ #3
+                             Diversity:DC+Diversity:SMOOTH+ #2
+                             DC:SMOOTH+ #1
+                             WU:Position:Diversity+WU:Position:DC+WU:Position:SMOOTH+WU:Diversity:DC+WU:Diversity:SMOOTH+WU:DC:SMOOTH+
+                             Position:Diversity:DC+Position:Diversity:SMOOTH+Position:DC:SMOOTH+Diversity:DC:SMOOTH+
+                             (WU|dataset.ID),
+                           data=data_mag_sum,
+                           family=Gamma(link = "inverse"))
+
+mod_mag_MW_upq_dd <- pdredge(mod_mag_MW_upq, trace = T, cluster = cl)
+
+# median
+mod_mag_MW_median <-  glmmTMB(RoC_median~WU+Position+Diversity+DC+SMOOTH+ #5
+                                WU:Position+WU:Diversity+WU:DC+WU:SMOOTH+ #4
+                                Position:Diversity+Position:DC+Position:SMOOTH+ #3
+                                Diversity:DC+Diversity:SMOOTH+ #2
+                                DC:SMOOTH+ #1
+                                WU:Position:Diversity+WU:Position:DC+WU:Position:SMOOTH+WU:Diversity:DC+WU:Diversity:SMOOTH+WU:DC:SMOOTH+
+                                Position:Diversity:DC+Position:Diversity:SMOOTH+Position:DC:SMOOTH+Diversity:DC:SMOOTH+
+                                (WU|dataset.ID),
+                              data=data_mag_sum,
+                              family=Gamma(link = "inverse"))
+
+mod_mag_MW_median_dd <- pdredge(mod_mag_MW_median, trace = T, cluster = cl)
+
+
 data_mag_sum_MW <- data_mag_sum %>%
-  filter(WU == "MW") %>%
-  ungroup() %>%
-  dplyr::select(-c(WU))
+  filter(WU =="MW")
 
-
-mod_mag_MW_max <-  glmmTMB(RoC_max~DC*Position*Diversity*SMOOTH+(1|dataset.ID),
+# max
+mod_mag_MW_max <-  glmmTMB(RoC_max~Position*Diversity*DC*SMOOTH+ (1|dataset.ID),
                            data=data_mag_sum_MW,
                            family=Gamma(link = "inverse"))
 
-mod_mag_MW_max_dd <- dredge(mod_mag_MW_max)
-
-mod_mag_MW_upq <-  glmmTMB(RoC_upq~DC*Position*Diversity*SMOOTH+(1|dataset.ID),
-                           data=data_mag_sum_MW,
-                           family=Gamma(link = "inverse"))
-
-mod_mag_MW_upq_dd <- dredge(mod_mag_MW_upq)
+mod_mag_MW_max_dd <- pdredge(mod_mag_MW_max, trace = T, cluster = cl)
 
 
-mod_mag_MW_median <-  glmmTMB(RoC_median~DC*Position*Diversity*SMOOTH+(1|dataset.ID),
-                           data=data_mag_sum_MW,
-                           family=Gamma(link = "inverse"))
+emmeans(mod_mag_MW_upq, ~ WU+Position+Diversity+DC+SMOOTH,
+        type = "response") %>%
+  as_tibble() %>%
+  mutate(PD = paste(Position,Diversity, sep = " - ")) %>%
+  mutate(WU = factor(WU, levels = c("levels","BINs","MW"))) %>%
+  mutate(WU = fct_recode(WU, "Mowing window" = "MW")) %>% 
+  ggplot(aes(y=response,x=PD, color=SMOOTH,fill=SMOOTH, ymin=lower.CL, ymax=upper.CL))+
+  facet_grid(WU~DC)+
+  geom_hline(yintercept = seq(0,1.5,0.5), color="gray90")+
+  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
+  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+  geom_point(shape=15,position = position_dodge(width = 0.5))+
+  #coord_cartesian(ylim = c(0,1))+
+  theme(axis.text.x = element_text(angle = -45, hjust = -0.05, vjust = 1))+
+  labs(y="Rate of change score",
+       x= "",
+       fill="",
+       color="")
 
-mod_mag_MW_median_dd <- dredge(mod_mag_MW_median)
 
-
+emmeans(mod_mag_MW_max, ~ Position+Diversity+DC+SMOOTH,
+        type = "response") %>%
+  as_tibble() %>%
+  mutate(PD = paste(Position,Diversity, sep = " - ")) %>%
+  ggplot(aes(y=response,x=DC, color=SMOOTH,fill=SMOOTH, ymin=lower.CL, ymax=upper.CL))+
+  facet_grid(~PD)+
+  geom_hline(yintercept = seq(0,2,0.5), color="gray90")+
+  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
+  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
+  geom_point(shape=15,position = position_dodge(width = 0.5))+
+  #coord_cartesian(ylim = c(0,1))+
+  theme(axis.text.x = element_text(angle = -45, hjust = -0.05, vjust = 1))+
+  labs(y="Rate of change score",
+       x= "",
+       fill="",
+       color="")
 # ----------------------------------------------
 #
 #               FIGURES 
 #
 # ----------------------------------------------
 
-Color.legen_smooth <- brewer.pal(n = unique(data_mag_sum$SMOOTH) %>% length(), name = 'Set2')
+Color.legen_smooth <- brewer.pal(n = 5, name = 'Set2')
 names(Color.legen_smooth) <- levels(data_mag_sum$SMOOTH)
 
 
-Color.legen_DC <- brewer.pal(n = unique(data_mag_sum$DC) %>% length(), name = 'Set3')
+Color.legen_DC <- brewer.pal(n =4, name = 'Set3')
 names(Color.legen_DC) <- levels(data_mag_sum$DC)
 
-Color.legen_Position <- brewer.pal(n = unique(data_mag_sum$Position) %>% length(), name = 'Set1')
+Color.legen_Position <- brewer.pal(n = 2, name = 'Set1')
 names(Color.legen_Position) <- levels(data_mag_sum$Position)
 
-Color.legen_Diversity <- brewer.pal(n = unique(data_mag_sum$Diversity) %>% length(), name = 'Paired')
+Color.legen_Diversity <- brewer.pal(n = 2, name = 'Paired')
 names(Color.legen_Diversity) <- levels(data_mag_sum$Diversity)
 
 
@@ -940,9 +1039,41 @@ names(Palette.1)<- sort(common_taxa)
 
 # Rate of Change
 
-data_site_A_RoC <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts,
+data_site_A_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts,
+                                   data.source.age = data_site_A$list_ages,
+                                   sm.type = "age.w", 
+                                   N.points = 5,
+                                   range.age.max = 500, 
+                                   grim.N.max = 9,
+                                   Working.Unit = "levels",
+                                   BIN.size = 500,
+                                   N.shifts = 5,
+                                   rand = 10000,
+                                   standardise = T, 
+                                   S.value = 150, 
+                                   DC = "chisq",
+                                   interest.treshold = age_lim,
+                                   Debug = F)
+
+data_site_A_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts,
+                                   data.source.age = data_site_A$list_ages,
+                                   sm.type = "age.w", 
+                                   N.points = 5,
+                                   range.age.max = 500, 
+                                   grim.N.max = 9,
+                                   Working.Unit = "BINs",
+                                   BIN.size = 500,
+                                   N.shifts = 5,
+                                   rand = 10000,
+                                   standardise = T, 
+                                   S.value = 150, 
+                                   DC = "chisq",
+                                   interest.treshold = age_lim,
+                                   Debug = F)
+
+data_site_A_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts,
                               data.source.age = data_site_A$list_ages,
-                              sm.type = "shep", 
+                              sm.type = "age.w", 
                               N.points = 5,
                               range.age.max = 500, 
                               grim.N.max = 9,
@@ -952,12 +1083,43 @@ data_site_A_RoC <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts
                               rand = 10000,
                               standardise = T, 
                               S.value = 150, 
-                              DC = "chord",
+                              DC = "chisq",
                               interest.treshold = age_lim,
                               Debug = F)
 
+data_Site_B_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts,
+                                   data.source.age = data_site_B$list_ages,
+                                   sm.type = "shep", 
+                                   N.points = 5,
+                                   range.age.max = 500, 
+                                   grim.N.max = 9,
+                                   Working.Unit = "levels",
+                                   BIN.size = 500,
+                                   N.shifts = 5,
+                                   rand = 10000,
+                                   standardise = T, 
+                                   S.value = 150, 
+                                   DC = "chord",
+                                   interest.treshold = age_lim,
+                                   Debug = F)
 
-data_Site_B_RoC <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts,
+data_Site_B_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts,
+                                   data.source.age = data_site_B$list_ages,
+                                   sm.type = "shep", 
+                                   N.points = 5,
+                                   range.age.max = 500, 
+                                   grim.N.max = 9,
+                                   Working.Unit = "BINs",
+                                   BIN.size = 500,
+                                   N.shifts = 5,
+                                   rand = 10000,
+                                   standardise = T, 
+                                   S.value = 150, 
+                                   DC = "chord",
+                                   interest.treshold = age_lim,
+                                   Debug = F)
+
+data_Site_B_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts,
                               data.source.age = data_site_B$list_ages,
                               sm.type = "shep", 
                               N.points = 5,
@@ -973,8 +1135,39 @@ data_Site_B_RoC <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts
                               interest.treshold = age_lim,
                               Debug = F)
 
+data_Site_C_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts,
+                                   data.source.age = data_site_C$list_ages,
+                                   sm.type = "shep", 
+                                   N.points = 5,
+                                   range.age.max = 500, 
+                                   grim.N.max = 9,
+                                   Working.Unit = "levels",
+                                   BIN.size = 500,
+                                   N.shifts = 5,
+                                   rand = 10000,
+                                   standardise = T, 
+                                   S.value = 150, 
+                                   DC = "chord",
+                                   interest.treshold = age_lim,
+                                   Debug = F)
 
-data_Site_C_RoC <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts,
+data_Site_C_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts,
+                                   data.source.age = data_site_C$list_ages,
+                                   sm.type = "shep", 
+                                   N.points = 5,
+                                   range.age.max = 500, 
+                                   grim.N.max = 9,
+                                   Working.Unit = "BINs",
+                                   BIN.size = 500,
+                                   N.shifts = 5,
+                                   rand = 10000,
+                                   standardise = T, 
+                                   S.value = 150, 
+                                   DC = "chord",
+                                   interest.treshold = age_lim,
+                                   Debug = F)
+
+data_Site_C_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts,
                               data.source.age = data_site_C$list_ages,
                               sm.type = "shep", 
                               N.points = 5,
@@ -990,8 +1183,40 @@ data_Site_C_RoC <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts
                               interest.treshold = age_lim,
                               Debug = F)
 
+data_Site_D_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts,
+                                     data.source.age = data_site_D$list_ages,
+                                     sm.type = "shep", 
+                                     N.points = 5,
+                                     range.age.max = 500, 
+                                     grim.N.max = 9,
+                                     Working.Unit = "levels",
+                                     BIN.size = 500,
+                                     N.shifts = 5,
+                                     rand = 10000,
+                                     standardise = T, 
+                                     S.value = 150, 
+                                     DC = "chord",
+                                     interest.treshold = age_lim,
+                                     Debug = F)
 
-data_Site_D_RoC <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts,
+data_Site_D_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts,
+                                   data.source.age = data_site_D$list_ages,
+                                   sm.type = "shep", 
+                                   N.points = 5,
+                                   range.age.max = 500, 
+                                   grim.N.max = 9,
+                                   Working.Unit = "BINs",
+                                   BIN.size = 500,
+                                   N.shifts = 5,
+                                   rand = 10000,
+                                   standardise = T, 
+                                   S.value = 150, 
+                                   DC = "chord",
+                                   interest.treshold = age_lim,
+                                   Debug = F)
+
+
+data_Site_D_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts,
                                 data.source.age = data_site_D$list_ages,
                               sm.type = "shep", 
                               N.points = 5,
@@ -1102,7 +1327,7 @@ plot(my_legend)
 
 
 FIG4_Site_A_2 <-  data_site_A_pollen %>%
-  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = -100, newage=NA)) %>%
+  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = 10e3, newage=NA)) %>%
   ggplot(aes( y=value, 
               x= age))+
   theme_classic()+
@@ -1132,7 +1357,7 @@ FIG4_Site_A_2 <-  data_site_A_pollen %>%
   facet_wrap(~name, ncol=length(common_taxa))
 
 FIG4_Site_B_2 <-  data_site_B_pollen %>%
-  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = -100, newage=NA)) %>%
+  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = 10e3, newage=NA)) %>%
   ggplot(aes( y=value, 
               x= age))+
   theme_classic()+
@@ -1162,7 +1387,7 @@ FIG4_Site_B_2 <-  data_site_B_pollen %>%
   facet_wrap(~name, ncol=length(common_taxa))
 
 FIG4_Site_C_2 <-  data_site_C_pollen %>%
-  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = -100, newage=NA)) %>%
+  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = 10e3, newage=NA)) %>%
   ggplot(aes( y=value, 
               x= age))+
   theme_classic()+
@@ -1192,7 +1417,7 @@ FIG4_Site_C_2 <-  data_site_C_pollen %>%
   facet_wrap(~name, ncol=length(common_taxa))
 
 FIG4_Site_D_2 <-  data_site_D_pollen %>%
-  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = -100, newage=NA)) %>%
+  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = 10e3, newage=NA)) %>%
   ggplot(aes( y=value, 
               x= age))+
   theme_classic()+
@@ -1221,7 +1446,7 @@ FIG4_Site_D_2 <-  data_site_D_pollen %>%
   coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
   facet_wrap(~name, ncol=length(common_taxa))
 
-FIG4_Site_A_3 <- data_site_A_RoC %>%
+FIG4_Site_A_3 <- data_site_A_RoC_MW %>%
 ggplot(aes(y=ROC, 
            x= AGE))+
   theme_classic()+
@@ -1560,14 +1785,14 @@ data_supp_fig <- within(data_supp_fig, SEGMENT <- factor(SEGMENT, levels = c("fo
 data_supp_fig <- within(data_supp_fig, PEAK <- factor(PEAK, levels = c("PEAK.T","PEAK.G","PEAK.S")))
 levels(data_supp_fig$PEAK) <- c("Threshold","GAM","SNI")
 
+data_supp_fig <- within(data_supp_fig, WU <- factor(WU, levels = c("levels","BINs","MW")))
 
 Supplementary_F2a <- data_supp_fig %>%
-  filter(WU == "MW") %>%
   ggplot(aes(y=VALUE.M,x=Dataset_type,fill=SEGMENT, group=SEGMENT))+
   geom_bar(stat="identity", position="dodge", color="gray30")+
   geom_errorbar(aes(ymin=VALUE.M-VALUE.SD,ymax=VALUE.M+VALUE.SD, group=SEGMENT),
                 position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
-  facet_grid(SMOOTH~DC+PEAK)+
+  facet_grid(DC+SMOOTH~WU+PEAK)+
   scale_fill_manual("Position in sequence", labels=c("Focal area (correct detection)","Outside of focal area (false positive)"),
                     values = c("darkseagreen","coral"))+
   ylab("Proportion of peak detection")+xlab("Type of simulated dataset")+
