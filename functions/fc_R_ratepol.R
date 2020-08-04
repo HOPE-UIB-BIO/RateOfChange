@@ -206,6 +206,10 @@ fc_R_ratepol <- function (data.source.pollen,
       # standardisation of pollen data to X(S.value) number of pollen grains 
       if(standardise==T) # 
       {
+        
+        # adjust the Svalue by the minimal Pollen or to a minimal of presected values
+        S.value <-  min(c( rowSums(data.subset$Pollen),S.value))
+        
         # check if all samples has S.value of pollen grains
         data.sd$Age <- data.sd$Age[rowSums(data.sd$Pollen, na.rm = T)>=S.value,]
         data.sd$Age.un <- data.sd$Age.un[,rowSums(data.sd$Pollen, na.rm = T)>=S.value]

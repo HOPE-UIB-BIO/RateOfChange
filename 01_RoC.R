@@ -43,7 +43,7 @@ library(maps)
 #             LOAD DATA & FUNCTIONS
 # ----------------------------------------------
 
-tibble_Europe <- readRDS("~/DATA/input/Europe_data.13.05.20.rds")
+HOPE_data_smooth <- readRDS("~/DATA/input/HOPE_data_smooth20200730.RDS")
 
 files.sources <- list.files("~/GITHUB/RateOfChange/functions/") 
 sapply(paste0("~/GITHUB/RateOfChange/functions/", files.sources, sep =""), source)
@@ -52,11 +52,15 @@ sapply(paste0("~/GITHUB/RateOfChange/functions/", files.sources, sep =""), sourc
 #               DATA EXPLORATION 
 # ----------------------------------------------
 
-# DATA based shoud be based on the criteria 
-# 1) that each record need to span between ca 250-8000 years and 
-# 2) samples have more than 150 grains Contain only relevant data for analysis
+glimpse(HOPE_data_smooth)
 
-glimpse(tibble_Europe)
+
+Region_filter_tibble <- tibble(REGION = c("Europe","North America","Asia","Latin America","Africa","Oceania"),
+                               max_limit =c(rep(8.5e3,2),rep(12e3,4)))
+
+HOPE_data_work <- HOPE_data_smooth %>% 
+  left_join(Region_filter_tibble, by="REGION")
+
 
 # ----------------------------------------------
 #               COMPUTATION 
@@ -64,14 +68,14 @@ glimpse(tibble_Europe)
 
 s.time <- Sys.time()
 
-tibble_Europe_Roc <-  tibble_Europe %>%
-  mutate(., ROC = map2(filtered.counts,list_ages,
-                       .f = function(.x,.y)
+HOPE_data_work_ROC <-  HOPE_data_work %>%
+  mutate(., ROC = pmap(list(filtered.counts,list_ages,max_limit),
+                       .f = function(.x,.y,.z)
                          {
                          try(res <- fc_R_ratepol(
                            data.source.pollen = .x,
                            data.source.age = .y,
-                           sm.type = "shep", 
+                           sm.type = "age.w", 
                            N.points = 5, 
                            range.age.max = 500, 
                            grim.N.max = 9,
@@ -81,8 +85,8 @@ tibble_Europe_Roc <-  tibble_Europe %>%
                            rand = 1000,
                            standardise = T, 
                            S.value = 150, 
-                           DC = "chord",
-                           interest.treshold = 8000,
+                           DC = "chisq",
+                           interest.treshold = .z,
                            Peak = "GAM",
                            Debug = F))
                          
@@ -99,12 +103,12 @@ tot.time
 #                 SAVE RESULT 
 # ----------------------------------------------
 
-tibble_Europe_Roc <- tibble_Europe_Roc %>%
+HOPE_data_work_ROC <- HOPE_data_work_ROC %>%
   dplyr::select(dataset.id, ROC) %>%
   filter(purrr::map(ROC, is_tibble)==T)
 
 
-# saveRDS(tibble_Europe_Roc, file = "~/DATA/output/tibble_Europe_Roc200518.rds") 
+# saveRDS(HOPE_data_work_ROC, file = "~/DATA/output/HOPE_Roc20200804.RDS") 
 
 
 # ----------------------------------------------
@@ -113,18 +117,18 @@ tibble_Europe_Roc <- tibble_Europe_Roc %>%
 
 # loadRDS("~/DATA/output/tibble_Europe_Roc200518.rds")
 
-tibble_Europe_work <- tibble_Europe %>%
-  inner_join(tibble_Europe_Roc, by="dataset.id")
+tibble_plot_work <- HOPE_data_work %>%
+  inner_join(HOPE_data_work_ROC, by="dataset.id")
 
 
 # variabe definition
-age.treshold = 8000 
+age.treshold = max(tibble_plot_work$max_limit) 
 Roc.treshold = 2 
-dataset.N = "4251"
+dataset.N = "374"
 
 
 # Perplot
-tibble_Europe_work %>%
+tibble_plot_work[1:100,] %>%
   select(dataset.id, collection.handle, long, lat, ROC) %>%
   unnest(cols = c(ROC)) %>%
   filter(AGE <= age.treshold) %>%
@@ -138,7 +142,7 @@ tibble_Europe_work %>%
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
   geom_point(data = . %>% filter(PEAK==T),color="green", size=2, shape=16, alpha=2/3)+
-  geom_hline(yintercept = 0, color="purple", size=0.1)+
+  geom_hline(yintercept = 0, size=0.1)+
   labs(
     x="Age (cal yr BC)",
     y="Rate-of-Change score"
@@ -148,101 +152,8 @@ tibble_Europe_work %>%
 ggsave("RESULTS/Europe/PerPlot.pdf",width = 50, height = 30, units= "cm", dpi= 600)
 
 
-# Summary
-ggarrange(
-  tibble_Europe_Roc %>%
-    select(dataset.id, collection.handle, long, lat, ROC) %>%
-    unnest(cols = c(ROC)) %>%
-    filter(AGE <= age.treshold) %>%
-    ggplot(aes( x= AGE))+
-    theme_classic()+
-    scale_x_continuous(trans = "reverse")+
-    coord_flip(xlim=c(age.treshold,0))+
-    geom_vline(xintercept = seq(from=0,to=age.treshold, by=2000), color="gray80", size=0.1)+
-    geom_rug(sides = "b")+
-    geom_density(fill="gray80", color="gray50")+
-    labs(
-      x="Age (cal yr BC)",
-      y="Density of the samples"
-    ) ,
-  tibble_Europe_Roc %>%
-    select(dataset.id, collection.handle, long, lat, ROC) %>%
-    unnest(cols = c(ROC)) %>%
-    filter(AGE <= age.treshold) %>%
-    ggplot(aes( y=ROC, 
-                x= AGE))+
-    theme_classic()+
-    scale_x_continuous(trans = "reverse")+
-    coord_flip(xlim=c(age.treshold,0), ylim = c(0,Roc.treshold))+
-    geom_hline(yintercept = seq(from=0,to=Roc.treshold, by=0.5), color="gray80", size=0.1)+
-    geom_vline(xintercept = seq(from=0,to=age.treshold, by=2000), color="gray80", size=0.1)+
-    geom_line(aes(group=as.factor(dataset.id)), size=0.5, alpha = 1/10)+
-    geom_smooth(color="purple", method = "loess",formula = y ~ x,  se=F)+
-    geom_hline(yintercept = 0, color="purple", size=0.1)+
-    labs(
-      x="Age (cal yr BC)",
-      y="Rate-of-Change score"
-    )+
-    theme(
-      axis.ticks.y = element_blank(),
-      axis.text.y = element_blank(),
-      axis.title.y  = element_blank()
-    ),
-  tibble_Europe_Roc %>%
-    select(dataset.id, collection.handle, long, lat, ROC) %>%
-    unnest(cols = c(ROC)) %>%
-    filter(AGE <= age.treshold) %>%
-    filter(PEAK == T) %>%
-    ggplot(aes( x= AGE))+
-    theme_classic()+
-    scale_x_continuous(trans = "reverse")+
-    coord_flip(xlim=c(age.treshold,0))+
-    geom_vline(xintercept = seq(from=0,to=age.treshold, by=2000), color="gray80", size=0.1)+
-    geom_rug(sides = "b")+
-    geom_density(fill="gray80", color="gray50")+
-    labs(
-      x="Age (cal yr BC)",
-      y="Density of Peak-points"
-    )+
-    theme(
-      axis.ticks.y = element_blank(),
-      axis.text.y = element_blank(),
-      axis.title.y  = element_blank()
-    ),
-  tibble_Europe_Roc %>%
-    select(dataset.id, collection.handle, long, lat, ROC) %>%
-    unnest(cols = c(ROC)) %>%
-    filter(AGE <= age.treshold) %>%
-    filter(PEAK == T) %>%
-    ggplot(aes( y=ROC, 
-                x= AGE))+
-    theme_classic()+
-    scale_x_continuous(trans = "reverse")+
-    coord_flip(xlim=c(age.treshold,0), ylim = c(0,Roc.treshold))+
-    geom_hline(yintercept = seq(from=0,to=Roc.treshold, by=0.5), color="gray80", size=0.1)+
-    geom_vline(xintercept = seq(from=0,to=age.treshold, by=2000), color="gray80", size=0.1)+
-    geom_point(color="green", size=2, shape=16, alpha=2/3)+
-    geom_smooth(color="red", method = "loess", formula = y ~ x,  se=F)+
-    labs(
-      x="Age (cal yr BC)",
-      y="Rate-of-Change Peak Points"
-    )+
-    theme(
-      axis.ticks.y = element_blank(),
-      axis.text.y = element_blank(),
-      axis.title.y  = element_blank()
-    ),
-  ncol = 4, 
-  widths = c(1,2,1,2),
-  labels = c("A","B","C","D"))
-
-
-ggsave("RESULTS/Europe/Summary.pdf",dpi= 600)
-
-
-
 # Single plot
-tibble_Europe_Roc %>%
+tibble_plot_work %>%
   select(dataset.id, collection.handle, long, lat, ROC) %>%
   filter(dataset.id==dataset.N) %>%
   unnest(cols = c(ROC)) %>%
@@ -263,35 +174,7 @@ tibble_Europe_Roc %>%
     y="Rate-of-Change score"
   )
 
-# MAP
-lat.dim <- c(min(tibble_Europe_Roc$lat),max(tibble_Europe_Roc$lat)) 
-long.dim <- c(min(tibble_Europe_Roc$long),max(tibble_Europe_Roc$long))
 
-tibble_Europe_Roc %>%
-  mutate(
-    N.RoC.points = select(.,ROC) %>%
-      pluck(.,1) %>% 
-      map_dbl(.,.f=function(x) {
-        filter(x,AGE <= age.treshold) %>%
-          filter(.,PEAK==T) %>%
-          nrow() }),
-    N.Samples = select(.,ROC) %>%
-      pluck(.,1) %>% 
-      map_dbl(.,.f=function(x) {
-        filter(x,AGE <= age.treshold) %>%
-          nrow(.) }),
-    Ratio = N.RoC.points/N.Samples
-  ) %>% 
-  ggplot(aes(x = long, y = lat)) +
-  borders(fill = "gray80", colour = "gray50") +
-  coord_fixed(ylim = lat.dim, xlim = long.dim) +
-  geom_point(aes(color=Ratio, size=N.RoC.points)) + 
-  scale_color_gradient("Ration of Peak-points to total samples",low="black",high = "red")+
-  scale_size( "Number of Peak-points")+
-  labs(x = "Longitude", y = "Latitude")+
-  theme_classic()
-
-ggsave("RESULTS/Europe/RoC_map_Europe.pdf",dpi= 600)
 
 # ----------------------------------------------
 #               CLEAN UP 
