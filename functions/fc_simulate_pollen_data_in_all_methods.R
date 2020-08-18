@@ -45,7 +45,7 @@ fc_simulate_pollen_data_in_all_methods <- function(random.data,
       # GAM  
         # mark points that are abowe the GAM model (exactly 1.5 SD higher than GAM prediction)
         suppressWarnings(try(pred.gam <-  predict.gam(gam(ROC~s(AGE,k=3), data = data.temp, family = "Gamma",
-                                                          correlation = corCAR1(form = ~ AGE), method = "REML"), type="response"),
+                                                        method = "REML"), type="response"),
                              silent =T))
         
         pred.gam.diff <- data.temp$ROC - pred.gam

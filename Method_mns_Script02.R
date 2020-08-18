@@ -1,4 +1,4 @@
-# load("C:/Users/omo084/OneDrive - University of Bergen/PRIVATE/ROC_method/ENV_METHOD_2020730.RData")
+# load("C:/Users/omo084/OneDrive - University of Bergen/PRIVATE/ROC_method/ENV_METHOD_2020807.RData")
 
 # ----------------------------------------------
 #                     SETUP
@@ -237,6 +237,7 @@ nrCores <- detectCores()
 
 ## FOCUS
 
+
 data_success_focus <- data_success_sum %>%
   filter(SEGMENT == "focus") %>%
   ungroup() %>%
@@ -246,6 +247,9 @@ mod_success_focus <-  glmmTMB(VALUE~WU*PEAK*Position*Diversity+(WU|dataset.ID),
                            data=data_success_focus,
                            family=betabinomial(link = "logit"))
 
+
+
+
 cl <- makeCluster(nrCores-1)
 registerDoParallel(cl); 
 clusterExport(cl,c("data_success_focus","nrCores"),envir=environment());
@@ -253,21 +257,18 @@ clusterEvalQ(cl,library("glmmTMB"))
 
 mod_success_focus_dd <- pdredge(mod_success_focus,cluster = cl, trace = T)
 
-emmeans(mod_success_focus, ~ WU*PEAK*Position*Diversity,
-        type = "response") %>%
+(mod_success_focus_dd$AICc - mod_success_focus_dd$AICc[1])<2
+
+mod_success_focus_dd[1,]
+#  -> FULL model 
+
+# Drop concirm the same thing
+drop1(mod_success_focus, test = "Chisq", trace = T)
+
+
+mod_success_focus_dd %>%
   as_tibble() %>%
-  mutate(PEAK = factor(PEAK, levels = c("PEAK.T","PEAK.G","PEAK.S"))) %>%
-  mutate(PEAK = fct_recode(PEAK, 
-                           "Threshold" = "PEAK.T",
-                           "GAM" = "PEAK.G",
-                           "SNI" = "PEAK.S")) %>%
-  ggplot(aes(y=prob,x=Position,color=Diversity, fill=Diversity, ymin=lower.CL, ymax=upper.CL))+
-  facet_grid(WU~PEAK)+
-  geom_hline(yintercept = seq(0,1,0.2), color="gray90")+
-  geom_bar(stat = "identity", color="gray60", orientation="x", width = 0.5, position = position_dodge(width = 0.5))+
-  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
-  geom_point(shape=15, position = position_dodge(width = 0.5))+
-  coord_cartesian(ylim = c(0,1))
+  write.csv(.,"METHOD_RESULTS/mod_success_focus.csv")
 
 
 data_success_focus_MW_G <- data_success_sum %>%
@@ -288,14 +289,24 @@ clusterEvalQ(cl,library("glmmTMB"))
 
 mod_success_focus_MW_G_dd <- pdredge(mod_success_focus_MW_G,cluster = cl, trace = T)
 
+(mod_success_focus_MW_G_dd$AICc - mod_success_focus_MW_G_dd$AICc[1])<2 
 
+importance(mod_success_focus_MW_G_dd[1:5,])
+
+mod_success_focus_MW_G_dd %>%
+  as_tibble() %>%
+  write.csv(.,"METHOD_RESULTS/mod_success_focus_MW_G_dd.csv")
+  
+
+# subset
 mod_success_focus_MW_G_sub <- glmmTMB(VALUE~Position+Diversity+DC+SMOOTH+
-                                        Diversity:Position+DC:Position+Position:SMOOTH+DC:Diversity+Diversity:SMOOTH+
-                                        Diversity:Position:SMOOTH+
+                                        Diversity:Position+Diversity:SMOOTH+Position:SMOOTH+Diversity:Position:SMOOTH+DC:Position++DC:Diversity+
                                         (1|dataset.ID),
                                       data=data_success_focus_MW_G,
                                       family=betabinomial(link = "logit"),
-                                      control = glmmTMBControl(parallel = nrCores-1))
+                                      control = glmmTMBControl(parallel = nrCores-1,
+                                                               optArgs = list(method="BFGS"),
+                                                               optimizer = optim))
 
 
 ## EMPTY 
@@ -305,7 +316,7 @@ data_success_false <- data_success_sum %>%
   ungroup() %>%
   dplyr::select(-c(SEGMENT))
 
-mod_success_false <-  glmmTMB(VALUE~WU*PEAK*Position*Diversity+(WU|dataset.ID),
+mod_success_false <-  glmmTMB((1-VALUE)~WU*PEAK*Position*Diversity+(WU|dataset.ID),
                               data=data_success_false,
                               family=betabinomial(link = "logit"))
 
@@ -316,20 +327,23 @@ clusterEvalQ(cl,library("glmmTMB"))
 
 mod_success_false_dd <- pdredge(mod_success_false,cluster = cl, trace = T)
 
-emmeans(mod_success_false, ~ WU*PEAK*Position*Diversity, type = "response") %>%
+(mod_success_false_dd$AICc - mod_success_false_dd$AICc[1])<2
+
+importance(mod_success_false_dd[1:3,])
+
+
+mod_success_false_dd %>%
   as_tibble() %>%
-  mutate(PEAK = factor(PEAK, levels = c("PEAK.T","PEAK.G","PEAK.S"))) %>%
-  mutate(PEAK = fct_recode(PEAK, 
-                           "Threshold" = "PEAK.T",
-                           "GAM" = "PEAK.G",
-                           "SNI" = "PEAK.S")) %>%
-  ggplot(aes(y=prob,x=Position,color=Diversity, fill=Diversity, ymin=lower.CL, ymax=upper.CL))+
-  facet_grid(WU~PEAK)+
-  geom_hline(yintercept = seq(0,1,0.2), color="gray90")+
-  geom_bar(stat = "identity", color="gray60", orientation="x", width = 0.5, position = position_dodge(width = 0.5))+
-  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
-  geom_point(shape=15, position = position_dodge(width = 0.5))+
-  coord_cartesian(ylim = c(0,1))
+  write.csv(.,"METHOD_RESULTS/mod_success_false_dd.csv")
+
+
+# sub
+mod_success_false_sub <-  glmmTMB(VALUE~PEAK+Position+WU+Diversity+
+                                    PEAK:Position+PEAK:WU+Position:WU+PEAK:Position:WU+
+                                    (1|dataset.ID),
+                              data=data_success_false,
+                              family=betabinomial(link = "logit"),
+                              control = glmmTMBControl(parallel = nrCores-1))
 
 data_success_false_MW_G <- data_success_sum %>%
   filter(SEGMENT == "empty") %>%
@@ -342,6 +356,7 @@ mod_success_false_MW_G <-  glmmTMB(VALUE~Position*Diversity*DC*SMOOTH+(1|dataset
                                    data=data_success_false_MW_G,
                                    family=betabinomial(link = "logit"))
 
+
 cl <- makeCluster(nrCores-1)
 registerDoParallel(cl); 
 clusterExport(cl,c("data_success_false_MW_G","nrCores"),envir=environment());
@@ -349,119 +364,24 @@ clusterEvalQ(cl,library("glmmTMB"))
 
 mod_success_false_MW_G_dd <- pdredge(mod_success_false_MW_G,cluster = cl, trace = T)
 
-mod_success_false_MW_G_sub <- glmmTMB(VALUE~Position+Diversity+DC+SMOOTH+
-                                        Position:Diversity+Position:SMOOTH+
+(mod_success_false_MW_G_dd$AICc - mod_success_false_MW_G_dd$AICc[1])<4 
+
+importance(mod_success_false_MW_G_dd[1:6,])
+
+
+mod_success_false_MW_G_dd %>%
+  as_tibble() %>%
+  write.csv(.,"METHOD_RESULTS/mod_success_false_MW_G_dd.csv")
+
+
+# sub
+mod_success_false_MW_G_sub <- glmmTMB(VALUE~Position+SMOOTH+Diversity+DC+Position:SMOOTH+Diversity:Position+
                                         (1|dataset.ID),
                                       data=data_success_false_MW_G,
                                       family=betabinomial(link = "logit"),
-                                      control = glmmTMBControl(parallel = nrCores-1,
-                                                               optArgs = list(method="BFGS"),
-                                                               optimizer = optim)
-                                      )
+                                      control = glmmTMBControl(parallel = nrCores-1))
 
-
-
-#Figures
-
-rbind(tibble(emmeans(mod_success_focus, ~ WU*PEAK*Position*Diversity,
-                     type = "response") %>%
-               as_tibble(),METHOD = "CORRECT"),
-      tibble(emmeans(mod_success_false, ~ WU*PEAK*Position*Diversity, type = "response") %>%
-               as_tibble(), METHOD = "FALSE")
-) %>%
-  mutate(PEAK = factor(PEAK, levels = c("PEAK.T","PEAK.G","PEAK.S"))) %>%
-  mutate(PEAK = fct_recode(PEAK, 
-                           "Threshold" = "PEAK.T",
-                           "GAM" = "PEAK.G",
-                           "SNI" = "PEAK.S")) %>%
-  mutate(PD = paste(Position,Diversity, sep = " - ")) %>%
-  ggplot(aes(y=prob,x=PD,color=METHOD, fill=METHOD, ymin=lower.CL, ymax=upper.CL))+
-  facet_grid(WU~PEAK)+
-  geom_hline(yintercept = seq(0,1,0.2), color="gray90")+
-  geom_bar(stat = "identity",color="gray60", orientation="x", width = 0.5, position = position_dodge(width = 0.5))+
-  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
-  geom_point(shape=15, position = position_dodge(width = 0.5))+
-  coord_cartesian(ylim = c(0,1))+
-  theme(axis.text.x = element_text(angle = -45, hjust = -0.05, vjust = 1))+
-  labs(y="Proportion of peak detection",
-       x= "",
-       fill="detection",
-       color="detection")
-
-ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ DC,
-                  type = "response") %>%
-            as_tibble() %>%
-            ggplot(aes(y=prob, x=DC,color=DC,fill=DC, ymin=lower.CL, ymax= upper.CL))+
-            geom_hline(yintercept = seq(0,1,0.1), color="gray90")+
-            geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
-            geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
-            geom_point(shape=15,position = position_dodge(width = 0.5))+
-            coord_cartesian(ylim = c(0.7,1))+
-            labs(y="",x=""),
-          emmeans(mod_success_false_MW_G_sub, ~ DC,
-                  type = "response") %>%
-            as_tibble() %>%
-            ggplot(aes(y=prob, x=DC,color=DC,fill=DC, ymin=lower.CL, ymax= upper.CL))+
-            geom_hline(yintercept = seq(0,1,0.01), color="gray90")+
-            geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
-            geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
-            geom_point(shape=15,position = position_dodge(width = 0.5))+
-            coord_cartesian(ylim = c(0,0.03))+
-            labs(y="",x=""),
-          nrow = 1, common.legend = T, legend = "none",
-          labels = c("Correct detections","False positives")
-) %>% annotate_figure(left = "Proportion of peak detection")
-
-
-ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ SMOOTH,
-                  type = "response") %>%
-            as_tibble() %>%
-            ggplot(aes(y=prob, x=SMOOTH,color=SMOOTH,fill=SMOOTH, ymin=lower.CL, ymax= upper.CL))+
-            geom_hline(yintercept = seq(0,1,0.1), color="gray90")+
-            geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
-            geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
-            geom_point(shape=15,position = position_dodge(width = 0.5))+
-            coord_cartesian(ylim = c(0.7,1))+
-            labs(y="",x=""),
-          emmeans(mod_success_false_MW_G_sub, ~ SMOOTH,
-                  type = "response") %>%
-            as_tibble() %>%
-            ggplot(aes(y=prob, x=SMOOTH,color=SMOOTH,fill=SMOOTH, ymin=lower.CL, ymax= upper.CL))+
-            geom_hline(yintercept = seq(0,1,0.01), color="gray90")+
-            geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
-            geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
-            geom_point(shape=15,position = position_dodge(width = 0.5))+
-            coord_cartesian(ylim = c(0,0.03))+
-            labs(y="",x=""),
-          nrow = 1, common.legend = T, legend = "none",
-          labels = c("Correct detections","False positives")
-) %>% annotate_figure(left = "Proportion of peak detection")
-
-
-
-rbind(tibble(emmeans(mod_success_focus_MW_G_sub, ~ Position+Diversity+DC+SMOOTH+
-                       Diversity:Position+DC:Position+Position:SMOOTH+DC:Diversity+Diversity:SMOOTH+
-                       Diversity:Position:SMOOTH,
-                     type = "response") %>%
-               as_tibble(), METHOD = "CORRECT"),
-      tibble(emmeans(mod_success_false_MW_G_sub, ~Position+Diversity+DC+SMOOTH+
-                       Position:Diversity+Position:SMOOTH,
-                     type = "response") %>%
-               as_tibble(), METHOD = "FALSE")) %>%
-  mutate(PD = paste(Position,Diversity, sep = " - ")) %>%
-  ggplot(aes(y=prob,x=PD, color=METHOD,fill=METHOD, ymin=lower.CL, ymax=upper.CL))+
-  facet_grid(DC~SMOOTH)+
-  geom_hline(yintercept = seq(0,1,0.2), color="gray90")+
-  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5)+
-  geom_errorbar(width=0.2, position = position_dodge(width = 0.5))+
-  geom_point(shape=15,position = position_dodge(width = 0.5))+
-  coord_cartesian(ylim = c(0,1))+
-  theme(axis.text.x = element_text(angle = -45, hjust = -0.05, vjust = 1))+
-  labs(y="Proportion of peak detection",
-       x= "",
-       fill="detection",
-       color="detection")
-
+#optArgs = list(method="BFGS"),optimizer = optim
 
 
 # -----------------------------------------
@@ -600,100 +520,244 @@ emmeans(mod_mag_MW_max, ~ Position+Diversity+DC+SMOOTH,
 #
 # ----------------------------------------------
 
+
 Color.legen_smooth <- brewer.pal(n = 5, name = 'Set2')
-names(Color.legen_smooth) <- levels(data_mag_sum$SMOOTH)
+names(Color.legen_smooth) <- c("None","M.avg","Grimm","Age.w","Shep")
 
 
 Color.legen_DC <- brewer.pal(n =4, name = 'Set3')
-names(Color.legen_DC) <- levels(data_mag_sum$DC)
+names(Color.legen_DC) <- c("Euc","Euc.sd","Chord","Chisq")
 
 Color.legen_Position <- brewer.pal(n = 2, name = 'Set1')
-names(Color.legen_Position) <- levels(data_mag_sum$Position)
+names(Color.legen_Position) <- c("high density level","low density level")
 
 Color.legen_Diversity <- brewer.pal(n = 2, name = 'Paired')
-names(Color.legen_Diversity) <- levels(data_mag_sum$Diversity)
+names(Color.legen_Diversity) <- c("low richness","high richness")
+
+
+
 
 
 ##############
 #   FIG 1
 #############
 
-fc_calculate_RoC_comparison <- function(data, Working.Unit, BIN.size, N.shifts, rand ,interest.treshold){
-  
-  performance.smooth <- c(rep("none",4),rep("m.avg",4),rep("grim",4),rep("age.w",4),rep("shep",4));
-  performance.DC <- c(rep(c("euc","euc.sd","chord","chisq"),5));
-  
-  for(i in 1:20)
-  {
-    data.temp<- fc_R_ratepol( data.source.pollen =  data$filtered.counts,
-                              data.source.age = data$list_ages,
-                              sm.type = performance.smooth[i],
-                              N.points = 5,
-                              range.age.max = 500, 
-                              grim.N.max = 9,
-                              Working.Unit = Working.Unit,
-                              BIN.size = BIN.size,
-                              N.shifts = N.shifts,
-                              rand = rand,
-                              standardise = F, 
-                              S.value = 150 ,
-                              DC = performance.DC[i],
-                              interest.treshold = interest.treshold,
-                              Debug = F) %>%
-      as_tibble()
-    
-    # PEAK detection 
-    # Median peak treshold
-    # treshold for RoC peaks is set as median of all RoC in dataset
-    r.treshold <- median(data.temp$ROC)
-    # mark peaks which have 95% quantile above the treshold asPeak.treshold
-    data.temp$PEAK.T <- data.temp$ROC.dw > r.treshold
-    
-    # GAM  
-    # mark points that are abowe the GAM model (exactly 1.5 SD higher than GAM prediction)
-    pred.gam <-  predict.gam(gam(ROC~s(AGE,k=3), data = data.temp, family = "Gamma",
-                                 correlation = corCAR1(form = ~ AGE), method = "REML"), type="response")
-    pred.gam.diff <- data.temp$ROC - pred.gam
-    data.temp$PEAK.G <- (pred.gam.diff) > 1.5*sd(pred.gam.diff)
-    
-    # SNI  
-    # set moving window of 5 times higher than average distance between samples
-    mean.age.window <- 5 * mean( diff(data.temp$AGE) )
-    # calculate SNI (singal to noise ratio)
-    SNI.calc <- CharSNI(data.frame(data.temp$AGE, data.temp$ROC, pred.gam),mean.age.window)
-    # mark points with SNI higher than 3
-    data.temp$PEAK.S <- SNI.calc$SNI > 3 & data.temp$ROC > pred.gam
-    
-    data.temp.sum<-data.temp %>%
-      mutate(SMOOTH = performance.smooth[i],
-             DC = performance.DC[i]) %>%
-      select(SMOOTH, DC, Working_Unit ,AGE, ROC,ROC.up, ROC.dw, PEAK.T, PEAK.G, PEAK.S)
-    
-    if(i == 1){
-      res.tibble <- data.temp.sum} else {
-        res.tibble <- rbind(res.tibble,data.temp.sum)
-      }
-  }
-  return(res.tibble)
+
+##############
+#   FIG 2
+#############
+
+ggarrange(rbind(tibble(emmeans(mod_success_focus, ~ WU*PEAK*Position*Diversity,
+                               type = "response") %>%
+                         as_tibble(),METHOD = "CORRECT"),
+                tibble(emmeans(mod_success_false_sub, ~ WU+PEAK+Position+Diversity+
+                                 PEAK:Position+PEAK:WU+Position:WU+PEAK:Position:WU+Diversity,
+                               type = "response") %>%
+                         as_tibble(), METHOD = "FALSE")
+) %>%
+  mutate(PEAK = factor(PEAK, levels = c("PEAK.T","PEAK.G","PEAK.S"))) %>%
+  mutate(PEAK = fct_recode(PEAK, 
+                           "Threshold" = "PEAK.T",
+                           "GAM" = "PEAK.G",
+                           "SNI" = "PEAK.S")) %>%
+  mutate(PD = paste(Position,Diversity, sep = " - ")) %>%
+  mutate(PD = as.factor(PD)) %>%
+  mutate(PD = fct_recode(PD,
+                         "HR - R" = "high density level - high richness",
+                         "LR - R" = "high density level - low richness",
+                         "HR - L" = "low density level - high richness",
+                         "LR - L" = "low density level - low richness",)) %>%
+  ggplot(aes(y=prob,x=PD,color=METHOD, fill=METHOD, ymin=lower.CL, ymax=upper.CL))+
+  facet_grid(WU~PEAK)+
+  geom_hline(yintercept = seq(0,1,0.25), color="gray90",size=0.1)+
+  geom_errorbar(width=0.2,color="gray60", position = position_dodge(width = 0.5),size=0.1)+
+  geom_bar(stat = "identity",color="gray60", orientation="x", width = 0.5, position = position_dodge(width = 0.5),size=0.1)+
+  #geom_point(shape=15, position = position_dodge(width = 0.5))+
+  scale_fill_manual("Position in sequence", labels=c("Focal area (correct detection)","Outside of focal area (false positive)"),
+                    values = c("darkseagreen","coral"))+
+  coord_cartesian(ylim = c(0,1))+
+  theme(axis.text.x = element_text(angle = -45, hjust = -0.05, vjust = 1))+
+  labs(y="",
+       x= ""),
+rbind(tibble(emmeans(mod_success_focus_MW_G_sub, ~ Position+Diversity+DC+SMOOTH+
+                       Diversity:Position+Diversity:SMOOTH+Position:SMOOTH+Diversity:Position:SMOOTH+DC:Position++DC:Diversity,
+                     type = "response") %>%
+               as_tibble(), METHOD = "CORRECT"),
+      tibble(emmeans(mod_success_false_MW_G_sub, ~Position+SMOOTH+Diversity+DC+Position:SMOOTH+Diversity:Position,
+                     type = "response") %>%
+               as_tibble(), METHOD = "FALSE")) %>%
+  mutate(PD = paste(Position,Diversity, sep = " - ")) %>%
+  mutate(PD = as.factor(PD)) %>%
+  mutate(PD = fct_recode(PD,
+                         "HR - R" = "high density level - high richness",
+                         "LR - R" = "high density level - low richness",
+                         "HR - L" = "low density level - high richness",
+                         "LR - L" = "low density level - low richness",)) %>%
+  ggplot(aes(y=prob,x=PD, color=METHOD,fill=METHOD, ymin=lower.CL, ymax=upper.CL))+
+  facet_grid(DC~SMOOTH)+
+  geom_hline(yintercept = seq(0,1,0.25), color="gray90",size=0.1)+
+  geom_errorbar(width=0.2, color="gray60", position = position_dodge(width = 0.5),size=0.1)+
+  geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
+  #geom_point(shape=15,position = position_dodge(width = 0.5))+
+  coord_cartesian(ylim = c(0,1))+
+  scale_fill_manual("Position in sequence", labels=c("Focal area (correct detection)","Outside of focal area (false positive)"),
+                    values = c("darkseagreen","coral"))+
+  theme(axis.text.x = element_text(angle = -45, hjust = -0.05, vjust = 1))+
+  labs(y="",
+       x= ""),
+nrow = 1, common.legend = T, legend = "top", labels = c("A","B"), widths = c(0.8,1)
+) %>%
+  annotate_figure(left = "Proportion of peak detection",
+                  bottom = "Dataset type")
+
+ggsave("METHOD_RESULTS//FIG2_v01.pdf",
+       width = 20, height = 12, units = "cm")
+
+
+emmeans(mod_success_focus, ~ PEAK,
+        type = "response")
+
+
+emmeans(mod_success_false, ~ PEAK,
+        type = "response")
+
+
+emmeans(mod_success_focus, ~ WU,
+        type = "response")
+
+
+emmeans(mod_success_false, ~ WU,
+        type = "response")
+
+emmeans(mod_success_focus, ~ WU*PEAK,
+        type = "response") %>%
+  as_tibble() %>%
+  filter(PEAK == "PEAK.G")
+
+emmeans(mod_success_false, ~ WU*PEAK,
+        type = "response") %>%
+  as_tibble() %>%
+  filter(PEAK == "PEAK.G")
+
+emmeans(mod_success_focus_MW_G_sub, ~ Position,
+        type = "response")
+
+emmeans(mod_success_false_MW_G_sub, ~Position,
+        type = "response")
+
+
+emmeans(mod_success_focus_MW_G_sub, ~ Diversity,
+        type = "response")
+
+emmeans(mod_success_false_MW_G_sub, ~Diversity,
+        type = "response")
+
+emmeans(mod_success_focus_MW_G_sub, ~ DC,
+        type = "response")
+emmeans(mod_success_false_MW_G_sub, ~DC,
+        type = "response")
+
+emmeans(mod_success_focus_MW_G_sub, ~ SMOOTH,
+        type = "response")
+
+##############
+#   FIG 3
+#############
+
+get_dominant_pollen_taxa <- function(data, N=5){
+  x = data$filtered.counts[-1]
+  y = x/rowSums(x)*100
+  z = colSums(y) %>% sort(decreasing =T)
+  return(names(z)[1:N])
 }
 
-fc_get_pollen_data <- function (data, sm.type, N.taxa)
+#SITE A
+
+
+which(Hope_smooth$dataset.id %in%  17334 )
+
+data_site_A <- list(dataset.id = Hope_smooth$dataset.id[[413]],
+                    filtered.counts = Hope_smooth$filtered.counts[[413]],
+                    list_ages = Hope_smooth$list_ages[[413]])
+
+data_site_A_dom <- get_dominant_pollen_taxa(data_site_A)
+
+data_site_A$filtered.counts %>%
+  as_tibble() %>%
+  dim()
+
+#Site B
+
+which(Hope_smooth$dataset.id %in%  4012 )
+
+
+data_site_B <- list(dataset.id = Hope_smooth$dataset.id[[84]],
+                    filtered.counts = Hope_smooth$filtered.counts[[84]],
+                    list_ages = Hope_smooth$list_ages[[84]])
+
+data_site_B_dom <- get_dominant_pollen_taxa(data_site_B)
+
+data_site_B$filtered.counts %>%
+  as_tibble() %>%
+  dim()
+
+
+# SITE c
+
+which(Hope_smooth$dataset.id %in%  40951 )
+
+
+data_site_C <- list(dataset.id = Hope_smooth$dataset.id[[273]],
+                    filtered.counts = Hope_smooth$filtered.counts[[273]],
+                    list_ages = Hope_smooth$list_ages[[273]])
+
+data_site_C_dom <- get_dominant_pollen_taxa(data_site_C)
+
+data_site_C$filtered.counts %>%
+  as_tibble() %>%
+  dim()
+
+
+# Site D
+
+
+which(Hope_smooth$dataset.id %in%  45314 )
+
+data_site_D <- list(dataset.id = Hope_smooth$dataset.id[[299]],
+                    filtered.counts = Hope_smooth$filtered.counts[[299]],
+                    list_ages = Hope_smooth$list_ages[[299]])
+
+data_site_D_dom <- get_dominant_pollen_taxa(data_site_D)
+
+data_site_D$filtered.counts %>%
+  as_tibble() %>%
+  dim()
+
+
+#Pollen taxa table
+
+common_taxa<- c(data_site_A_dom,
+                data_site_B_dom,
+                data_site_C_dom,
+                data_site_D_dom) %>%
+  unique() %>%
+  sub("/",".",.) %>%
+  sub("-",".",.) %>%
+  sub(")",".",.) %>%
+  sub(".\\(","..",.) 
+
+library (RColorBrewer)
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+Palette.1<- getPalette(length(common_taxa))
+names(Palette.1)<- sort(common_taxa)  
+
+
+fc_get_pollen_data <- function (data, sm.type, Common.list)
 {
   # remove the sample ID
   if (is.numeric(unlist(data$filtered.counts[,1]))==F){
     data$filtered.counts <- data$filtered.counts[,-1]
   }
-  
-  
-  Common.list <- data$filtered.counts %>%
-    colSums() %>% 
-    sort(decreasing = T) %>%
-    .subset(.,1:N.taxa) %>%
-    names() %>%
-    sub("/",".",.) %>%
-    sub("-",".",.) %>%
-    sub(")",".",.) %>%
-    sub(".\\(","..",.) 
   
   data.ext <-  fc_extract_data(data$filtered.counts,
                                data$list_ages) %>%
@@ -714,6 +778,839 @@ fc_get_pollen_data <- function (data, sm.type, N.taxa)
 }
 
 
+data_site_A_pollen <-fc_get_pollen_data(data_site_A, sm.type = "none",common_taxa)
+
+data_site_B_pollen <-fc_get_pollen_data(data_site_B, sm.type = "none", common_taxa)
+
+data_site_C_pollen <-fc_get_pollen_data(data_site_C, sm.type = "none",common_taxa)
+
+data_site_D_pollen <-fc_get_pollen_data(data_site_D, sm.type = "none",common_taxa)
+
+
+# Rate of Change
+
+data_site_A_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts,
+                                       data.source.age = data_site_A$list_ages,
+                                       sm.type = "age.w", 
+                                       N.points = 5,
+                                       range.age.max = 500, 
+                                       grim.N.max = 9,
+                                       Working.Unit = "levels",
+                                       BIN.size = 500,
+                                       N.shifts = 5,
+                                       rand = 10000,
+                                       standardise = T, 
+                                       S.value = 150, 
+                                       DC = "chisq",
+                                       interest.treshold = age_lim,
+                                       Debug = F)
+
+data_site_A_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts,
+                                     data.source.age = data_site_A$list_ages,
+                                     sm.type = "age.w", 
+                                     N.points = 5,
+                                     range.age.max = 500, 
+                                     grim.N.max = 9,
+                                     Working.Unit = "BINs",
+                                     BIN.size = 500,
+                                     N.shifts = 5,
+                                     rand = 10000,
+                                     standardise = T, 
+                                     S.value = 150, 
+                                     DC = "chisq",
+                                     interest.treshold = age_lim,
+                                     Debug = F)
+
+data_site_A_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts,
+                                   data.source.age = data_site_A$list_ages,
+                                   sm.type = "age.w", 
+                                   N.points = 5,
+                                   range.age.max = 500, 
+                                   grim.N.max = 9,
+                                   Working.Unit = "MW",
+                                   BIN.size = 500,
+                                   N.shifts = 5,
+                                   rand = 10000,
+                                   standardise = T, 
+                                   S.value = 150, 
+                                   DC = "chisq",
+                                   interest.treshold = age_lim,
+                                   Debug = F)
+
+data_Site_B_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts,
+                                       data.source.age = data_site_B$list_ages,
+                                       sm.type = "shep", 
+                                       N.points = 5,
+                                       range.age.max = 500, 
+                                       grim.N.max = 9,
+                                       Working.Unit = "levels",
+                                       BIN.size = 500,
+                                       N.shifts = 5,
+                                       rand = 10000,
+                                       standardise = T, 
+                                       S.value = 150, 
+                                       DC = "chord",
+                                       interest.treshold = age_lim,
+                                       Debug = F)
+
+data_Site_B_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts,
+                                     data.source.age = data_site_B$list_ages,
+                                     sm.type = "shep", 
+                                     N.points = 5,
+                                     range.age.max = 500, 
+                                     grim.N.max = 9,
+                                     Working.Unit = "BINs",
+                                     BIN.size = 500,
+                                     N.shifts = 5,
+                                     rand = 10000,
+                                     standardise = T, 
+                                     S.value = 150, 
+                                     DC = "chord",
+                                     interest.treshold = age_lim,
+                                     Debug = F)
+
+data_Site_B_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts,
+                                   data.source.age = data_site_B$list_ages,
+                                   sm.type = "shep", 
+                                   N.points = 5,
+                                   range.age.max = 500, 
+                                   grim.N.max = 9,
+                                   Working.Unit = "MW",
+                                   BIN.size = 500,
+                                   N.shifts = 5,
+                                   rand = 10000,
+                                   standardise = T, 
+                                   S.value = 150, 
+                                   DC = "chord",
+                                   interest.treshold = age_lim,
+                                   Debug = F)
+
+data_Site_C_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts,
+                                       data.source.age = data_site_C$list_ages,
+                                       sm.type = "shep", 
+                                       N.points = 5,
+                                       range.age.max = 500, 
+                                       grim.N.max = 9,
+                                       Working.Unit = "levels",
+                                       BIN.size = 500,
+                                       N.shifts = 5,
+                                       rand = 10000,
+                                       standardise = T, 
+                                       S.value = 150, 
+                                       DC = "chord",
+                                       interest.treshold = age_lim,
+                                       Debug = F)
+
+data_Site_C_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts,
+                                     data.source.age = data_site_C$list_ages,
+                                     sm.type = "shep", 
+                                     N.points = 5,
+                                     range.age.max = 500, 
+                                     grim.N.max = 9,
+                                     Working.Unit = "BINs",
+                                     BIN.size = 500,
+                                     N.shifts = 5,
+                                     rand = 10000,
+                                     standardise = T, 
+                                     S.value = 150, 
+                                     DC = "chord",
+                                     interest.treshold = age_lim,
+                                     Debug = F)
+
+data_Site_C_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts,
+                                   data.source.age = data_site_C$list_ages,
+                                   sm.type = "shep", 
+                                   N.points = 5,
+                                   range.age.max = 500, 
+                                   grim.N.max = 9,
+                                   Working.Unit = "MW",
+                                   BIN.size = 500,
+                                   N.shifts = 5,
+                                   rand = 10000,
+                                   standardise = T, 
+                                   S.value = 150, 
+                                   DC = "chord",
+                                   interest.treshold = age_lim,
+                                   Debug = F)
+
+data_Site_D_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts,
+                                       data.source.age = data_site_D$list_ages,
+                                       sm.type = "shep", 
+                                       N.points = 5,
+                                       range.age.max = 500, 
+                                       grim.N.max = 9,
+                                       Working.Unit = "levels",
+                                       BIN.size = 500,
+                                       N.shifts = 5,
+                                       rand = 10000,
+                                       standardise = T, 
+                                       S.value = 150, 
+                                       DC = "chord",
+                                       interest.treshold = age_lim,
+                                       Debug = F)
+
+data_Site_D_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts,
+                                     data.source.age = data_site_D$list_ages,
+                                     sm.type = "shep", 
+                                     N.points = 5,
+                                     range.age.max = 500, 
+                                     grim.N.max = 9,
+                                     Working.Unit = "BINs",
+                                     BIN.size = 500,
+                                     N.shifts = 5,
+                                     rand = 10000,
+                                     standardise = T, 
+                                     S.value = 150, 
+                                     DC = "chord",
+                                     interest.treshold = age_lim,
+                                     Debug = F)
+
+
+data_Site_D_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts,
+                                   data.source.age = data_site_D$list_ages,
+                                   sm.type = "shep", 
+                                   N.points = 5,
+                                   range.age.max = 500, 
+                                   grim.N.max = 9,
+                                   Working.Unit = "MW",
+                                   BIN.size = 500,
+                                   N.shifts = 5,
+                                   rand = 10000,
+                                   standardise = T, 
+                                   S.value = 150, 
+                                   DC = "chord",
+                                   interest.treshold = age_lim,
+                                   Debug = F)
+
+# FIGURES 
+
+FIG3_Site_A_1 <- data_site_A$list_ages$ages %>%
+  filter(age < 9000) %>%
+  ggplot(aes(x=age))+
+  geom_hline(yintercept = c(0,3e-4), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_density(color="gray30", fill="gray50")+
+  geom_rug(sides = "b")+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  scale_y_continuous(breaks = c(0,3e-4))+
+  labs(x="Age (cal yr BP)",
+       y="Density of samples"
+  )+
+  theme(
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.title.x = element_blank()
+  )+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))
+
+
+FIG3_Site_B_1 <- data_site_B$list_ages$ages %>%
+  filter(age < 9000) %>%
+  ggplot(aes(x=age))+
+  geom_hline(yintercept = c(0,3e-4), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_density(color="gray30", fill="gray50")+
+  geom_rug(sides = "b")+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  scale_y_continuous(breaks = c(0,3e-4))+
+  labs(x="Age (cal yr BP)",
+       y="Density of samples"
+  )+
+  theme(
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.title.x = element_blank()
+  )+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))
+
+FIG3_Site_C_1 <- data_site_C$list_ages$ages %>%
+  filter(age < 9000) %>%
+  ggplot(aes(x=age))+
+  geom_hline(yintercept = c(0,3e-4), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_density(color="gray30", fill="gray50")+
+  geom_rug(sides = "b")+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  scale_y_continuous(breaks = c(0,3e-4))+
+  labs(x="Age (cal yr BP)",
+       y="Density of samples"
+  )+
+  theme(
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.title.x = element_blank()
+  )+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))
+
+
+FIG3_Site_D_1 <- data_site_D$list_ages$ages %>%
+  filter(age < 9000) %>%
+  ggplot(aes(x=age))+
+  geom_hline(yintercept = c(0,3e-4), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_density(color="gray30", fill="gray50")+
+  geom_rug(sides = "b")+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  labs(x="Age (cal yr BP)",
+       y="Density of samples"
+  )+
+  theme(
+    #    axis.ticks.x = element_blank(),
+    #    axis.text.x = element_blank(),
+    #    axis.title.x = element_blank()
+  )+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))
+
+
+library(cowplot)
+my_legend <- cowplot::get_legend(ggplot(data = data.frame(NAME=common_taxa,X=1), aes(x=X, fill=NAME))+
+                                   geom_density(alpha=1/3)+
+                                   theme_classic()+
+                                   theme(legend.position = "bottom")+
+                                   scale_fill_manual("pollen taxa",values = Palette.1))
+
+plot(my_legend)
+
+
+FIG3_Site_A_2 <-  data_site_A_pollen %>%
+  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = 10e3, newage=NA)) %>%
+  ggplot(aes( y=value, 
+              x= age))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  scale_y_continuous(breaks = c(0,1))+
+  geom_hline(yintercept = c(0,1), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
+              color="gray20", alpha=1/5, size=0.1)+
+  scale_fill_manual("pollen taxa",values = Palette.1)+
+  labs(
+    x="Age (cal yr BP)",
+    y="% of pollen grains"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(angle = 45)
+        #        strip.text = element_blank()
+  )+
+  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
+  facet_wrap(~name, ncol=length(common_taxa))
+
+FIG3_Site_B_2 <-  data_site_B_pollen %>%
+  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = 10e3, newage=NA)) %>%
+  ggplot(aes( y=value, 
+              x= age))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  scale_y_continuous(breaks = c(0,1))+
+  geom_hline(yintercept = c(0,1), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
+              color="gray20", alpha=1/5, size=0.1)+
+  scale_fill_manual("pollen taxa",values = Palette.1, drop=FALSE)+
+  labs(
+    x="Age (cal yr BP)",
+    y="% of pollen grains"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+        strip.background = element_blank(),
+        #        strip.text = element_text(angle = 45)
+        strip.text = element_blank()
+  )+
+  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
+  facet_wrap(~name, ncol=length(common_taxa))
+
+FIG3_Site_C_2 <-  data_site_C_pollen %>%
+  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = 10e3, newage=NA)) %>%
+  ggplot(aes( y=value, 
+              x= age))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  scale_y_continuous(breaks = c(0,1))+
+  geom_hline(yintercept = c(0,1), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
+              color="gray20", alpha=1/5, size=0.1)+
+  scale_fill_manual("pollen taxa",values = Palette.1, drop=FALSE)+
+  labs(
+    x="Age (cal yr BP)",
+    y="% of pollen grains"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+        strip.background = element_blank(),
+        #        strip.text = element_text(angle = 45)
+        strip.text = element_blank()
+  )+
+  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
+  facet_wrap(~name, ncol=length(common_taxa))
+
+FIG3_Site_D_2 <-  data_site_D_pollen %>%
+  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = 10e3, newage=NA)) %>%
+  ggplot(aes( y=value, 
+              x= age))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  scale_y_continuous(breaks = c(0,1))+
+  geom_hline(yintercept = c(0,1), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
+              color="gray20", alpha=1/5, size=0.1)+
+  scale_fill_manual("pollen taxa",values = Palette.1)+
+  labs(
+    x="Age (cal yr BP)",
+    y="% of pollen grains"
+  )+
+  theme(legend.position = "none",
+        #        axis.ticks.x = element_blank(),
+        #        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        #        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+        strip.background = element_blank(),
+        #       strip.text = element_text(angle = 45)
+        strip.text = element_blank()
+  )+
+  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
+  facet_wrap(~name, ncol=length(common_taxa))
+
+
+
+FIG3_Site_A_3_levels <- data_site_A_RoC_levels %>%
+  ggplot(aes(y=ROC, 
+             x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
+  #geom_hline(yintercept = seq(from=0,to=5, by=2), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
+  geom_line(alpha=1, size=0.5)+
+  geom_point(data = . %>% filter(PEAK==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_hline(yintercept = 0, color="purple", size=0.1)+
+  labs(
+    x="Age (cal yr BP)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+  )
+
+
+
+FIG3_Site_A_3_BINs <-  data_site_A_RoC_BINs %>%
+  ggplot(aes(y=ROC, 
+             x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
+  #geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
+  geom_line(alpha=1, size=0.5)+
+  geom_point(data = . %>% filter(PEAK==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_hline(yintercept = 0, color="purple", size=0.1)+
+  labs(
+    x="Age (cal yr BP)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+  )
+FIG3_Site_A_3_MW <-  data_site_A_RoC_MW %>%
+  ggplot(aes(y=ROC, 
+             x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
+  #geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
+  geom_line(alpha=1, size=0.5)+
+  geom_point(data = . %>% filter(PEAK==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_hline(yintercept = 0, color="purple", size=0.1)+
+  labs(
+    x="Age (cal yr BP)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+  )
+
+FIG3_Site_B_3_levels <-  data_Site_B_RoC_levels %>%
+  ggplot(aes(y=ROC, 
+             x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
+  # geom_hline(yintercept = seq(from=0,to=5, by=0.5), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
+  geom_line(alpha=1, size=0.5)+
+  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_hline(yintercept = 0, color="purple", size=0.1)+
+  labs(
+    x="Age (cal yr BP)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+  )
+FIG3_Site_B_3_BINs <-  data_Site_B_RoC_BINs %>%
+  ggplot(aes(y=ROC, 
+             x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
+  #geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
+  geom_line(alpha=1, size=0.5)+
+  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_hline(yintercept = 0, color="purple", size=0.1)+
+  labs(
+    x="Age (cal yr BP)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+  )
+
+FIG3_Site_B_3_MW <-  data_Site_B_RoC_MW %>%
+  ggplot(aes(y=ROC, 
+             x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
+  # geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
+  geom_line(alpha=1, size=0.5)+
+  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_hline(yintercept = 0, color="purple", size=0.1)+
+  labs(
+    x="Age (cal yr BP)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+  )
+
+FIG3_Site_C_3_levels <-data_Site_C_RoC_levels %>%
+  ggplot(aes(y=ROC, 
+             x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
+  # geom_hline(yintercept = seq(from=0,to=5, by=0.5), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
+  geom_line(alpha=1, size=0.5)+
+  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_hline(yintercept = 0, color="purple", size=0.1)+
+  labs(
+    x="Age (cal yr BP)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+  )
+
+FIG3_Site_C_3_BINs <-  data_Site_C_RoC_BINs %>%
+  ggplot(aes(y=ROC, 
+             x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
+  #geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
+  geom_line(alpha=1, size=0.5)+
+  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_hline(yintercept = 0, color="purple", size=0.1)+
+  labs(
+    x="Age (cal yr BP)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+  )
+
+FIG3_Site_C_3_MW <-  data_Site_C_RoC_MW %>%
+  ggplot(aes(y=ROC, 
+             x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
+  #geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
+  geom_line(alpha=1, size=0.5)+
+  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_hline(yintercept = 0, color="purple", size=0.1)+
+  labs(
+    x="Age (cal yr BP)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+  )
+
+
+FIG3_Site_D_3_levels <- data_Site_D_RoC_levels %>%
+  ggplot(aes(y=ROC, 
+             x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
+  # geom_hline(yintercept = seq(from=0,to=5, by=0.5), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
+  geom_line(alpha=1, size=0.5)+
+  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_hline(yintercept = 0, color="purple", size=0.1)+
+  labs(
+    x="Age (cal yr BP)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        #        axis.ticks.x = element_blank(),
+        #        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        #        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+  )
+
+FIG3_Site_D_3_BINs <-  data_Site_D_RoC_BINs %>%
+  ggplot(aes(y=ROC, 
+             x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
+  # geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
+  geom_line(alpha=1, size=0.5)+
+  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_hline(yintercept = 0, color="purple", size=0.1)+
+  labs(
+    x="Age (cal yr BP)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        #        axis.ticks.x = element_blank(),
+        #        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        #        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+  )
+FIG3_Site_D_3_MW <-  data_Site_D_RoC_MW %>%
+  ggplot(aes(y=ROC, 
+             x= AGE))+
+  theme_classic()+
+  scale_x_continuous(trans = "reverse")+
+  coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
+  # geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
+  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
+  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
+  geom_line(alpha=1, size=0.5)+
+  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
+  geom_hline(yintercept = 0, color="purple", size=0.1)+
+  labs(
+    x="Age (cal yr BP)",
+    y="Rate-of-Change score"
+  )+
+  theme(legend.position = "none",
+        #        axis.ticks.x = element_blank(),
+        #        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        #        axis.title.x  = element_blank(),
+        axis.title.y  = element_blank(),
+  )
+
+
+data_site_A_RoC_MW %>%
+  filter(PEAK == T)
+
+data_Site_B_RoC_MW %>%
+  filter(PEAK == T)
+
+data_Site_C_RoC_MW %>%
+  filter(PEAK == T)
+
+data_Site_D_RoC_MW %>%
+  filter(PEAK == T)
+
+
+
+library(cowplot)
+FIG3_Site_A <- plot_grid(FIG3_Site_A_1, FIG3_Site_A_2, FIG3_Site_A_3_levels,FIG3_Site_A_3_BINs,FIG3_Site_A_3_MW,
+                         align = "h",axis = "bt", ncol = 5, rel_widths = c(0.8,3,0.8,0.8,0.8))
+FIG3_Site_B <- plot_grid(FIG3_Site_B_1, FIG3_Site_B_2, FIG3_Site_B_3_levels,FIG3_Site_B_3_BINs,FIG3_Site_B_3_MW,
+                         align = "h",axis = "bt", ncol = 5, rel_widths = c(0.8,3,0.8,0.8,0.8))
+FIG3_Site_C <- plot_grid(FIG3_Site_C_1, FIG3_Site_C_2, FIG3_Site_C_3_levels,FIG3_Site_C_3_BINs,FIG3_Site_C_3_MW,
+                         align = "h",axis = "bt", ncol = 5, rel_widths = c(0.8,3,0.8,0.8,0.8))
+FIG3_Site_D <- plot_grid(FIG3_Site_D_1, FIG3_Site_D_2, FIG3_Site_D_3_levels,FIG3_Site_D_3_BINs,FIG3_Site_D_3_MW,
+                         align = "h",axis = "bt", ncol = 5, rel_widths = c(0.8,3,0.8,0.8,0.8))
+
+
+FIG3_Site_comparison <- ggarrange(
+  FIG3_Site_A,
+  FIG3_Site_B,
+  FIG3_Site_C,
+  FIG3_Site_D,
+  #labels = c(17334,"","",40951,"","",4012,"",""),
+  labels = c("A","B","C","D"),
+  heights = c(1.8,1,1,1.2),
+  ncol = 1, nrow = 4, legend = "none")
+FIG3_Site_comparison
+
+
+
+ggsave("METHOD_RESULTS//FIG3_v02.pdf",
+       width = 20, height = 22, units = "cm")
+
+
+
+
+
+############
+#   FIG 4
+############
+
+fc_calculate_RoC_comparison <- function(data, Working.Unit, BIN.size, N.shifts, rand ,peek, interest.treshold){
+  
+  performance.smooth <- c(rep("none",4),rep("m.avg",4),rep("grim",4),rep("age.w",4),rep("shep",4));
+  performance.DC <- c(rep(c("euc","euc.sd","chord","chisq"),5));
+  
+  for(i in 1:20)
+  {
+    data.temp<- fc_R_ratepol( data.source.pollen =  data$filtered.counts,
+                              data.source.age = data$list_ages,
+                              sm.type = performance.smooth[i],
+                              N.points = 5,
+                              range.age.max = 500, 
+                              grim.N.max = 9,
+                              Working.Unit = Working.Unit,
+                              BIN.size = BIN.size,
+                              N.shifts = N.shifts,
+                              rand = rand,
+                              standardise = F, 
+                              S.value = 150 ,
+                              DC = performance.DC[i],
+                              interest.treshold = interest.treshold,
+                              Peak = peek,
+                              Debug = F) %>%
+      as_tibble()
+    
+    if(peek == "all"){
+      # PEAK detection 
+      # Median peak treshold
+      # treshold for RoC peaks is set as median of all RoC in dataset
+      r.treshold <- median(data.temp$ROC)
+      # mark peaks which have 95% quantile above the treshold asPeak.treshold
+      data.temp$PEAK.T <- data.temp$ROC.dw > r.treshold
+      
+      # GAM  
+      # mark points that are abowe the GAM model (exactly 1.5 SD higher than GAM prediction)
+      pred.gam <-  predict.gam(gam(ROC~s(AGE,k=3), data = data.temp, family = "Gamma",
+                                   correlation = corCAR1(form = ~ AGE), method = "REML"), type="response")
+      pred.gam.diff <- data.temp$ROC - pred.gam
+      data.temp$PEAK.G <- (pred.gam.diff) > 1.5*sd(pred.gam.diff)
+      
+      # SNI  
+      # set moving window of 5 times higher than average distance between samples
+      mean.age.window <- 5 * mean( diff(data.temp$AGE) )
+      # calculate SNI (singal to noise ratio)
+      SNI.calc <- CharSNI(data.frame(data.temp$AGE, data.temp$ROC, pred.gam),mean.age.window)
+      # mark points with SNI higher than 3
+      data.temp$PEAK.S <- SNI.calc$SNI > 3 & data.temp$ROC > pred.gam
+    }
+    
+    data.temp.sum<-data.temp %>%
+      mutate(SMOOTH = performance.smooth[i],
+             DC = performance.DC[i]) %>%
+      select(SMOOTH, DC, Working_Unit ,AGE, ROC,ROC.up, ROC.dw, PEAK)
+    
+    if(i == 1){
+      res.tibble <- data.temp.sum} else {
+        res.tibble <- rbind(res.tibble,data.temp.sum)
+      }
+  }
+  return(res.tibble)
+}
+
+
 data_example <- list(dataset.id = tibble_Europe2$dataset.id[[2]],
                      filtered.counts = tibble_Europe2$filtered.counts[[2]],
                      list_ages = tibble_Europe2$list_ages[[2]])
@@ -723,6 +1620,7 @@ data_example_MW <- fc_calculate_RoC_comparison(data_example,
                                                BIN.size = 500,
                                                N.shifts = 5,
                                                rand = 10000,
+                                               peek = "GAM",
                                                interest.treshold =  age_lim)
 data_example_MW.fresh <- data_example_MW
 data_example_MW <- data_example_MW.fresh
@@ -734,6 +1632,8 @@ levels(data_example_MW$DC) <- c("Euc","Euc.sd","Chord","Chisq")
 data_example_MW <- within(data_example_MW, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
 levels(data_example_MW$SMOOTH)<-c("None","M.avg","Grimm","Age.w","Shep")
 
+data_example_MW[data_example_MW$DC == "Chisq" & data_example_MW$SMOOTH == "Age.w",]$PEAK[1] <- F
+
 
 FIG1_visual_example_MW <- data_example_MW %>%
   ggplot(aes(y=ROC, 
@@ -744,25 +1644,23 @@ FIG1_visual_example_MW <- data_example_MW %>%
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
-  geom_point(data = . %>% filter(PEAK.T==T),color="blue", size=2, shape=1, alpha=2/3)+
-  geom_point(data = . %>% filter(PEAK.G==T ),color="green", size=2, shape=16, alpha=2/3)+
-  geom_point(data = . %>% filter(PEAK.S==T ),color="red", size=2, shape=8, alpha=2/3)+
+  geom_point(data = . %>% filter(PEAK==T ),color="green", size=2, shape=16, alpha=2/3)+
   geom_hline(yintercept = 0, color="purple", size=0.1)+
   xlab("Age (cal yr BP)")+ylab("Rate of Change score")+
   facet_grid(SMOOTH~DC, scales = "free_x")
 
 FIG1_visual_example_MW
 
-ggsave("~/RESULTS/Methods/FIN/FIG1_visual_example_MW.pdf",
+ggsave("METHOD_RESULTS/FIG4_v01.pdf",
        plot = FIG1_visual_example_MW,
-       width = 20, height = 12, units = "cm")
+       width = 16, height = 12, units = "cm")
 
 
 data_example_BIN <- fc_calculate_RoC_comparison(data_example,
-                                               Working.Unit = "BINs",
-                                               BIN.size = 500,
-                                               rand = 10000,
-                                               interest.treshold =  age_lim)
+                                                Working.Unit = "BINs",
+                                                BIN.size = 500,
+                                                rand = 10000,
+                                                interest.treshold =  age_lim)
 data_example_BIN <- within(data_example_BIN, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
 levels(data_example_BIN$DC) <- c("Euc","Euc.sd","Chord","Chisq")
 data_example_BIN <- within(data_example_BIN, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
@@ -791,809 +1689,6 @@ ggsave("~/RESULTS/Methods/FIN/FIG1_visual_example_BIN.pdf",
        width = 20, height = 12, units = "cm")
 
 
-
-##############
-#   FIG 2
-#############
-M.glm.fin
-
-formula(M.glm.fin)
-
-data_mag_summmary <- data_mag_sum %>%
-  group_by(DC, Diversity, Position) %>%
-  summarise(N= n(),
-            RoC_max.m = mean(RoC_max),
-            RoC_max_SD =  sd(RoC_max, na.rm = T),
-            RoC_max_SE =  sd(RoC_max)/sqrt(N),
-            RoC_max_05 = quantile(RoC_max,0.025),
-            RoC_max_95 = quantile(RoC_max,0.975)
-            )
-
-
-FIG2_mag_MW  <- data_mag_summmary %>%
-  ggplot(aes(y=RoC_max.m,x=Position, fill= Diversity))+
-  geom_bar(stat="identity", position = "dodge", color="gray30")+
-  geom_errorbar(aes(ymax=RoC_max.m+RoC_max_SE, ymin=RoC_max.m-RoC_max_SE), 
-                position = position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
-  facet_grid(rows=vars(DC), scales = "free_y")+
-  theme_classic()+
-  scale_fill_manual(values = Color.legen_Diversity)+
-  theme(legend.position = "bottom")+
-  labs(x= "Density of levels",
-       y= "Mean maximum Rate-of-change score",
-       fill = "Diversity of pollen taxa")
-
-FIG2_mag_MW
-
-##############
-#   FIG 3
-#############
-
-formula(glm.fin)
-
-data_success_summary <- data_success_sum %>%
-  filter(SEGMENT == "focus") %>%
-  ungroup() %>%
-  group_by(Position, SMOOTH, Diversity) %>%
-  summarise(VALUE.M = mean(VALUE, na.rm = T),
-            VALUE.SD = sd(VALUE, na.rm = T),
-            VALUE.SE = sd(VALUE, na.rm = T)/sqrt(n()),
-            VALUE.05 = quantile(VALUE,0.025, na.rm = T),
-            VALUE.95 = quantile(VALUE,0.975, na.rm = T)
-  ) %>%
-  ungroup()
-
-
-
-FIG3_sum_MW_gam_A  <-data_success_summary %>%
-  ggplot(aes(y=VALUE.M,x=SMOOTH,fill=SMOOTH, group=SMOOTH))+
-  geom_bar(stat="identity", position="dodge", color="gray30")+
-  geom_errorbar(aes(ymin=VALUE.M-VALUE.SE,ymax=VALUE.M+VALUE.SE, group=SMOOTH),
-                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
-  facet_grid(Diversity~Position)+
-  labs(y="Proportion of peak detection",
-       x="Smoothing",
-       fill = "Smoothing",
-       title = "Focal area (correct detection)")+
-  theme_classic()+
-  coord_cartesian(ylim=c(0,0.75))+
-  scale_fill_manual(values = Color.legen_smooth)+
-  theme(axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        legend.position = "right")
-
-FIG3_sum_MW_gam_A
-
-formula(glm.fin.e)
-
-data_success_summary_E <- data_success_sum %>%
-  filter(SEGMENT == "empty") %>%
-  ungroup() %>%
-  group_by(Position, SMOOTH, DC) %>%
-  summarise(VALUE.M = mean(VALUE, na.rm = T),
-            VALUE.SD = sd(VALUE, na.rm = T),
-            VALUE.SE = sd(VALUE, na.rm = T)/sqrt(n()),
-            VALUE.05 = quantile(VALUE,0.025, na.rm = T),
-            VALUE.95 = quantile(VALUE,0.975, na.rm = T)
-  ) %>%
-  ungroup()
-
-
-FIG3_sum_MW_gam_B  <-data_success_summary_E %>%
-  ggplot(aes(y=VALUE.M,x=SMOOTH,fill=SMOOTH, group=SMOOTH))+
-  geom_bar(stat="identity", position="dodge", color="gray30")+
-  geom_errorbar(aes(ymin=VALUE.M-VALUE.SE,ymax=VALUE.M+VALUE.SE, group=DC),
-                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
-  facet_grid(DC~Position)+
-  labs(y="Proportion of peak detection",
-       x="Smoothing",
-       fill = "DC",
-       title = "Outside of focal area (false positive)")+
-  theme_classic()+
-  coord_cartesian(ylim=c(0,0.3))+
-  scale_fill_manual(values = Color.legen_smooth)+
-  theme(axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        legend.position = "right")
-
-FIG3_sum_MW_gam_B
-
-FIG3_sum_MW_gam <- ggarrange(
-  FIG3_sum_MW_gam_A,
-  FIG3_sum_MW_gam_B,
-  nrow = 1, widths = c(1,1),
-  common.legend = T, legend = "bottom"
-)
-
-FIG3_sum_MW_gam
-
-FIG3_sum_MW_gam_fin <- annotate_figure(FIG3_sum_MW_gam, left = "Proportion of peak detection") 
-
-FIG3_sum_MW_gam_fin
-
-
-FIG23 <- ggarrange(
-  FIG2_mag_MW,
-  FIG3_sum_MW_gam_fin,
-  widths = c(0.6,1),
-  nrow= 1, labels = c("A","B")
-)
-
-FIG23
-
-ggsave("~/RESULTS/Methods/FIN/FIG23_mag_plus_success.pdf",
-       plot = FIG23,
-       height = 12, width = 25, units="cm")
-
-
-
-############
-#   FIG 4
-############
-
-
-#SITE A
-
-
-which(Hope_smooth$dataset.id %in%  17334 )
-
-data_site_A <- list(dataset.id = Hope_smooth$dataset.id[[413]],
-                    filtered.counts = Hope_smooth$filtered.counts[[413]],
-                    list_ages = Hope_smooth$list_ages[[413]])
-
-data_site_A_pollen <-fc_get_pollen_data(data_site_A, sm.type = "none",N.taxa = 5)
-
-data_site_A$filtered.counts %>%
-  as_tibble() %>%
-  dim()
-
-fc_get_pollen_data(data_site_A, sm.type = "none",N.taxa = 80) %>%
-  group_by(name) %>%
-  summarise(SUM = sum(value)) %>%
-  arrange(-SUM)
-  
-
-#Site B
-
-which(Hope_smooth$dataset.id %in%  4012 )
-
-
-data_site_B <- list(dataset.id = Hope_smooth$dataset.id[[84]],
-                    filtered.counts = Hope_smooth$filtered.counts[[84]],
-                    list_ages = Hope_smooth$list_ages[[84]])
-
-data_site_B_pollen <-fc_get_pollen_data(data_site_B, sm.type = "none", N.taxa = 10)
-
-data_site_B$filtered.counts %>%
-  as_tibble() %>%
-  dim()
-
-fc_get_pollen_data(data_site_B, sm.type = "none",N.taxa = 50) %>%
-  group_by(name) %>%
-  summarise(SUM = sum(value)) %>%
-  arrange(-SUM)
-
-
-# SITE c
-
-which(Hope_smooth$dataset.id %in%  40951 )
-
-
-data_site_C <- list(dataset.id = Hope_smooth$dataset.id[[273]],
-                    filtered.counts = Hope_smooth$filtered.counts[[273]],
-                    list_ages = Hope_smooth$list_ages[[273]])
-
-
-data_site_C_pollen <-fc_get_pollen_data(data_site_C, sm.type = "none",N.taxa = 5)
-
-data_site_C$filtered.counts %>%
-  as_tibble() %>%
-  dim()
-
-fc_get_pollen_data(data_site_C, sm.type = "none",N.taxa = 103) %>%
-  group_by(name) %>%
-  summarise(SUM = sum(value)) %>%
-  arrange(-SUM)
-
-
-# Site D
-
-
-which(Hope_smooth$dataset.id %in%  45314 )
-
-data_site_D <- list(dataset.id = Hope_smooth$dataset.id[[299]],
-                    filtered.counts = Hope_smooth$filtered.counts[[299]],
-                    list_ages = Hope_smooth$list_ages[[299]])
-
-
-data_site_D_pollen <-fc_get_pollen_data(data_site_D, sm.type = "none",N.taxa = 5)
-
-data_site_D$filtered.counts %>%
-  as_tibble() %>%
-  dim()
-
-fc_get_pollen_data(data_site_D, sm.type = "none",N.taxa = 44) %>%
-  group_by(name) %>%
-  summarise(SUM = sum(value)) %>%
-  arrange(-SUM)
-
-
-# Pollen taxa table
-
-common_taxa<- c(data_site_A_pollen$name,
-                data_site_B_pollen$name,
-                data_site_C_pollen$name,
-                data_site_D_pollen$name
-                ) %>%
-  unique()
-
-library (RColorBrewer)
-getPalette = colorRampPalette(brewer.pal(9, "Set1"))
-Palette.1<- getPalette(length(common_taxa))
-names(Palette.1)<- sort(common_taxa)  
-
-
-# Rate of Change
-
-data_site_A_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts,
-                                   data.source.age = data_site_A$list_ages,
-                                   sm.type = "age.w", 
-                                   N.points = 5,
-                                   range.age.max = 500, 
-                                   grim.N.max = 9,
-                                   Working.Unit = "levels",
-                                   BIN.size = 500,
-                                   N.shifts = 5,
-                                   rand = 10000,
-                                   standardise = T, 
-                                   S.value = 150, 
-                                   DC = "chisq",
-                                   interest.treshold = age_lim,
-                                   Debug = F)
-
-data_site_A_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts,
-                                   data.source.age = data_site_A$list_ages,
-                                   sm.type = "age.w", 
-                                   N.points = 5,
-                                   range.age.max = 500, 
-                                   grim.N.max = 9,
-                                   Working.Unit = "BINs",
-                                   BIN.size = 500,
-                                   N.shifts = 5,
-                                   rand = 10000,
-                                   standardise = T, 
-                                   S.value = 150, 
-                                   DC = "chisq",
-                                   interest.treshold = age_lim,
-                                   Debug = F)
-
-data_site_A_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts,
-                              data.source.age = data_site_A$list_ages,
-                              sm.type = "age.w", 
-                              N.points = 5,
-                              range.age.max = 500, 
-                              grim.N.max = 9,
-                              Working.Unit = "MW",
-                              BIN.size = 500,
-                              N.shifts = 5,
-                              rand = 10000,
-                              standardise = T, 
-                              S.value = 150, 
-                              DC = "chisq",
-                              interest.treshold = age_lim,
-                              Debug = F)
-
-data_Site_B_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts,
-                                   data.source.age = data_site_B$list_ages,
-                                   sm.type = "shep", 
-                                   N.points = 5,
-                                   range.age.max = 500, 
-                                   grim.N.max = 9,
-                                   Working.Unit = "levels",
-                                   BIN.size = 500,
-                                   N.shifts = 5,
-                                   rand = 10000,
-                                   standardise = T, 
-                                   S.value = 150, 
-                                   DC = "chord",
-                                   interest.treshold = age_lim,
-                                   Debug = F)
-
-data_Site_B_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts,
-                                   data.source.age = data_site_B$list_ages,
-                                   sm.type = "shep", 
-                                   N.points = 5,
-                                   range.age.max = 500, 
-                                   grim.N.max = 9,
-                                   Working.Unit = "BINs",
-                                   BIN.size = 500,
-                                   N.shifts = 5,
-                                   rand = 10000,
-                                   standardise = T, 
-                                   S.value = 150, 
-                                   DC = "chord",
-                                   interest.treshold = age_lim,
-                                   Debug = F)
-
-data_Site_B_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts,
-                              data.source.age = data_site_B$list_ages,
-                              sm.type = "shep", 
-                              N.points = 5,
-                              range.age.max = 500, 
-                              grim.N.max = 9,
-                              Working.Unit = "MW",
-                              BIN.size = 500,
-                              N.shifts = 5,
-                              rand = 10000,
-                              standardise = T, 
-                              S.value = 150, 
-                              DC = "chord",
-                              interest.treshold = age_lim,
-                              Debug = F)
-
-data_Site_C_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts,
-                                   data.source.age = data_site_C$list_ages,
-                                   sm.type = "shep", 
-                                   N.points = 5,
-                                   range.age.max = 500, 
-                                   grim.N.max = 9,
-                                   Working.Unit = "levels",
-                                   BIN.size = 500,
-                                   N.shifts = 5,
-                                   rand = 10000,
-                                   standardise = T, 
-                                   S.value = 150, 
-                                   DC = "chord",
-                                   interest.treshold = age_lim,
-                                   Debug = F)
-
-data_Site_C_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts,
-                                   data.source.age = data_site_C$list_ages,
-                                   sm.type = "shep", 
-                                   N.points = 5,
-                                   range.age.max = 500, 
-                                   grim.N.max = 9,
-                                   Working.Unit = "BINs",
-                                   BIN.size = 500,
-                                   N.shifts = 5,
-                                   rand = 10000,
-                                   standardise = T, 
-                                   S.value = 150, 
-                                   DC = "chord",
-                                   interest.treshold = age_lim,
-                                   Debug = F)
-
-data_Site_C_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts,
-                              data.source.age = data_site_C$list_ages,
-                              sm.type = "shep", 
-                              N.points = 5,
-                              range.age.max = 500, 
-                              grim.N.max = 9,
-                              Working.Unit = "MW",
-                              BIN.size = 500,
-                              N.shifts = 5,
-                              rand = 10000,
-                              standardise = T, 
-                              S.value = 150, 
-                              DC = "chord",
-                              interest.treshold = age_lim,
-                              Debug = F)
-
-data_Site_D_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts,
-                                     data.source.age = data_site_D$list_ages,
-                                     sm.type = "shep", 
-                                     N.points = 5,
-                                     range.age.max = 500, 
-                                     grim.N.max = 9,
-                                     Working.Unit = "levels",
-                                     BIN.size = 500,
-                                     N.shifts = 5,
-                                     rand = 10000,
-                                     standardise = T, 
-                                     S.value = 150, 
-                                     DC = "chord",
-                                     interest.treshold = age_lim,
-                                     Debug = F)
-
-data_Site_D_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts,
-                                   data.source.age = data_site_D$list_ages,
-                                   sm.type = "shep", 
-                                   N.points = 5,
-                                   range.age.max = 500, 
-                                   grim.N.max = 9,
-                                   Working.Unit = "BINs",
-                                   BIN.size = 500,
-                                   N.shifts = 5,
-                                   rand = 10000,
-                                   standardise = T, 
-                                   S.value = 150, 
-                                   DC = "chord",
-                                   interest.treshold = age_lim,
-                                   Debug = F)
-
-
-data_Site_D_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts,
-                                data.source.age = data_site_D$list_ages,
-                              sm.type = "shep", 
-                              N.points = 5,
-                              range.age.max = 500, 
-                              grim.N.max = 9,
-                              Working.Unit = "MW",
-                              BIN.size = 500,
-                              N.shifts = 5,
-                              rand = 10000,
-                              standardise = T, 
-                              S.value = 150, 
-                              DC = "chord",
-                              interest.treshold = age_lim,
-                              Debug = F)
-
-# FIGURES 
-
-FIG4_Site_A_1 <- data_site_A$list_ages$ages %>%
-  filter(age < 9000) %>%
-  ggplot(aes(x=age))+
-  geom_hline(yintercept = c(0,3e-4), color="gray80", size=0.1)+
-  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_density(color="gray30", fill="gray50")+
-  geom_rug(sides = "b")+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  scale_y_continuous(breaks = c(0,3e-4))+
-  labs(x="Age (cal yr BP)",
-      y="Density of samples"
-       )+
-  theme(
-    axis.ticks.x = element_blank(),
-    axis.text.x = element_blank(),
-    axis.title.x = element_blank()
-    )+
-  coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))
-
-
-FIG4_Site_B_1 <- data_site_B$list_ages$ages %>%
-  filter(age < 9000) %>%
-  ggplot(aes(x=age))+
-  geom_hline(yintercept = c(0,3e-4), color="gray80", size=0.1)+
-  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_density(color="gray30", fill="gray50")+
-  geom_rug(sides = "b")+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  scale_y_continuous(breaks = c(0,3e-4))+
-  labs(x="Age (cal yr BP)",
-      y="Density of samples"
-  )+
-  theme(
-    axis.ticks.x = element_blank(),
-    axis.text.x = element_blank(),
-    axis.title.x = element_blank()
-  )+
-coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))
-
-FIG4_Site_C_1 <- data_site_C$list_ages$ages %>%
-  filter(age < 9000) %>%
-  ggplot(aes(x=age))+
-  geom_hline(yintercept = c(0,3e-4), color="gray80", size=0.1)+
-  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_density(color="gray30", fill="gray50")+
-  geom_rug(sides = "b")+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  scale_y_continuous(breaks = c(0,3e-4))+
-  labs(x="Age (cal yr BP)",
-       y="Density of samples"
-  )+
-  theme(
-    axis.ticks.x = element_blank(),
-    axis.text.x = element_blank(),
-    axis.title.x = element_blank()
-  )+
-coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))
-
-
-FIG4_Site_D_1 <- data_site_D$list_ages$ages %>%
-  filter(age < 9000) %>%
-  ggplot(aes(x=age))+
-  geom_hline(yintercept = c(0,3e-4), color="gray80", size=0.1)+
-  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_density(color="gray30", fill="gray50")+
-  geom_rug(sides = "b")+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  labs(x="Age (cal yr BP)",
-       y="Density of samples"
-  )+
-  theme(
-#    axis.ticks.x = element_blank(),
-#    axis.text.x = element_blank(),
-#    axis.title.x = element_blank()
-  )+
-coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))
-
-
-library(cowplot)
-my_legend <- cowplot::get_legend(ggplot(data = data.frame(NAME=common_taxa,X=1), aes(x=X, fill=NAME))+
-                             geom_density(alpha=1/3)+
-                             theme_classic()+
-                             theme(legend.position = "bottom")+
-                             scale_fill_manual("pollen taxa",values = Palette.1))
-
-plot(my_legend)
-
-
-FIG4_Site_A_2 <-  data_site_A_pollen %>%
-  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = 10e3, newage=NA)) %>%
-  ggplot(aes( y=value, 
-              x= age))+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  scale_y_continuous(breaks = c(0,1))+
-  geom_hline(yintercept = c(0,1), color="gray80", size=0.1)+
-  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
-              color="gray20", alpha=1/5, size=0.1)+
-  scale_fill_manual("pollen taxa",values = Palette.1)+
-  labs(
-    x="Age (cal yr BP)",
-    y="% of pollen grains"
-        )+
-  theme(legend.position = "none",
-        axis.ticks.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.title.x  = element_blank(),
-        axis.title.y  = element_blank(),
-        strip.background = element_blank(),
-        strip.text = element_text(angle = 45)
-#        strip.text = element_blank()
-        )+
-  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
-  facet_wrap(~name, ncol=length(common_taxa))
-
-FIG4_Site_B_2 <-  data_site_B_pollen %>%
-  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = 10e3, newage=NA)) %>%
-  ggplot(aes( y=value, 
-              x= age))+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  scale_y_continuous(breaks = c(0,1))+
-  geom_hline(yintercept = c(0,1), color="gray80", size=0.1)+
-  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
-              color="gray20", alpha=1/5, size=0.1)+
-  scale_fill_manual("pollen taxa",values = Palette.1, drop=FALSE)+
-  labs(
-    x="Age (cal yr BP)",
-    y="% of pollen grains"
-  )+
-  theme(legend.position = "none",
-        axis.ticks.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.title.x  = element_blank(),
-        axis.title.y  = element_blank(),
-        strip.background = element_blank(),
-#        strip.text = element_text(angle = 45)
-        strip.text = element_blank()
-  )+
-  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
-  facet_wrap(~name, ncol=length(common_taxa))
-
-FIG4_Site_C_2 <-  data_site_C_pollen %>%
-  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = 10e3, newage=NA)) %>%
-  ggplot(aes( y=value, 
-              x= age))+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  scale_y_continuous(breaks = c(0,1))+
-  geom_hline(yintercept = c(0,1), color="gray80", size=0.1)+
-  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
-              color="gray20", alpha=1/5, size=0.1)+
-  scale_fill_manual("pollen taxa",values = Palette.1, drop=FALSE)+
-  labs(
-    x="Age (cal yr BP)",
-    y="% of pollen grains"
-  )+
-  theme(legend.position = "none",
-        axis.ticks.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.title.x  = element_blank(),
-        axis.title.y  = element_blank(),
-        strip.background = element_blank(),
-#        strip.text = element_text(angle = 45)
-        strip.text = element_blank()
-  )+
-  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
-  facet_wrap(~name, ncol=length(common_taxa))
-
-FIG4_Site_D_2 <-  data_site_D_pollen %>%
-  bind_rows(.,data.frame(sample.id=NA,name=common_taxa,value=0,depth=NA, age = 10e3, newage=NA)) %>%
-  ggplot(aes( y=value, 
-              x= age))+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  scale_y_continuous(breaks = c(0,1))+
-  geom_hline(yintercept = c(0,1), color="gray80", size=0.1)+
-  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_ribbon(aes(ymin=rep(0,length(value)),ymax=value, fill=name), 
-              color="gray20", alpha=1/5, size=0.1)+
-  scale_fill_manual("pollen taxa",values = Palette.1)+
-  labs(
-    x="Age (cal yr BP)",
-    y="% of pollen grains"
-  )+
-  theme(legend.position = "none",
-#        axis.ticks.x = element_blank(),
-#        axis.text.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
-#        axis.title.x  = element_blank(),
-        axis.title.y  = element_blank(),
-        strip.background = element_blank(),
- #       strip.text = element_text(angle = 45)
-        strip.text = element_blank()
-  )+
-  coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
-  facet_wrap(~name, ncol=length(common_taxa))
-
-FIG4_Site_A_3 <- data_site_A_RoC_MW %>%
-ggplot(aes(y=ROC, 
-           x= AGE))+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim = c(age_lim,0), ylim = c(0,1))+
-  geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
-  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
-  geom_line(alpha=1, size=0.5)+
-  geom_point(data = . %>% filter(PEAK==T ),color="green", size=2, shape=16, alpha=2/3)+
-  geom_hline(yintercept = 0, color="purple", size=0.1)+
-  labs(
-    x="Age (cal yr BP)",
-    y="Rate-of-Change score"
-  )+
-  theme(legend.position = "none",
-        axis.ticks.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.title.x  = element_blank(),
-        axis.title.y  = element_blank(),
-     )
-
-
-FIG4_Site_B_3 <- data_Site_B_RoC %>%
-  ggplot(aes(y=ROC, 
-             x= AGE))+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim = c(age_lim,0), ylim = c(0,1))+
-  geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
-  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
-  geom_line(alpha=1, size=0.5)+
-  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
-  geom_hline(yintercept = 0, color="purple", size=0.1)+
-  labs(
-    x="Age (cal yr BP)",
-    y="Rate-of-Change score"
-  )+
-  theme(legend.position = "none",
-        axis.ticks.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.title.x  = element_blank(),
-        axis.title.y  = element_blank(),
-  )
-
-FIG4_Site_C_3 <- data_Site_C_RoC %>%
-  ggplot(aes(y=ROC, 
-             x= AGE))+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim = c(age_lim,0), ylim = c(0,1))+
-  geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
-  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
-  geom_line(alpha=1, size=0.5)+
-  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
-  geom_hline(yintercept = 0, color="purple", size=0.1)+
-  labs(
-    x="Age (cal yr BP)",
-    y="Rate-of-Change score"
-  )+
-  theme(legend.position = "none",
-        axis.ticks.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.title.x  = element_blank(),
-        axis.title.y  = element_blank(),
-  )
-
-
-FIG4_Site_D_3 <- data_Site_D_RoC %>%
-  ggplot(aes(y=ROC, 
-             x= AGE))+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim = c(age_lim,0), ylim = c(0,1))+
-  geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
-  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
-  geom_line(alpha=1, size=0.5)+
-  geom_point(data = . %>% filter(PEAK ==T ),color="green", size=2, shape=16, alpha=2/3)+
-  geom_hline(yintercept = 0, color="purple", size=0.1)+
-  labs(
-    x="Age (cal yr BP)",
-    y="Rate-of-Change score"
-  )+
-  theme(legend.position = "none",
-#        axis.ticks.x = element_blank(),
-#        axis.text.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
-#        axis.title.x  = element_blank(),
-       axis.title.y  = element_blank(),
-  )
-
-
-data_site_A_RoC %>%
-  filter(PEAK == T)
-
-data_Site_B_RoC %>%
-  filter(PEAK == T)
-
-data_Site_C_RoC %>%
-  filter(PEAK == T)
-
-data_Site_D_RoC %>%
-  filter(PEAK == T)
-
-
-
-library(cowplot)
-FIG4_Site_A <- plot_grid(FIG4_Site_A_1, FIG4_Site_A_2, FIG4_Site_A_3,
-                         align = "h",axis = "bt", ncol = 3, rel_widths = c(1,3,1))
-FIG4_Site_B <- plot_grid(FIG4_Site_B_1, FIG4_Site_B_2, FIG4_Site_B_3,
-                         align = "h",axis = "bt", ncol = 3, rel_widths = c(1,3,1))
-FIG4_Site_C <- plot_grid(FIG4_Site_C_1, FIG4_Site_C_2, FIG4_Site_C_3,
-                         align = "h",axis = "bt", ncol = 3, rel_widths = c(1,3,1))
-FIG4_Site_D <- plot_grid(FIG4_Site_D_1, FIG4_Site_D_2, FIG4_Site_D_3,
-                         align = "h",axis = "bt", ncol = 3, rel_widths = c(1,3,1))
-
-
-FIG4_Site_comparison <- ggarrange(
-  FIG4_Site_A,
-  FIG4_Site_B,
-  FIG4_Site_C,
-  FIG4_Site_D,
-  #labels = c(17334,"","",40951,"","",4012,"",""),
-  labels = c("A","B","C","D"),
-  heights = c(1.8,1,1,1.2),
-  ncol = 1, nrow = 4, legend = "none")
-FIG4_Site_comparison
-
-FIG4_Site_comparison_legend <- ggarrange(
-  FIG4_Site_comparison,
-  my_legend, 
-  ncol=1, heights = c(12,2))
-FIG4_Site_comparison_legend
-
-ggsave("~/RESULTS/Methods/FIN/FIG4_Site_comparison.pdf",
-       plot = FIG4_Site_comparison, 
-       height = 20, width = 22, units="cm")
 
 ###############
 # SUPLEMENTARY 
@@ -1754,95 +1849,121 @@ ggsave("~/RESULTS/Methods/FIN/Supplementary_F1.pdf",
 ##########
 # FIG S2 #
 ########## 
+ggarrange(ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ DC,
+                            type = "response") %>%
+                      as_tibble() %>%
+                      ggplot(aes(y=prob, x=DC,color=DC,fill=DC, ymin=lower.CL, ymax= upper.CL))+
+                      geom_hline(yintercept = seq(0,1,0.1), color="gray90",size=0.1)+
+                      geom_errorbar(width=0.2, color="gray60",position = position_dodge(width = 0.5),size=0.1)+
+                      geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
+                      #geom_point(shape=15,position = position_dodge(width = 0.5))+
+                      coord_cartesian(ylim = c(0.7,1))+
+                      scale_fill_manual(values = Color.legen_DC)+
+                      scale_color_manual(values = Color.legen_DC)+
+                      labs(y="",x=""),
+                    emmeans(mod_success_false_MW_G_sub, ~ DC,
+                            type = "response") %>%
+                      as_tibble() %>%
+                      ggplot(aes(y=prob, x=DC,color=DC,fill=DC, ymin=lower.CL, ymax= upper.CL))+
+                      geom_hline(yintercept = seq(0,1,0.025), color="gray90",size=0.1)+
+                      geom_errorbar(width=0.2, color="gray60",position = position_dodge(width = 0.5),size=0.1)+
+                      geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
+                      #geom_point(shape=15,position = position_dodge(width = 0.5))+
+                      coord_cartesian(ylim = c(0,0.1))+
+                      scale_fill_manual(values = Color.legen_DC)+
+                      scale_color_manual(values = Color.legen_DC)+
+                      labs(y="",x=""),
+                    nrow = 1, common.legend = T, legend = "none",
+                    labels = c("Correct detections","False positives")
+),
+ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ SMOOTH,
+                  type = "response") %>%
+            as_tibble() %>%
+            ggplot(aes(y=prob, x=SMOOTH,color=SMOOTH,fill=SMOOTH, ymin=lower.CL, ymax= upper.CL))+
+            geom_hline(yintercept = seq(0,1,0.1), color="gray90",size=0.1)+
+            geom_errorbar(width=0.2, color="gray60", position = position_dodge(width = 0.5),size=0.1)+
+            geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
+            #geom_point(shape=15,position = position_dodge(width = 0.5))+
+            coord_cartesian(ylim = c(0.7,1))+
+            scale_color_manual(values = Color.legen_smooth)+
+            scale_fill_manual(values = Color.legen_smooth)+
+            labs(y="",x=""),
+          emmeans(mod_success_false_MW_G_sub, ~ SMOOTH,
+                  type = "response") %>%
+            as_tibble() %>%
+            ggplot(aes(y=prob, x=SMOOTH,color=SMOOTH,fill=SMOOTH, ymin=lower.CL, ymax= upper.CL))+
+            geom_hline(yintercept = seq(0,1,0.05), color="gray90",size=0.1)+
+            geom_errorbar(width=0.2, color="gray60", position = position_dodge(width = 0.5),size=0.1)+
+            geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
+            #geom_point(shape=15,position = position_dodge(width = 0.5))+
+            coord_cartesian(ylim = c(0,0.2))+
+            scale_color_manual(values = Color.legen_smooth)+
+            scale_fill_manual(values = Color.legen_smooth)+
+            labs(y="",x=""),
+          nrow = 1, common.legend = T, legend = "none"),
+ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ Position ,
+                  type = "response") %>%
+            as_tibble() %>%
+            ggplot(aes(y=prob, x=Position ,color=Position ,fill=Position , ymin=lower.CL, ymax= upper.CL))+
+            geom_hline(yintercept = seq(0,1,0.1), color="gray90",size=0.1)+
+            geom_errorbar(width=0.2, color="gray60", position = position_dodge(width = 0.5),size=0.1)+
+            geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
+            #geom_point(shape=15,position = position_dodge(width = 0.5))+
+            coord_cartesian(ylim = c(0.5,1))+
+            scale_color_manual(values = Color.legen_Position )+
+            scale_fill_manual(values = Color.legen_Position )+
+            labs(y="",x=""),
+          emmeans(mod_success_false_MW_G_sub, ~ Position ,
+                  type = "response") %>%
+            as_tibble() %>%
+            ggplot(aes(y=prob, x=Position ,color=Position ,fill=Position , ymin=lower.CL, ymax= upper.CL))+
+            geom_hline(yintercept = seq(0,1,0.05), color="gray90",size=0.1)+
+            geom_errorbar(width=0.2, color="gray60", position = position_dodge(width = 0.5),size=0.1)+
+            geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
+            #geom_point(shape=15,position = position_dodge(width = 0.5))+
+            coord_cartesian(ylim = c(0,0.2))+
+            scale_color_manual(values = Color.legen_Position )+
+            scale_fill_manual(values = Color.legen_Position )+
+            labs(y="",x=""),
+          nrow = 1, common.legend = T, legend = "none"),
+ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ Diversity ,
+                  type = "response") %>%
+            as_tibble() %>%
+            ggplot(aes(y=prob, x=Diversity ,color=Diversity ,fill=Diversity , ymin=lower.CL, ymax= upper.CL))+
+            geom_hline(yintercept = seq(0,1,0.1), color="gray90",size=0.1)+
+            geom_errorbar(width=0.2, color="gray60", position = position_dodge(width = 0.5),size=0.1)+
+            geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
+            #geom_point(shape=15,Diversity = position_dodge(width = 0.5))+
+            coord_cartesian(ylim = c(0.7,1))+
+            scale_color_manual(values = Color.legen_Diversity )+
+            scale_fill_manual(values = Color.legen_Diversity )+
+            labs(y="",x=""),
+          emmeans(mod_success_false_MW_G_sub, ~ Diversity ,
+                  type = "response") %>%
+            as_tibble() %>%
+            ggplot(aes(y=prob, x=Diversity ,color=Diversity ,fill=Diversity , ymin=lower.CL, ymax= upper.CL))+
+            geom_hline(yintercept = seq(0,1,0.1), color="gray90",size=0.1)+
+            geom_errorbar(width=0.2, color="gray60", position = position_dodge(width = 0.5),size=0.1)+
+            geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
+            #geom_point(shape=15,Diversity = position_dodge(width = 0.5))+
+            coord_cartesian(ylim = c(0,0.4))+
+            scale_color_manual(values = Color.legen_Diversity )+
+            scale_fill_manual(values = Color.legen_Diversity )+
+            labs(y="",x=""),
+          nrow = 1, common.legend = T, legend = "none") ,
+nrow = 4) %>% annotate_figure(left = "Proportion of peak detection")
 
-data_supp_fig <- rbind(
-  data.frame(perform_sim_ld_recent_MW$SumData,WU = "MW"),
-  data.frame(perform_sim_ld_late_MW$SumData,WU="MW"),
-  data.frame(perform_sim_hd_recent_MW$SumData,WU="MW"),
-  data.frame(perform_sim_hd_late_MW$SumData,WU="MW"),
-  data.frame(perform_sim_ld_recent_BINs$SumData,WU = "BINs"),
-  data.frame(perform_sim_ld_late_BINs$SumData,WU="BINs"),
-  data.frame(perform_sim_hd_recent_BINs$SumData,WU="BINs"),
-  data.frame(perform_sim_hd_late_BINs$SumData,WU="BINs"),
-  data.frame(perform_sim_ld_recent_levels$SumData,WU = "levels"),
-  data.frame(perform_sim_ld_late_levels$SumData,WU="levels"),
-  data.frame(perform_sim_hd_recent_levels$SumData,WU="levels"),
-  data.frame(perform_sim_hd_late_levels$SumData,WU="levels")
-)
-
-data_supp_fig$Dataset_type <- rep(c(rep("LR-R",120),rep("LR-L",120),rep("HR-R",120),rep("HR-L",120)),3)
-data_supp_fig <- within(data_supp_fig, Dataset_type <- factor(Dataset_type, levels = c("LR-R","LR-L","HR-R","HR-L")))
-
-data_supp_fig <- within(data_supp_fig, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
-levels(data_supp_fig$DC) <- c("Euc","Euc.sd","Chord","Chisq")
 
 
-data_supp_fig <- within(data_supp_fig, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
-levels(data_supp_fig$SMOOTH) <- c("None","M.avg","Grimm","Age.w","Shep")
+
+ggsave("METHOD_RESULTS//FIG_S2_v01.pdf",
+       width = 20, height = 20, units = "cm")
 
 
-data_supp_fig <- within(data_supp_fig, SEGMENT <- factor(SEGMENT, levels = c("focus","empty")))
-data_supp_fig <- within(data_supp_fig, PEAK <- factor(PEAK, levels = c("PEAK.T","PEAK.G","PEAK.S")))
-levels(data_supp_fig$PEAK) <- c("Threshold","GAM","SNI")
 
-data_supp_fig <- within(data_supp_fig, WU <- factor(WU, levels = c("levels","BINs","MW")))
-
-Supplementary_F2a <- data_supp_fig %>%
-  ggplot(aes(y=VALUE.M,x=Dataset_type,fill=SEGMENT, group=SEGMENT))+
-  geom_bar(stat="identity", position="dodge", color="gray30")+
-  geom_errorbar(aes(ymin=VALUE.M-VALUE.SD,ymax=VALUE.M+VALUE.SD, group=SEGMENT),
-                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
-  facet_grid(DC+SMOOTH~WU+PEAK)+
-  scale_fill_manual("Position in sequence", labels=c("Focal area (correct detection)","Outside of focal area (false positive)"),
-                    values = c("darkseagreen","coral"))+
-  ylab("Proportion of peak detection")+xlab("Type of simulated dataset")+
-  theme_classic()+
-  coord_cartesian(ylim = c(0,1))+
-  theme(legend.position = "bottom")+
-  theme(axis.text.x = element_text(angle = -45,hjust = 0.3, vjust = 0.2 ))
+citation(package = "emmeans")
 
 
-Supplementary_F2a
-
-ggsave("~/RESULTS/Methods/FIN/Supplementary_F2.pdf",
-       plot = Supplementary_F2,
-       height = 15, width = 22, units="cm")
-
-Supplementary_F2b <- data_supp_fig %>%
-  filter(WU == "BINs") %>%
-  ggplot(aes(y=VALUE.M,x=Dataset_type,fill=SEGMENT, group=SEGMENT))+
-  geom_bar(stat="identity", position="dodge", color="gray30")+
-  geom_errorbar(aes(ymin=VALUE.M-VALUE.SD,ymax=VALUE.M+VALUE.SD, group=SEGMENT),
-                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
-  facet_grid(SMOOTH~DC+PEAK)+
-  scale_fill_manual("Position in sequence", labels=c("Focal area (correct detection)","Outside of focal area (false positive)"),
-                    values = c("darkseagreen","coral"))+
-  ylab("Proportion of peak detection")+xlab("Type of simulated dataset")+
-  theme_classic()+
-  coord_cartesian(ylim = c(0,1))+
-  theme(legend.position = "bottom")+
-  theme(axis.text.x = element_text(angle = -45,hjust = 0.3, vjust = 0.2 ))
-
-
-Supplementary_F2b
-
-Supplementary_F2c <- data_supp_fig %>%
-  filter(WU == "levels") %>%
-  ggplot(aes(y=VALUE.M,x=Dataset_type,fill=SEGMENT, group=SEGMENT))+
-  geom_bar(stat="identity", position="dodge", color="gray30")+
-  geom_errorbar(aes(ymin=VALUE.M-VALUE.SD,ymax=VALUE.M+VALUE.SD, group=SEGMENT),
-                position=position_dodge(width=0.9), width=0.2, size=0.5, color="gray50")+
-  facet_grid(SMOOTH~DC+PEAK)+
-  scale_fill_manual("Position in sequence", labels=c("Focal area (correct detection)","Outside of focal area (false positive)"),
-                    values = c("darkseagreen","coral"))+
-  ylab("Proportion of peak detection")+xlab("Type of simulated dataset")+
-  theme_classic()+
-  coord_cartesian(ylim = c(0,1))+
-  theme(legend.position = "bottom")+
-  theme(axis.text.x = element_text(angle = -45,hjust = 0.3, vjust = 0.2 ))
-
-
-Supplementary_F2c
 
 
 ##########
@@ -2660,4 +2781,4 @@ ggsave("~/RESULTS/Methods/FIN/Supplementary_F6D.pdf",
 #               SAVE               #
 ####################################
 
-# save.image("~/DATA/temp/ENV_METHOD_2020730.RData")
+# save.image("C:/Users/omo084/OneDrive - University of Bergen/PRIVATE/ROC_method/ENV_METHOD_2020807.RData")
