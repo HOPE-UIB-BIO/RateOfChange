@@ -67,7 +67,7 @@ fc_test_simlutated_data_succsess <- function(sim.data,
         mutate(SEGMENT = breaks.seq) %>%
         pivot_longer(-c(SEGMENT)) %>%
         group_by(SEGMENT, name) %>%
-        summarise(VALUE = mean(value)) %>%
+        summarise(VALUE = mean(value), .groups = "keep") %>%
         mutate(dataset.ID = i,
                SMOOTH =performance.smooth[j],
                DC = performance.DC[j]) %>%
@@ -87,7 +87,8 @@ fc_test_simlutated_data_succsess <- function(sim.data,
   # summary of randomisation
   SUM.data <- sum.temp.res %>%
     group_by(SMOOTH,DC,PEAK,SEGMENT) %>%
-    summarise(VALUE.M = mean(VALUE, na.rm = T),
+    summarise(.groups = "keep",
+              VALUE.M = mean(VALUE, na.rm = T),
               VALUE.SD = sd(VALUE, na.rm = T),
               VALUE.05 = quantile(VALUE,0.025, na.rm = T),
               VALUE.95 = quantile(VALUE,0.975, na.rm = T)
