@@ -17,12 +17,12 @@
    height="778.75"
    viewBox="0 0 707.5 778.75"
    sodipodi:docname="FIG3_v02_edit.svg"
-   inkscape:export-filename="C:\Users\omo084\OneDrive - University of Bergen\PRIVATE\GITHUB\RateOfChange\METHOD_RESULTS\FIG3_v01.png"
+   inkscape:export-filename="C:\Users\omo084\Documents\GITHUB\RateOfChange\METHOD_RESULTS\FIG3_v01.png"
    inkscape:export-xdpi="600"
    inkscape:export-ydpi="600"><metadata
      id="metadata18733"><rdf:RDF><cc:Work
          rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><defs
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><defs
      id="defs18731"><clipPath
        clipPathUnits="userSpaceOnUse"
        id="clipPath18753"><path
@@ -841,13 +841,13 @@
      inkscape:window-height="1017"
      id="namedview18729"
      showgrid="false"
-     inkscape:zoom="0.85715416"
-     inkscape:cx="54.697562"
-     inkscape:cy="441.36732"
+     inkscape:zoom="2.4243981"
+     inkscape:cx="252.60601"
+     inkscape:cy="153.2261"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
-     inkscape:current-layer="g18735" /><g
+     inkscape:current-layer="g25957" /><g
      id="g18735"
      inkscape:groupmode="layer"
      inkscape:label="FIG3_v02"
@@ -7568,10 +7568,10 @@
          transform="matrix(1,0,0,-1,168.02,7.9)"
          style="font-variant:normal;font-weight:normal;font-size:11px;font-family:Helvetica;-inkscape-font-specification:Helvetica;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
          id="text25959"><tspan
-           x="0 9.7790003 12.837 18.952999 22.011 25.069 31.184999 37.300999 39.743 42.185001 48.300999 54.417 57.474998 63.591 67.143997 73.260002 75.702003 81.818001"
-           y="0"
            sodipodi:role="line"
-           id="tspan25961">% of pollen grains</tspan></text>
+           id="tspan25961"
+           x="0"
+           y="0">Proportion of total pollen</tspan></text>
 </g><g
        id="g25963" /><g
        id="g25965" /><g
