@@ -12,8 +12,12 @@ library(emmeans)
 library(parallel)
 library(doParallel)
 library (RColorBrewer)
+library(cowplot)
+library(ggpubr)
+library(viridis)
 library(devtools)
 devtools::install_github("HOPE-UIB-BIO/R-Ratepol-package")
+
 library(RRatepol)
 
 theme_set(theme_classic())
@@ -599,13 +603,13 @@ fc_get_pollen_data <- function (data, smooth_method , Common.list)
     data$filtered.counts <- data$filtered.counts[,-1]
   }
   
-  data.ext <-  fc_extract_data(data$filtered.counts,
-                               data$list_ages) %>%
-    fc_smooth_pollen_data(.,smooth_method  = smooth_method ,
-                          smooth_N_points  = 5,
-                          smooth_N_max  = 9,
-                          smooth_age_range  = 500) %>%
-    fc_check_data(.,proportion = T)
+  data.ext <- RRatepol::fc_extract_data(data$filtered.counts,
+                                        data$list_ages) %>%
+    RRatepol::fc_smooth_pollen_data(.,smooth_method  = smooth_method ,
+                                    smooth_N_points  = 5,
+                                    smooth_N_max  = 9,
+                                    smooth_age_range  = 500) %>%
+    RRatepol::fc_check_data(.,proportion = T)
   
   plot.data <- data.ext$Pollen %>%
     select(any_of(Common.list)) %>%
@@ -629,198 +633,198 @@ data_site_D_pollen <-fc_get_pollen_data(data_site_D, smooth_method  = "none",com
 
 # Rate of Change
 
-data_site_A_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts,
-                                       data.source.age = data_site_A$list_ages,
-                                       sm.type = "age.w", 
-                                       N.points = 5,
-                                       range.age.max = 500, 
-                                       grim.N.max = 9,
-                                       Working.Unit = "levels",
-                                       BIN.size = 500,
-                                       N.shifts = 5,
-                                       rand = 10000,
-                                       standardise = T, 
-                                       S.value = 150, 
-                                       DC = "chisq",
-                                       interest.treshold = age_lim,
-                                       Debug = F)
+data_site_A_RoC_levels <- RRatepol::fc_estimate_RoC(data_source_pollen = data_site_A$filtered.counts,
+                                                    data_source_age = data_site_A$list_ages,
+                                                    smooth_method  = "age.w", 
+                                                    smooth_N_points  = 5,
+                                                    smooth_age_range  = 500, 
+                                                    smooth_N_max   = 9,
+                                                    Working_Units  = "levels",
+                                                    bin_size  = 500,
+                                                    Number_of_shifts = 5,
+                                                    rand = 10000,
+                                                    standardise = T, 
+                                                    N_pollen_grains  = 150, 
+                                                    DC = "chisq",
+                                                    interest_threshold  = age_lim,
+                                                    Debug = F)
 
-data_site_A_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts,
-                                     data.source.age = data_site_A$list_ages,
-                                     sm.type = "age.w", 
-                                     N.points = 5,
-                                     range.age.max = 500, 
-                                     grim.N.max = 9,
-                                     Working.Unit = "BINs",
-                                     BIN.size = 500,
-                                     N.shifts = 5,
-                                     rand = 10000,
-                                     standardise = T, 
-                                     S.value = 150, 
-                                     DC = "chisq",
-                                     interest.treshold = age_lim,
-                                     Debug = F)
+data_site_A_RoC_BINs <- RRatepol::fc_estimate_RoC(data_source_pollen = data_site_A$filtered.counts,
+                                                  data_source_age = data_site_A$list_ages,
+                                                  smooth_method  = "age.w", 
+                                                  smooth_N_points  = 5,
+                                                  smooth_age_range = 500, 
+                                                  smooth_N_max   = 9,
+                                                  Working_Units  = "BINs",
+                                                  bin_size  = 500,
+                                                  Number_of_shifts  = 5,
+                                                  rand = 10000,
+                                                  standardise = T, 
+                                                  N_pollen_grains  = 150, 
+                                                  DC = "chisq",
+                                                  interest_threshold  = age_lim,
+                                                  Debug = F)
 
-data_site_A_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_A$filtered.counts,
-                                   data.source.age = data_site_A$list_ages,
-                                   sm.type = "age.w", 
-                                   N.points = 5,
-                                   range.age.max = 500, 
-                                   grim.N.max = 9,
-                                   Working.Unit = "MW",
-                                   BIN.size = 500,
-                                   N.shifts = 5,
-                                   rand = 10000,
-                                   standardise = T, 
-                                   S.value = 150, 
-                                   DC = "chisq",
-                                   interest.treshold = age_lim,
-                                   Debug = F)
+data_site_A_RoC_MW <- RRatepol::fc_estimate_RoC(data_source_pollen = data_site_A$filtered.counts,
+                                                data_source_age = data_site_A$list_ages,
+                                                smooth_method  = "age.w", 
+                                                smooth_N_points  = 5,
+                                                smooth_age_range = 500, 
+                                                smooth_N_max   = 9,
+                                                Working_Units  = "MW",
+                                                bin_size  = 500,
+                                                Number_of_shifts  = 5,
+                                                rand = 10000,
+                                                standardise = T, 
+                                                N_pollen_grains  = 150, 
+                                                DC = "chisq",
+                                                interest_threshold  = age_lim,
+                                                Debug = F)
 
-data_Site_B_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts,
-                                       data.source.age = data_site_B$list_ages,
-                                       sm.type = "shep", 
-                                       N.points = 5,
-                                       range.age.max = 500, 
-                                       grim.N.max = 9,
-                                       Working.Unit = "levels",
-                                       BIN.size = 500,
-                                       N.shifts = 5,
-                                       rand = 10000,
-                                       standardise = T, 
-                                       S.value = 150, 
-                                       DC = "chord",
-                                       interest.treshold = age_lim,
-                                       Debug = F)
+data_Site_B_RoC_levels <- RRatepol::fc_estimate_RoC(data_source_pollen = data_site_B$filtered.counts,
+                                                    data_source_age = data_site_B$list_ages,
+                                                    smooth_method  = "shep", 
+                                                    smooth_N_points  = 5,
+                                                    smooth_age_range = 500, 
+                                                    smooth_N_max   = 9,
+                                                    Working_Units  = "levels",
+                                                    bin_size  = 500,
+                                                    Number_of_shifts  = 5,
+                                                    rand = 10000,
+                                                    standardise = T, 
+                                                    N_pollen_grains  = 150, 
+                                                    DC = "chord",
+                                                    interest_threshold  = age_lim,
+                                                    Debug = F)
 
-data_Site_B_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts,
-                                     data.source.age = data_site_B$list_ages,
-                                     sm.type = "shep", 
-                                     N.points = 5,
-                                     range.age.max = 500, 
-                                     grim.N.max = 9,
-                                     Working.Unit = "BINs",
-                                     BIN.size = 500,
-                                     N.shifts = 5,
-                                     rand = 10000,
-                                     standardise = T, 
-                                     S.value = 150, 
-                                     DC = "chord",
-                                     interest.treshold = age_lim,
-                                     Debug = F)
+data_Site_B_RoC_BINs <- RRatepol::fc_estimate_RoC(data_source_pollen = data_site_B$filtered.counts,
+                                                  data_source_age = data_site_B$list_ages,
+                                                  smooth_method  = "shep", 
+                                                  smooth_N_points  = 5,
+                                                  smooth_age_range = 500, 
+                                                  smooth_N_max   = 9,
+                                                  Working_Units  = "BINs",
+                                                  bin_size  = 500,
+                                                  Number_of_shifts  = 5,
+                                                  rand = 10000,
+                                                  standardise = T, 
+                                                  N_pollen_grains  = 150, 
+                                                  DC = "chord",
+                                                  interest_threshold  = age_lim,
+                                                  Debug = F)
 
-data_Site_B_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_B$filtered.counts,
-                                   data.source.age = data_site_B$list_ages,
-                                   sm.type = "shep", 
-                                   N.points = 5,
-                                   range.age.max = 500, 
-                                   grim.N.max = 9,
-                                   Working.Unit = "MW",
-                                   BIN.size = 500,
-                                   N.shifts = 5,
-                                   rand = 10000,
-                                   standardise = T, 
-                                   S.value = 150, 
-                                   DC = "chord",
-                                   interest.treshold = age_lim,
-                                   Debug = F)
+data_Site_B_RoC_MW <- RRatepol::fc_estimate_RoC(data_source_pollen = data_site_B$filtered.counts,
+                                                data_source_age = data_site_B$list_ages,
+                                                smooth_method  = "shep", 
+                                                smooth_N_points  = 5,
+                                                smooth_age_range = 500, 
+                                                smooth_N_max   = 9,
+                                                Working_Units  = "MW",
+                                                bin_size  = 500,
+                                                Number_of_shifts  = 5,
+                                                rand = 10000,
+                                                standardise = T, 
+                                                N_pollen_grains  = 150, 
+                                                DC = "chord",
+                                                interest_threshold  = age_lim,
+                                                Debug = F)
 
-data_Site_C_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts,
-                                       data.source.age = data_site_C$list_ages,
-                                       sm.type = "shep", 
-                                       N.points = 5,
-                                       range.age.max = 500, 
-                                       grim.N.max = 9,
-                                       Working.Unit = "levels",
-                                       BIN.size = 500,
-                                       N.shifts = 5,
-                                       rand = 10000,
-                                       standardise = T, 
-                                       S.value = 150, 
-                                       DC = "chord",
-                                       interest.treshold = age_lim,
-                                       Debug = F)
+data_Site_C_RoC_levels <- RRatepol::fc_estimate_RoC(data_source_pollen = data_site_C$filtered.counts,
+                                                    data_source_age = data_site_C$list_ages,
+                                                    smooth_method  = "shep", 
+                                                    smooth_N_points  = 5,
+                                                    smooth_age_range = 500, 
+                                                    smooth_N_max   = 9,
+                                                    Working_Units  = "levels",
+                                                    bin_size  = 500,
+                                                    Number_of_shifts  = 5,
+                                                    rand = 10000,
+                                                    standardise = T, 
+                                                    N_pollen_grains  = 150, 
+                                                    DC = "chord",
+                                                    interest_threshold  = age_lim,
+                                                    Debug = F)
 
-data_Site_C_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts,
-                                     data.source.age = data_site_C$list_ages,
-                                     sm.type = "shep", 
-                                     N.points = 5,
-                                     range.age.max = 500, 
-                                     grim.N.max = 9,
-                                     Working.Unit = "BINs",
-                                     BIN.size = 500,
-                                     N.shifts = 5,
-                                     rand = 10000,
-                                     standardise = T, 
-                                     S.value = 150, 
-                                     DC = "chord",
-                                     interest.treshold = age_lim,
-                                     Debug = F)
+data_Site_C_RoC_BINs <- RRatepol::fc_estimate_RoC(data_source_pollen = data_site_C$filtered.counts,
+                                                  data_source_age = data_site_C$list_ages,
+                                                  smooth_method  = "shep", 
+                                                  smooth_N_points  = 5,
+                                                  smooth_age_range = 500, 
+                                                  smooth_N_max   = 9,
+                                                  Working_Units  = "BINs",
+                                                  bin_size  = 500,
+                                                  Number_of_shifts  = 5,
+                                                  rand = 10000,
+                                                  standardise = T, 
+                                                  N_pollen_grains  = 150, 
+                                                  DC = "chord",
+                                                  interest_threshold  = age_lim,
+                                                  Debug = F)
 
-data_Site_C_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_C$filtered.counts,
-                                   data.source.age = data_site_C$list_ages,
-                                   sm.type = "shep", 
-                                   N.points = 5,
-                                   range.age.max = 500, 
-                                   grim.N.max = 9,
-                                   Working.Unit = "MW",
-                                   BIN.size = 500,
-                                   N.shifts = 5,
-                                   rand = 10000,
-                                   standardise = T, 
-                                   S.value = 150, 
-                                   DC = "chord",
-                                   interest.treshold = age_lim,
-                                   Debug = F)
+data_Site_C_RoC_MW <- RRatepol::fc_estimate_RoC(data_source_pollen = data_site_C$filtered.counts,
+                                                data_source_age = data_site_C$list_ages,
+                                                smooth_method  = "shep", 
+                                                smooth_N_points  = 5,
+                                                smooth_age_range = 500, 
+                                                smooth_N_max   = 9,
+                                                Working_Units  = "MW",
+                                                bin_size  = 500,
+                                                Number_of_shifts  = 5,
+                                                rand = 10000,
+                                                standardise = T, 
+                                                N_pollen_grains  = 150, 
+                                                DC = "chord",
+                                                interest_threshold  = age_lim,
+                                                Debug = F)
 
-data_Site_D_RoC_levels <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts,
-                                       data.source.age = data_site_D$list_ages,
-                                       sm.type = "shep", 
-                                       N.points = 5,
-                                       range.age.max = 500, 
-                                       grim.N.max = 9,
-                                       Working.Unit = "levels",
-                                       BIN.size = 500,
-                                       N.shifts = 5,
-                                       rand = 10000,
-                                       standardise = T, 
-                                       S.value = 150, 
-                                       DC = "chord",
-                                       interest.treshold = age_lim,
-                                       Debug = F)
+data_Site_D_RoC_levels <- RRatepol::fc_estimate_RoC(data_source_pollen = data_site_D$filtered.counts,
+                                                    data_source_age = data_site_D$list_ages,
+                                                    smooth_method  = "shep", 
+                                                    smooth_N_points  = 5,
+                                                    smooth_age_range = 500, 
+                                                    smooth_N_max   = 9,
+                                                    Working_Units  = "levels",
+                                                    bin_size  = 500,
+                                                    Number_of_shifts  = 5,
+                                                    rand = 10000,
+                                                    standardise = T, 
+                                                    N_pollen_grains  = 150, 
+                                                    DC = "chord",
+                                                    interest_threshold  = age_lim,
+                                                    Debug = F)
 
-data_Site_D_RoC_BINs <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts,
-                                     data.source.age = data_site_D$list_ages,
-                                     sm.type = "shep", 
-                                     N.points = 5,
-                                     range.age.max = 500, 
-                                     grim.N.max = 9,
-                                     Working.Unit = "BINs",
-                                     BIN.size = 500,
-                                     N.shifts = 5,
-                                     rand = 10000,
-                                     standardise = T, 
-                                     S.value = 150, 
-                                     DC = "chord",
-                                     interest.treshold = age_lim,
-                                     Debug = F)
+data_Site_D_RoC_BINs <- RRatepol::fc_estimate_RoC(data_source_pollen = data_site_D$filtered.counts,
+                                                  data_source_age = data_site_D$list_ages,
+                                                  smooth_method  = "shep", 
+                                                  smooth_N_points  = 5,
+                                                  smooth_age_range = 500, 
+                                                  smooth_N_max   = 9,
+                                                  Working_Units  = "BINs",
+                                                  bin_size  = 500,
+                                                  Number_of_shifts  = 5,
+                                                  rand = 10000,
+                                                  standardise = T, 
+                                                  N_pollen_grains  = 150, 
+                                                  DC = "chord",
+                                                  interest_threshold  = age_lim,
+                                                  Debug = F)
 
 
-data_Site_D_RoC_MW <- fc_R_ratepol(data.source.pollen = data_site_D$filtered.counts,
-                                   data.source.age = data_site_D$list_ages,
-                                   sm.type = "shep", 
-                                   N.points = 5,
-                                   range.age.max = 500, 
-                                   grim.N.max = 9,
-                                   Working.Unit = "MW",
-                                   BIN.size = 500,
-                                   N.shifts = 5,
-                                   rand = 10000,
-                                   standardise = T, 
-                                   S.value = 150, 
-                                   DC = "chord",
-                                   interest.treshold = age_lim,
-                                   Debug = F)
+data_Site_D_RoC_MW <- RRatepol::fc_estimate_RoC(data_source_pollen = data_site_D$filtered.counts,
+                                                data_source_age = data_site_D$list_ages,
+                                                smooth_method  = "shep", 
+                                                smooth_N_points  = 5,
+                                                smooth_age_range = 500, 
+                                                smooth_N_max   = 9,
+                                                Working_Units  = "MW",
+                                                bin_size  = 500,
+                                                Number_of_shifts  = 5,
+                                                rand = 10000,
+                                                standardise = T, 
+                                                N_pollen_grains  = 150, 
+                                                DC = "chord",
+                                                interest_threshold  = age_lim,
+                                                Debug = F)
 
 # FIGURES 
 
@@ -899,21 +903,9 @@ FIG3_Site_D_1 <- data_site_D$list_ages$ages %>%
        y="Density of samples"
   )+
   theme(
-    #    axis.ticks.x = element_blank(),
-    #    axis.text.x = element_blank(),
-    #    axis.title.x = element_blank()
   )+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,3e-4))
 
-
-library(cowplot)
-my_legend <- cowplot::get_legend(ggplot(data = data.frame(NAME=common_taxa,X=1), aes(x=X, fill=NAME))+
-                                   geom_density(alpha=1/3)+
-                                   theme_classic()+
-                                   theme(legend.position = "bottom")+
-                                   scale_fill_manual("pollen taxa",values = Palette.1))
-
-plot(my_legend)
 
 
 FIG3_Site_A_2 <-  data_site_A_pollen %>%
@@ -930,7 +922,7 @@ FIG3_Site_A_2 <-  data_site_A_pollen %>%
   scale_fill_manual("pollen taxa",values = Palette.1)+
   labs(
     x="Age (cal yr BP)",
-    y="% of pollen grains"
+    y="Proportion of total pollen"
   )+
   theme(legend.position = "none",
         axis.ticks.x = element_blank(),
@@ -941,7 +933,6 @@ FIG3_Site_A_2 <-  data_site_A_pollen %>%
         axis.title.y  = element_blank(),
         strip.background = element_blank(),
         strip.text = element_text(angle = 45)
-        #        strip.text = element_blank()
   )+
   coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
   facet_wrap(~name, ncol=length(common_taxa))
@@ -960,7 +951,7 @@ FIG3_Site_B_2 <-  data_site_B_pollen %>%
   scale_fill_manual("pollen taxa",values = Palette.1, drop=FALSE)+
   labs(
     x="Age (cal yr BP)",
-    y="% of pollen grains"
+    y="Proportion of total pollen"
   )+
   theme(legend.position = "none",
         axis.ticks.x = element_blank(),
@@ -970,7 +961,6 @@ FIG3_Site_B_2 <-  data_site_B_pollen %>%
         axis.title.x  = element_blank(),
         axis.title.y  = element_blank(),
         strip.background = element_blank(),
-        #        strip.text = element_text(angle = 45)
         strip.text = element_blank()
   )+
   coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
@@ -990,7 +980,7 @@ FIG3_Site_C_2 <-  data_site_C_pollen %>%
   scale_fill_manual("pollen taxa",values = Palette.1, drop=FALSE)+
   labs(
     x="Age (cal yr BP)",
-    y="% of pollen grains"
+    y="Proportion of total pollen"
   )+
   theme(legend.position = "none",
         axis.ticks.x = element_blank(),
@@ -1000,7 +990,6 @@ FIG3_Site_C_2 <-  data_site_C_pollen %>%
         axis.title.x  = element_blank(),
         axis.title.y  = element_blank(),
         strip.background = element_blank(),
-        #        strip.text = element_text(angle = 45)
         strip.text = element_blank()
   )+
   coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
@@ -1020,17 +1009,13 @@ FIG3_Site_D_2 <-  data_site_D_pollen %>%
   scale_fill_manual("pollen taxa",values = Palette.1)+
   labs(
     x="Age (cal yr BP)",
-    y="% of pollen grains"
+    y="Proportion of total pollen"
   )+
   theme(legend.position = "none",
-        #        axis.ticks.x = element_blank(),
-        #        axis.text.x = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y = element_blank(),
-        #        axis.title.x  = element_blank(),
         axis.title.y  = element_blank(),
         strip.background = element_blank(),
-        #       strip.text = element_text(angle = 45)
         strip.text = element_blank()
   )+
   coord_flip(xlim=c(age_lim,0), ylim = c(0,1))+
@@ -1044,7 +1029,6 @@ FIG3_Site_A_3_levels <- data_site_A_RoC_levels %>%
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
-  #geom_hline(yintercept = seq(from=0,to=5, by=2), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1071,7 +1055,6 @@ FIG3_Site_A_3_BINs <-  data_site_A_RoC_BINs %>%
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
-  #geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1095,7 +1078,6 @@ FIG3_Site_A_3_MW <-  data_site_A_RoC_MW %>%
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
-  #geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1120,7 +1102,6 @@ FIG3_Site_B_3_levels <-  data_Site_B_RoC_levels %>%
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
-  # geom_hline(yintercept = seq(from=0,to=5, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1144,7 +1125,6 @@ FIG3_Site_B_3_BINs <-  data_Site_B_RoC_BINs %>%
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
-  #geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1169,7 +1149,6 @@ FIG3_Site_B_3_MW <-  data_Site_B_RoC_MW %>%
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
-  # geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1194,7 +1173,6 @@ FIG3_Site_C_3_levels <-data_Site_C_RoC_levels %>%
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
-  # geom_hline(yintercept = seq(from=0,to=5, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1219,7 +1197,6 @@ FIG3_Site_C_3_BINs <-  data_Site_C_RoC_BINs %>%
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
-  #geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1244,7 +1221,6 @@ FIG3_Site_C_3_MW <-  data_Site_C_RoC_MW %>%
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
-  #geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1270,7 +1246,6 @@ FIG3_Site_D_3_levels <- data_Site_D_RoC_levels %>%
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
-  # geom_hline(yintercept = seq(from=0,to=5, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1281,11 +1256,8 @@ FIG3_Site_D_3_levels <- data_Site_D_RoC_levels %>%
     y="Rate-of-Change score"
   )+
   theme(legend.position = "none",
-        #        axis.ticks.x = element_blank(),
-        #        axis.text.x = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y = element_blank(),
-        #        axis.title.x  = element_blank(),
         axis.title.y  = element_blank(),
   )
 
@@ -1295,7 +1267,6 @@ FIG3_Site_D_3_BINs <-  data_Site_D_RoC_BINs %>%
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
-  # geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1306,11 +1277,8 @@ FIG3_Site_D_3_BINs <-  data_Site_D_RoC_BINs %>%
     y="Rate-of-Change score"
   )+
   theme(legend.position = "none",
-        #        axis.ticks.x = element_blank(),
-        #        axis.text.x = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y = element_blank(),
-        #        axis.title.x  = element_blank(),
         axis.title.y  = element_blank(),
   )
 FIG3_Site_D_3_MW <-  data_Site_D_RoC_MW %>%
@@ -1319,7 +1287,6 @@ FIG3_Site_D_3_MW <-  data_Site_D_RoC_MW %>%
   theme_classic()+
   scale_x_continuous(trans = "reverse")+
   coord_flip(xlim = c(age_lim,0), ylim = c(0,2))+
-  # geom_hline(yintercept = seq(from=0,to=2, by=0.5), color="gray80", size=0.1)+
   geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
   geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
   geom_line(alpha=1, size=0.5)+
@@ -1330,11 +1297,8 @@ FIG3_Site_D_3_MW <-  data_Site_D_RoC_MW %>%
     y="Rate-of-Change score"
   )+
   theme(legend.position = "none",
-        #        axis.ticks.x = element_blank(),
-        #        axis.text.x = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y = element_blank(),
-        #        axis.title.x  = element_blank(),
         axis.title.y  = element_blank(),
   )
 
@@ -1352,8 +1316,6 @@ data_Site_D_RoC_MW %>%
   filter(PEAK == T)
 
 
-
-library(cowplot)
 FIG3_Site_A <- plot_grid(FIG3_Site_A_1, FIG3_Site_A_2, FIG3_Site_A_3_levels,FIG3_Site_A_3_BINs,FIG3_Site_A_3_MW,
                          align = "h",axis = "bt", ncol = 5, rel_widths = c(0.8,3,0.8,0.8,0.8))
 FIG3_Site_B <- plot_grid(FIG3_Site_B_1, FIG3_Site_B_2, FIG3_Site_B_3_levels,FIG3_Site_B_3_BINs,FIG3_Site_B_3_MW,
@@ -1369,7 +1331,6 @@ FIG3_Site_comparison <- ggarrange(
   FIG3_Site_B,
   FIG3_Site_C,
   FIG3_Site_D,
-  #labels = c(17334,"","",40951,"","",4012,"",""),
   labels = c("A","B","C","D"),
   heights = c(1.8,1,1,1.2),
   ncol = 1, nrow = 4, legend = "none")
@@ -1388,54 +1349,30 @@ ggsave("METHOD_RESULTS//FIG3_v02.pdf",
 #   FIG 4
 ############
 
-fc_calculate_RoC_comparison <- function(data, Working.Unit, BIN.size, N.shifts, rand ,peek, interest.treshold){
+fc_calculate_RoC_comparison <- function(data, Working_Units , bin_size , Number_of_shifts , rand ,peek, interest_threshold ){
   
   performance.smooth <- c(rep("none",4),rep("m.avg",4),rep("grim",4),rep("age.w",4),rep("shep",4));
   performance.DC <- c(rep(c("euc","euc.sd","chord","chisq"),5));
   
   for(i in 1:20)
   {
-    data.temp<- fc_R_ratepol( data.source.pollen =  data$filtered.counts,
-                              data.source.age = data$list_ages,
-                              sm.type = performance.smooth[i],
-                              N.points = 5,
-                              range.age.max = 500, 
-                              grim.N.max = 9,
-                              Working.Unit = Working.Unit,
-                              BIN.size = BIN.size,
-                              N.shifts = N.shifts,
+    data.temp<- RRatepol::fc_estimate_RoC( data_source_pollen =  data$filtered.counts,
+                              data_source_age = data$list_ages,
+                              smooth_method  = performance.smooth[i],
+                              smooth_N_points  = 5,
+                              smooth_age_range = 500, 
+                              smooth_N_max   = 9,
+                              Working_Units  = Working_Units ,
+                              bin_size  = bin_size ,
+                              Number_of_shifts  = Number_of_shifts ,
                               rand = rand,
                               standardise = F, 
-                              S.value = 150 ,
+                              N_pollen_grains  = 150 ,
                               DC = performance.DC[i],
-                              interest.treshold = interest.treshold,
+                              interest_threshold  = interest_threshold ,
                               Peak = peek,
                               Debug = F) %>%
       as_tibble()
-    
-    if(peek == "all"){
-      # PEAK detection 
-      # Median peak treshold
-      # treshold for RoC peaks is set as median of all RoC in dataset
-      r.treshold <- median(data.temp$ROC)
-      # mark peaks which have 95% quantile above the treshold asPeak.treshold
-      data.temp$PEAK.T <- data.temp$ROC.dw > r.treshold
-      
-      # GAM  
-      # mark points that are abowe the GAM model (exactly 1.5 SD higher than GAM prediction)
-      pred.gam <-  predict.gam(gam(ROC~s(AGE,k=3), data = data.temp, family = "Gamma",
-                                   correlation = corCAR1(form = ~ AGE), method = "REML"), type="response")
-      pred.gam.diff <- data.temp$ROC - pred.gam
-      data.temp$PEAK.G <- (pred.gam.diff) > 1.5*sd(pred.gam.diff)
-      
-      # SNI  
-      # set moving window of 5 times higher than average distance between samples
-      mean.age.window <- 5 * mean( diff(data.temp$AGE) )
-      # calculate SNI (singal to noise ratio)
-      SNI.calc <- CharSNI(data.frame(data.temp$AGE, data.temp$ROC, pred.gam),mean.age.window)
-      # mark points with SNI higher than 3
-      data.temp$PEAK.S <- SNI.calc$SNI > 3 & data.temp$ROC > pred.gam
-    }
     
     data.temp.sum<-data.temp %>%
       mutate(SMOOTH = performance.smooth[i],
@@ -1451,19 +1388,13 @@ fc_calculate_RoC_comparison <- function(data, Working.Unit, BIN.size, N.shifts, 
 }
 
 
-data_example <- list(dataset.id = tibble_Europe2$dataset.id[[2]],
-                     filtered.counts = tibble_Europe2$filtered.counts[[2]],
-                     list_ages = tibble_Europe2$list_ages[[2]])
-
-data_example_MW <- fc_calculate_RoC_comparison(data_example,
-                                               Working.Unit = "MW",
-                                               BIN.size = 500,
-                                               N.shifts = 5,
+data_example_MW <- fc_calculate_RoC_comparison(data_site_A,
+                                               Working_Units  = "MW",
+                                               bin_size  = 500,
+                                               Number_of_shifts  = 5,
                                                rand = 10000,
                                                peek = "GAM",
-                                               interest.treshold =  age_lim)
-data_example_MW.fresh <- data_example_MW
-data_example_MW <- data_example_MW.fresh
+                                               interest_threshold  =  age_lim)
 
 
 data_example_MW <- within(data_example_MW, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
@@ -1471,9 +1402,6 @@ levels(data_example_MW$DC) <- c("Euc","Euc.sd","Chord","Chisq")
 
 data_example_MW <- within(data_example_MW, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
 levels(data_example_MW$SMOOTH)<-c("None","M.avg","Grimm","Age.w","Shep")
-
-data_example_MW[data_example_MW$DC == "Chisq" & data_example_MW$SMOOTH == "Age.w",]$PEAK[1] <- F
-
 
 FIG1_visual_example_MW <- data_example_MW %>%
   ggplot(aes(y=ROC, 
@@ -1496,40 +1424,6 @@ ggsave("METHOD_RESULTS/FIG4_v01.pdf",
        width = 16, height = 12, units = "cm")
 
 
-data_example_BIN <- fc_calculate_RoC_comparison(data_example,
-                                                Working.Unit = "BINs",
-                                                BIN.size = 500,
-                                                rand = 10000,
-                                                interest.treshold =  age_lim)
-data_example_BIN <- within(data_example_BIN, DC <- factor(DC, levels = c("euc","euc.sd","chord","chisq")))
-levels(data_example_BIN$DC) <- c("Euc","Euc.sd","Chord","Chisq")
-data_example_BIN <- within(data_example_BIN, SMOOTH <- factor(SMOOTH, levels = c("none","m.avg","grim","age.w","shep")))
-levels(data_example_BIN$SMOOTH)<-c("None","M.avg","Grimm","Age.w","Shep")
-
-FIG1_visual_example_BIN <- data_example_BIN %>%
-  ggplot(aes(y=ROC, 
-             x= AGE))+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  coord_flip(xlim = c(age_lim,0))+
-  geom_vline(xintercept = seq(from=0,to=age_lim, by=2000), color="gray80", size=0.1)+
-  geom_ribbon(aes(ymin=ROC.dw, ymax=ROC.up), alpha=1/2, color="gray80", fill="gray80")+
-  geom_line(alpha=1, size=0.5)+
-  geom_point(data = . %>% filter(PEAK.T==T),color="blue", size=2, shape=1, alpha=2/3)+
-  geom_point(data = . %>% filter(PEAK.G==T ),color="green", size=2, shape=16, alpha=2/3)+
-  geom_point(data = . %>% filter(PEAK.S==T ),color="red", size=2, shape=8, alpha=2/3)+
-  geom_hline(yintercept = 0, color="purple", size=0.1)+
-  xlab("Age (cal yr BP)")+ylab("Rate of Change score")+
-  facet_grid(SMOOTH~DC, scales = "free_x")
-
-FIG1_visual_example_BIN
-
-ggsave("~/RESULTS/Methods/FIN/FIG1_visual_example_BIN.pdf",
-       plot = FIG1_visual_example_BIN,
-       width = 20, height = 12, units = "cm")
-
-
-
 ###############
 # SUPLEMENTARY 
 ###############
@@ -1540,95 +1434,93 @@ ggsave("~/RESULTS/Methods/FIN/FIG1_visual_example_BIN.pdf",
 
 # Example of simulation of enviroemntal data
 
-time= tibble_Europe2$list_ages[[2]]$ages$age
-nforc=4;
-mean=100; 
-sdev=.15; 
-nprox=50; 
-var=20;
-range=15;
-manual.edit = T;
-breaks=c(2000,3000);
-breaks=c(5500,6500);
-jitter = T;
-rarity=T;
-
-forcing <- array(0, dim=c(length(time), nforc))
-forcing[1,] <- rnorm(nforc, mean, sdev)
-for(i in 2:length(time))
-  forcing[i,] <- rnorm(nforc, forcing[i-1,], sdev)
-for(l in 1:( length(breaks)-1 ) )
-{
-  if(l%%2 == 1) # odd
+genererate_exmaple_data <- function(time= time_seq,
+                                    nforc=4,
+                                    mean=100,
+                                    sdev=.15, 
+                                    nprox=50, 
+                                    var=20,
+                                    range=15,
+                                    manual.edit = T,
+                                    breaks,
+                                    jitter = T,
+                                    rarity=T) {
+  
+  forcing <- array(0, dim=c(length(time), nforc))
+  forcing[1,] <- rnorm(nforc, mean, sdev)
+  for(i in 2:length(time))
+    forcing[i,] <- rnorm(nforc, forcing[i-1,], sdev)
+  for(l in 1:( length(breaks)-1 ) )
   {
-    forcing[time>breaks[l] & time<breaks[l+1],] <-  forcing[time>breaks[l] & time<breaks[l+1],] * (1+sdev)  
+    if(l%%2 == 1) # odd
+    {
+      forcing[time>breaks[l] & time<breaks[l+1],] <-  forcing[time>breaks[l] & time<breaks[l+1],] * (1+sdev)  
+    }
+    
+    if(l%%2 == 0) # even
+    {
+      forcing[time>breaks[l] & time<breaks[l+1],] <-  forcing[time>breaks[l] & time<breaks[l+1],] * (1-sdev) 
+    }
   }
   
-  if(l%%2 == 0) # even
+  forcing<- apply(forcing,2, FUN = function(x) {
+    low <- lowess(x,f=.05,iter=100)
+    return(low$y)
+  }) 
+  
+  # choose random optima and ranges for the biota
+  ecology <- c()
+  for(i in 1:nprox)
+    ecology[[i]] <- list(mean=rnorm(nforc, mean, var), sd=rgamma(nforc, range, 1))
+  
+  # reactions of the biota to the environmental changes
+  proxies <- array(1, dim=c(length(time), nprox))
+  o <- c()
+  
+  for(i in 1:nprox)
   {
-    forcing[time>breaks[l] & time<breaks[l+1],] <-  forcing[time>breaks[l] & time<breaks[l+1],] * (1-sdev) 
+    for(j in 1:nforc)
+      proxies[,i] <- proxies[,i] * dnorm(forcing[,j], ecology[[i]]$mean[j], ecology[[i]]$sd[j])
+    #o[i] <- weighted.mean(time, proxies[,i])
   }
-}
-
-#forcing <- saved.f
-#saved.f <-forcing 
-
-forcing<- apply(forcing,2, FUN = function(x) {
-  low <- lowess(x,f=.05,iter=100)
-  return(low$y)
-}) 
-
-# choose random optima and ranges for the biota
-ecology <- c()
-for(i in 1:nprox)
-  ecology[[i]] <- list(mean=rnorm(nforc, mean, var), sd=rgamma(nforc, range, 1))
-
-# reactions of the biota to the environmental changes
-proxies <- array(1, dim=c(length(time), nprox))
-o <- c()
-
-for(i in 1:nprox)
-{
-  for(j in 1:nforc)
-    proxies[,i] <- proxies[,i] * dnorm(forcing[,j], ecology[[i]]$mean[j], ecology[[i]]$sd[j])
-  #o[i] <- weighted.mean(time, proxies[,i])
-}
-
-# order taxa by abundance
-o <- order(colSums(proxies), decreasing=TRUE)
-proxies <- proxies[,o]
-
-
-# decrease the abundances of rare taxa
-if(rarity==T)
-{
-  for(i in 1:ncol(proxies)) {
-    proxies[,i]<- (proxies[,i] / max(1,runif(1, min = i-1, max=i)) )
+  
+  # order taxa by abundance
+  o <- order(colSums(proxies), decreasing=TRUE)
+  proxies <- proxies[,o]
+  
+  
+  # decrease the abundances of rare taxa
+  if(rarity==T)
+  {
+    for(i in 1:ncol(proxies)) {
+      proxies[,i]<- (proxies[,i] / max(1,runif(1, min = i-1, max=i)) )
+    }
   }
+  
+  
+  # jitter the resul the pollen data
+  if(jitter==T)
+  {
+    proxies<- apply(proxies,2,FUN= function(x) jitter(x,factor = 1.5, amount = 0))
+    proxies[proxies < 0] <- 0
+  }
+  
+  # return 
+  data.source.age<- list(ages=data.frame(sample.id =c(1:length(time)), age=time),
+                         age_position= matrix(time, nrow = 1))
+  data.source.pollen <- as.data.frame(proxies)
+  row.names(data.source.pollen) <- c(1:length(time))
+  return(list(forcing = forcing, pollen = data.source.pollen, age = data.source.age))
 }
 
+Supplementary_F1a_data <- genererate_exmaple_data(breaks = c(2000,3000))
 
-# jitter the resul the pollen data
-if(jitter==T)
-{
-  proxies<- apply(proxies,2,FUN= function(x) jitter(x,factor = 1.5, amount = 0))
-  proxies[proxies < 0] <- 0
-}
-
-# return 
-data.source.age<- list(ages=data.frame(sample.id =c(1:length(time)), age=time),
-                       age_position= matrix(time, nrow = 1))
-data.source.pollen <- as.data.frame(proxies)
-row.names(data.source.pollen) <- c(1:length(time))
-
-
-
-Supplementary_F1a <-ggarrange(as.data.frame(forcing) %>%
+Supplementary_F1a <-ggarrange(as.data.frame(Supplementary_F1a_data$forcing) %>%
                                mutate(AGE = time) %>%
                                pivot_longer(., cols = -c(AGE)) %>%
                                arrange(AGE,value) %>%
                                ggplot(aes(x=AGE, y= value))+
-                               geom_vline(xintercept = breaks, color="gray80", size=0.1)+
+                               geom_vline(xintercept = c(2000,3000), color="gray80", size=0.1)+
                                geom_line(aes(color=name))+
                                theme_classic()+
                                coord_flip(xlim=c(8000,0))+
@@ -1637,14 +1529,11 @@ Supplementary_F1a <-ggarrange(as.data.frame(forcing) %>%
                                  axis.ticks.y = element_blank(),
                                  axis.text.y = element_blank(),
                                  axis.title.y = element_blank(),
-                                     #axis.ticks.x = element_blank(),
-                                     #axis.text.x = element_blank(),
                                      legend.position = "none"
                                      )+
-                                #ylab("")+
                                 ylab("Value of env. variable")+
                                 xlab("Age (cal yr BP)"),
-                             fc_extract_data(data.source.pollen, data.source.age) %>%
+                             fc_extract_data(Supplementary_F1a_data$pollen, Supplementary_F1a_data$age) %>%
                                fc_smooth_pollen_data("none") %>%
                                fc_check_data(., proportion = T) %>%
                                pluck("Pollen") %>%
@@ -1653,24 +1542,64 @@ Supplementary_F1a <-ggarrange(as.data.frame(forcing) %>%
                                ggplot(aes(x=AGE, y=value))+
                                geom_ribbon(aes(ymin=rep(0,length(value)), ymax=value, fill=name), 
                                            color="gray20", alpha=1/5, size=0.1)+
-                               geom_vline(xintercept = breaks, color="gray80", size=0.1)+
+                               geom_vline(xintercept = c(2000,3000), color="gray80", size=0.1)+
                                coord_flip(xlim=c(8000,0), ylim=c(0,1))+
                                theme_classic()+
                                scale_x_continuous(trans = "reverse")+
                                xlab("")+
-                               #ylab("")+
                                ylab("Proportion of pollen grains")+
                                theme(
                                      axis.ticks.y = element_blank(),
                                      axis.text.y = element_blank(),
-                                     #axis.ticks.x = element_blank(),
-                                     #axis.text.x = element_blank(),
                                      legend.position = "none"),
                              ncol=2, align = "h")
 
 
 Supplementary_F1a
 
+Supplementary_F1b_data <- genererate_exmaple_data(breaks = c(5500,6500))
+
+Supplementary_F1b <-ggarrange(as.data.frame(Supplementary_F1b_data$forcing) %>%
+                                mutate(AGE = time) %>%
+                                pivot_longer(., cols = -c(AGE)) %>%
+                                arrange(AGE,value) %>%
+                                ggplot(aes(x=AGE, y= value))+
+                                geom_vline(xintercept = c(5500,6500), color="gray80", size=0.1)+
+                                geom_line(aes(color=name))+
+                                theme_classic()+
+                                coord_flip(xlim=c(8000,0))+
+                                scale_x_continuous(trans = "reverse")+
+                                theme(
+                                  axis.ticks.y = element_blank(),
+                                  axis.text.y = element_blank(),
+                                  axis.title.y = element_blank(),
+                                  legend.position = "none"
+                                )+
+                                ylab("Value of env. variable")+
+                                xlab("Age (cal yr BP)"),
+                              fc_extract_data(Supplementary_F1b_data$pollen, Supplementary_F1b_data$age) %>%
+                                fc_smooth_pollen_data("none") %>%
+                                fc_check_data(., proportion = T) %>%
+                                pluck("Pollen") %>%
+                                mutate(AGE = time) %>%
+                                pivot_longer(-c(AGE)) %>%
+                                ggplot(aes(x=AGE, y=value))+
+                                geom_ribbon(aes(ymin=rep(0,length(value)), ymax=value, fill=name), 
+                                            color="gray20", alpha=1/5, size=0.1)+
+                                geom_vline(xintercept = c(5500,6500), color="gray80", size=0.1)+
+                                coord_flip(xlim=c(8000,0), ylim=c(0,1))+
+                                theme_classic()+
+                                scale_x_continuous(trans = "reverse")+
+                                xlab("")+
+                                ylab("Proportion of pollen grains")+
+                                theme(
+                                  axis.ticks.y = element_blank(),
+                                  axis.text.y = element_blank(),
+                                  legend.position = "none"),
+                              ncol=2, align = "h")
+
+
+Supplementary_F1b
 
 Supplementary_F1 <- ggarrange(
   Supplementary_F1a,Supplementary_F1b,
@@ -1682,7 +1611,7 @@ Supplementary_F1_fin <- annotate_figure(Supplementary_F1, left= "Age (cal yr BP)
 
 Supplementary_F1_fin
 
-ggsave("~/RESULTS/Methods/FIN/Supplementary_F1.pdf",
+ggsave("METHOD_RESULTS/Supplementary_F1.pdf",
        plot = Supplementary_F1_fin,
        height = 10, width = 15, units="cm")
 
@@ -1696,7 +1625,6 @@ ggarrange(ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ DC,
                       geom_hline(yintercept = seq(0,1,0.1), color="gray90",size=0.1)+
                       geom_errorbar(width=0.2, color="gray60",position = position_dodge(width = 0.5),size=0.1)+
                       geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
-                      #geom_point(shape=15,position = position_dodge(width = 0.5))+
                       coord_cartesian(ylim = c(0.7,1))+
                       scale_fill_manual(values = Color.legen_DC)+
                       scale_color_manual(values = Color.legen_DC)+
@@ -1708,7 +1636,6 @@ ggarrange(ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ DC,
                       geom_hline(yintercept = seq(0,1,0.025), color="gray90",size=0.1)+
                       geom_errorbar(width=0.2, color="gray60",position = position_dodge(width = 0.5),size=0.1)+
                       geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
-                      #geom_point(shape=15,position = position_dodge(width = 0.5))+
                       coord_cartesian(ylim = c(0,0.1))+
                       scale_fill_manual(values = Color.legen_DC)+
                       scale_color_manual(values = Color.legen_DC)+
@@ -1723,7 +1650,6 @@ ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ SMOOTH,
             geom_hline(yintercept = seq(0,1,0.1), color="gray90",size=0.1)+
             geom_errorbar(width=0.2, color="gray60", position = position_dodge(width = 0.5),size=0.1)+
             geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
-            #geom_point(shape=15,position = position_dodge(width = 0.5))+
             coord_cartesian(ylim = c(0.7,1))+
             scale_color_manual(values = Color.legen_smooth)+
             scale_fill_manual(values = Color.legen_smooth)+
@@ -1735,7 +1661,6 @@ ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ SMOOTH,
             geom_hline(yintercept = seq(0,1,0.05), color="gray90",size=0.1)+
             geom_errorbar(width=0.2, color="gray60", position = position_dodge(width = 0.5),size=0.1)+
             geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
-            #geom_point(shape=15,position = position_dodge(width = 0.5))+
             coord_cartesian(ylim = c(0,0.2))+
             scale_color_manual(values = Color.legen_smooth)+
             scale_fill_manual(values = Color.legen_smooth)+
@@ -1748,7 +1673,6 @@ ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ Position ,
             geom_hline(yintercept = seq(0,1,0.1), color="gray90",size=0.1)+
             geom_errorbar(width=0.2, color="gray60", position = position_dodge(width = 0.5),size=0.1)+
             geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
-            #geom_point(shape=15,position = position_dodge(width = 0.5))+
             coord_cartesian(ylim = c(0.5,1))+
             scale_color_manual(values = Color.legen_Position )+
             scale_fill_manual(values = Color.legen_Position )+
@@ -1760,7 +1684,6 @@ ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ Position ,
             geom_hline(yintercept = seq(0,1,0.05), color="gray90",size=0.1)+
             geom_errorbar(width=0.2, color="gray60", position = position_dodge(width = 0.5),size=0.1)+
             geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
-            #geom_point(shape=15,position = position_dodge(width = 0.5))+
             coord_cartesian(ylim = c(0,0.2))+
             scale_color_manual(values = Color.legen_Position )+
             scale_fill_manual(values = Color.legen_Position )+
@@ -1773,7 +1696,6 @@ ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ Diversity ,
             geom_hline(yintercept = seq(0,1,0.1), color="gray90",size=0.1)+
             geom_errorbar(width=0.2, color="gray60", position = position_dodge(width = 0.5),size=0.1)+
             geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
-            #geom_point(shape=15,Diversity = position_dodge(width = 0.5))+
             coord_cartesian(ylim = c(0.7,1))+
             scale_color_manual(values = Color.legen_Diversity )+
             scale_fill_manual(values = Color.legen_Diversity )+
@@ -1785,7 +1707,6 @@ ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ Diversity ,
             geom_hline(yintercept = seq(0,1,0.1), color="gray90",size=0.1)+
             geom_errorbar(width=0.2, color="gray60", position = position_dodge(width = 0.5),size=0.1)+
             geom_bar(stat = "identity", position = position_dodge(width = 0.5), color="gray60", orientation="x", width = 0.5,size=0.1)+
-            #geom_point(shape=15,Diversity = position_dodge(width = 0.5))+
             coord_cartesian(ylim = c(0,0.4))+
             scale_color_manual(values = Color.legen_Diversity )+
             scale_fill_manual(values = Color.legen_Diversity )+
@@ -1794,14 +1715,9 @@ ggarrange(emmeans(mod_success_focus_MW_G_sub, ~ Diversity ,
 nrow = 4) %>% annotate_figure(left = "Proportion of peak detection")
 
 
-
-
-ggsave("METHOD_RESULTS//FIG_S2_v01.pdf",
+ggsave("METHOD_RESULTS//Supplementary_F2.pdf",
        width = 20, height = 20, units = "cm")
 
-
-
-citation(package = "emmeans")
 
 
 
@@ -1810,811 +1726,47 @@ citation(package = "emmeans")
 # FIG S3 #
 ########## 
 
-
-formula(glm.fin)
-
-
-Success_supp_A <- ggarrange(
-  data_success_sum %>%
-    ungroup() %>%
-    filter(PEAK == "PEAK.G") %>%
-    filter(SEGMENT == "focus") %>%
-    group_by(Position) %>%
-    summarise(
-      VALUE.M = mean(VALUE),
-      SD = sd(VALUE),
-      SE = SD/sqrt(n())
-    ) %>%
-    ungroup() %>%
-    ggplot(aes(x=Position, y=VALUE.M))+
-    geom_bar(aes(fill=Position), stat = "identity", color="gray50")+
-    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
-    theme_classic()+
-    scale_fill_manual(values = Color.legen_Position)+
-    coord_cartesian(ylim=c(0.4,1))+
-    labs(x="Density of levels",
-         y="Percentage of peak detection"
-    )+
-    theme(legend.position = "none", 
-          axis.title.y = element_blank(),
-          axis.ticks.x = element_blank(),
-          axis.text.x = element_blank(),
-          axis.title.x = element_blank())
-  ,
-  data_success_sum %>%
-    ungroup() %>%
-    filter(PEAK == "PEAK.G") %>%
-    filter(SEGMENT == "focus") %>%
-    group_by(SMOOTH) %>%
-    summarise(
-      VALUE.M = mean(VALUE),
-      SD = sd(VALUE),
-      SE = SD/sqrt(n())
-    ) %>%
-    ungroup() %>%
-    ggplot(aes(x=SMOOTH, y=VALUE.M))+
-    geom_bar(aes(fill = SMOOTH),stat = "identity", color="gray50")+
-    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
-    theme_classic()+
-    scale_fill_manual(values = Color.legen_smooth)+
-    coord_cartesian(ylim=c(0.4,1))+
-    labs(x="Smoothing",
-         y="Percentage of peak detection")+
-    theme(legend.position = "none",
-          axis.ticks.y = element_blank(),
-          axis.text.y = element_blank(),
-          axis.title.y = element_blank(),
-          axis.ticks.x = element_blank(),
-          axis.text.x = element_blank(),
-          axis.title.x = element_blank())
-  ,
-  data_success_sum %>%
-    ungroup() %>%
-    filter(PEAK == "PEAK.G") %>%
-    filter(SEGMENT == "focus") %>%
-    group_by(Diversity) %>%
-    summarise(
-      VALUE.M = mean(VALUE),
-      SD = sd(VALUE),
-      SE = SD/sqrt(n())
-    ) %>%
-    ungroup() %>%
-    ggplot(aes(x=Diversity, y=VALUE.M))+
-    geom_bar(aes(fill=Diversity), stat = "identity", color="gray50")+
-    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
-    theme_classic()+
-    scale_fill_manual(values=Color.legen_Diversity)+
-    coord_cartesian(ylim=c(0.4,1))+
-    labs(x= "Richness of pollen taxa",
-         y= "Percentage of peak detection")+
-    theme(legend.position = "none",
-          axis.ticks.y = element_blank(),
-          axis.text.y = element_blank(),
-          axis.title.y = element_blank(),
-          axis.ticks.x = element_blank(),
-          axis.text.x = element_blank(),
-          axis.title.x = element_blank())
-  ,
-  data_success_sum %>%
-    ungroup() %>%
-    filter(PEAK == "PEAK.G") %>%
-    filter(SEGMENT == "focus") %>%
-    group_by(DC) %>%
-    summarise(
-      VALUE.M = mean(VALUE),
-      SD = sd(VALUE),
-      SE = SD/sqrt(n())
-    ) %>%
-    ungroup() %>%
-    ggplot(aes(x=DC, y=VALUE.M))+
-    geom_bar(aes(fill=DC),stat = "identity", color="gray50", )+
-    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
-    theme_classic()+
-    scale_fill_manual(values = Color.legen_DC)+
-    coord_cartesian(ylim=c(0.4,1))+
-    labs(x= "Dissimilarity coeficient",
-         y= "Percentage of peak detection")+
-    theme(legend.position = "none", 
-          axis.ticks.y = element_blank(),
-          axis.text.y = element_blank(),
-          axis.title.y = element_blank(),
-          axis.ticks.x = element_blank(),
-          axis.text.x = element_blank(),
-          axis.title.x = element_blank())
-  , nrow = 1, ncol = 4
-)
-
-Success_supp_A
-
-Success_supp_A_a <- annotate_figure(Success_supp_A, top = "Focal area (correct detection)")
-
-Success_supp_A_a
-
-formula(glm.fin.e)
-
-Success_supp_B <- ggarrange(
-  data_success_sum %>%
-    ungroup() %>%
-    filter(PEAK == "PEAK.G") %>%
-    filter(SEGMENT == "empty") %>%
-    group_by(Position) %>%
-    summarise(
-      VALUE.M = mean(VALUE),
-      SD = sd(VALUE),
-      SE = SD/sqrt(n())
-    ) %>%
-    ungroup() %>%
-    ggplot(aes(x=Position, y=VALUE.M))+
-    geom_bar(aes(fill=Position), stat = "identity", color="gray50")+
-    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
-    theme_classic()+
-    scale_fill_manual(values = Color.legen_Position)+
-    coord_cartesian(ylim=c(0,0.25))+
-    labs(x="Density of levels",
-         y="Percentage of peak detection"
-    )+
-    theme(legend.position = "none", 
-          axis.title.y = element_blank())
-  ,
-  data_success_sum %>%
-    ungroup() %>%
-    filter(PEAK == "PEAK.G") %>%
-    filter(SEGMENT == "empty") %>%
-    group_by(SMOOTH) %>%
-    summarise(
-      VALUE.M = mean(VALUE),
-      SD = sd(VALUE),
-      SE = SD/sqrt(n())
-    ) %>%
-    ungroup() %>%
-    ggplot(aes(x=SMOOTH, y=VALUE.M))+
-    geom_bar(aes(fill = SMOOTH),stat = "identity", color="gray50")+
-    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
-    theme_classic()+
-    scale_fill_manual(values = Color.legen_smooth)+
-    coord_cartesian(ylim=c(0,0.25))+
-    labs(x="Smoothing",
-         y="Percentage of peak detection")+
-    theme(legend.position = "none",
-          axis.ticks.y = element_blank(),
-          axis.text.y = element_blank(),
-          axis.title.y = element_blank())
-  ,
-  data_success_sum %>%
-    ungroup() %>%
-    filter(PEAK == "PEAK.G") %>%
-    filter(SEGMENT == "empty") %>%
-    group_by(Diversity) %>%
-    summarise(
-      VALUE.M = mean(VALUE),
-      SD = sd(VALUE),
-      SE = SD/sqrt(n())
-    ) %>%
-    ungroup() %>%
-    ggplot(aes(x=Diversity, y=VALUE.M))+
-    geom_bar(aes(fill=Diversity), stat = "identity", color="gray50")+
-    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
-    theme_classic()+
-    scale_fill_manual(values=Color.legen_Diversity)+
-    coord_cartesian(ylim=c(0,0.25))+
-    labs(x= "Richness of pollen taxa",
-         y= "Percentage of peak detection")+
-    theme(legend.position = "none",
-          axis.ticks.y = element_blank(),
-          axis.text.y = element_blank(),
-          axis.title.y = element_blank())
-  ,
-  data_success_sum %>%
-    ungroup() %>%
-    filter(PEAK == "PEAK.G") %>%
-    filter(SEGMENT == "empty") %>%
-    group_by(DC) %>%
-    summarise(
-      VALUE.M = mean(VALUE),
-      SD = sd(VALUE),
-      SE = SD/sqrt(n())
-    ) %>%
-    ungroup() %>%
-    ggplot(aes(x=DC, y=VALUE.M))+
-    geom_bar(aes(fill=DC),stat = "identity", color="gray50", )+
-    geom_errorbar(aes(ymin=VALUE.M-SE, ymax=VALUE.M+SE), width=0.2, size=0.5, color="gray50")+
-    theme_classic()+
-    scale_fill_manual(values = Color.legen_DC)+
-    coord_cartesian(ylim=c(0,0.25))+
-    labs(x= "Dissimilarity coeficient",
-         y= "Percentage of peak detection")+
-    theme(legend.position = "none", 
-          axis.ticks.y = element_blank(),
-          axis.text.y = element_blank(),
-          axis.title.y = element_blank())
-  , nrow = 1, ncol = 4
-)
-
-
-Success_supp_B
-
-Success_supp_B_a <- annotate_figure(Success_supp_B, top="Outside of focal area (false positive)")
-
-Success_supp_B_a
-
-Success_supp <- ggarrange(
-  Success_supp_A_a,
-  Success_supp_B_a,
-  nrow = 2
-)
-
-Success_supp
-
-Supplementary_F3 <- annotate_figure(Success_supp, left = "Proportion of peak detection")
-
-Supplementary_F3
-
-ggsave("~/RESULTS/Methods/FIN/Supplementary_F3.pdf",
-       plot = Supplementary_F3,
-       height = 12, width = 25, units="cm")
-
-
-##########
-# FIG S4 #
-########## 
-
-
-
-Supplementary_F4 <- data_success_sum %>%
-  ungroup() %>%
-  filter(PEAK == "PEAK.G") %>%
-  filter(SEGMENT == "empty") %>%
-  group_by(DC, SMOOTH) %>%
-  summarise(
-    VALUE.M = mean(VALUE),
-    SD = sd(VALUE),
-    SE = SD/sqrt(n())
-  ) %>%
-  ungroup() %>% 
-  ggplot(aes(x=SMOOTH, y= VALUE.M, group= DC, fill= DC))+
-  geom_bar(stat = "identity", position = position_dodge(), color="gray30")+
-  geom_errorbar(aes(ymin = VALUE.M-SE, ymax= VALUE.M+SE), position = position_dodge(width=0.9), color="gray50",width=0.2, size=0.5)+
-  #coord_cartesian(ylim=c(0.62, 0.75))+
-  theme_classic()+
-  scale_fill_manual(values = Color.legen_DC)+
-  labs(x= "Smoothing",
-       y= "Proportion of peak detection",
-       title = "Outside of focal area (false positive)",
-       fill="Disimilarity coeficient")+
-  theme()
-
-Supplementary_F4
-
-data_success_sum %>%
-  ungroup() %>%
-  filter(PEAK == "PEAK.G") %>%
-  filter(SEGMENT == "empty") %>%
-  group_by(DC, SMOOTH) %>%
-  summarise(
-    VALUE.M = mean(VALUE),
-    SD = sd(VALUE),
-    SE = SD/sqrt(n())
-  ) %>%
-  ungroup() %>%
-  View()
-
-
-ggsave("~/RESULTS/Methods/FIN/Supplementary_F4.pdf",
-       plot = Supplementary_F4,
-       height = 12, width = 25, units="cm")
-
-
-##########
-# FIG S5 #
-########## 
-
-Supplementary_F5<- tibble_Europe2[c(2,45,224,50),] %>%
-  ggplot(aes(y=lat, x=long, label = c("A","B","C","D")))+
-  borders(fill = "gray90", colour = "gray60") +
-  geom_point(size=3)+
-  geom_text(nudge_x = 1,nudge_y = -1)+
-  coord_fixed(xlim = c(-25,25), ylim=c(35,70))+
-  theme_classic()+
-  labs(x="longitude",
-       y="lattitude")
-
-Supplementary_F5
-
-ggsave("~/RESULTS/Methods/FIN/Supplementary_F5.pdf",
-       plot = Supplementary_F5,
-       height = 10, width = 15, units="cm")
-
-##########
-# FIG S6 #
-########## 
-
-data_scheme_00 <- data_site_A$list_ages$ages %>%
-  filter(age < 8000)
-
-
-data_scheme_1_a <-fc_get_pollen_data(data_site_A, sm.type = "none",N.taxa = 1)
-data_scheme_1_a <-data_scheme_1_a %>%
-  filter(age < 8000)
-data_scheme_1_b <-fc_get_pollen_data(data_site_A, sm.type = "grim",N.taxa = 1)
-data_scheme_1_b <-data_scheme_1_b %>%
-  filter(age < 8000)
-
-dia01 <- ggplot()+
-  theme_classic()+
-  scale_x_continuous(trans = "reverse")+
-  coord_cartesian (ylim = c(0.1,1), xlim = c(8e3,0))+
-  labs(x="Age (yr BP)",
-       title = "Smoothing of pollen data")+
-  theme(axis.title.y = element_blank(),
-        axis.ticks.y =element_blank(),
-        axis.text.y = element_blank())+
-  geom_line(data = data_scheme_1_a,aes(x=age, y=value), color="gray50")+
-  geom_line(data = data_scheme_1_b,aes(x=age, y=value+0.5), color="gray30")+
-  geom_segment(aes(x=4e3, xend=4e3, y=0.3, yend=0.7), arrow = arrow(length = unit(0.3, "cm")), color="gray30")
-
-
-dia01
-
-BINs_a <-seq(from=0,
-             to=ceiling(max(data_scheme_01$age)),
-             by=500)
-
-BINs_b <-seq(from=333,
-             to=ceiling(max(data_scheme_01$age)),
-             by=500)
-
-BINs_c <-seq(from=666,
-             to=ceiling(max(data_scheme_01$age)),
-             by=500)
-
-dia02 <- ggplot()+
-  theme_classic()+
-  theme(axis.text.y = element_blank(),
-        axis.title.y = element_blank(),
-        axis.ticks.y = element_blank())+
-  labs(x= "Age (yr BP",
-       title = "Creation of time bins")+
-  geom_segment(aes(x = BINs_a, xend = BINs_a, y = 1, yend = 2), color = "blue")+
-  geom_segment(aes(x = BINs_a[-length(BINs_a)]+100, xend = BINs_a[-1]-100, y = 1.5, yend = 1.5),
-               color = "blue")+
-  geom_segment(aes(x = BINs_b, xend = BINs_b, y = 2.5, yend = 3.5), color = "green")+
-  geom_segment(aes(x = BINs_b[-length(BINs_b)]+100, xend = BINs_b[-1]-100, y = 3, yend = 3),
-               color = "green")+
-  geom_segment(aes(x = BINs_c, xend = BINs_c, y = 4, yend = 5), color = "red")+
-  geom_segment(aes(x = BINs_c[-length(BINs_c)]+100, xend = BINs_c[-1]-100, y = 4.5, yend = 4.5),
-               color = "red")
-
-dia02
-
-select_bins_help_fc <- function(y){
-  
-  x <- data.frame(matrix(ncol = ncol(data_scheme_01), nrow = length(y)))
-  names(x) <- names(data_scheme_01)
-  
-  for( i in 1:length(y)){
-    
-    selected.BIN <- y[i] #select teh bin
-    
-    subset.w <- data_scheme_01 %>%
-      filter(age < selected.BIN+500 & age > selected.BIN)
-    
-    if (nrow(subset.w)>0) # If selected subset has at least one sample
-    {
-      
-      subset.w$diff <- abs(subset.w$age-selected.BIN)
-      suppressWarnings(x[i,] <- subset.w[subset.w$diff==min(subset.w$diff),c(1:4)] )
-      
+for(i in seq(100,1e3,100)){
+ df_w<- RRatepol::fc_estimate_RoC(data_source_pollen = data_site_A$filtered.counts,
+                            data_source_age = data_site_A$list_ages,
+                            smooth_method  = "age.w", 
+                            smooth_N_points  = 5,
+                            smooth_age_range = 500, 
+                            smooth_N_max   = 9,
+                            Working_Units  = "MW",
+                            bin_size  = i,
+                            Number_of_shifts  = 5,
+                            rand = 1000,
+                            standardise = T, 
+                            N_pollen_grains  = 150, 
+                            DC = "chisq",
+                            interest_threshold  = age_lim,
+                            Debug = F)
+    if(exists("BIM_tibble")==F){
+      BIM_tibble <- tibble(df_w, BIN =i)
+    } else {
+      BIM_tibble <- bind_rows(BIM_tibble,tibble(df_w, BIN =i))
     }
-  }
-  
-  return(x)
-} 
-
-
-
-data_scheme_02_a <- na.omit(select_bins_help_fc(y=BINs_a))
-data_scheme_02_b <- na.omit(select_bins_help_fc(y=BINs_b))
-data_scheme_02_c <- na.omit(select_bins_help_fc(y=BINs_c))
-
-data_scheme_03 <- tibble(age=c((data_scheme_02_a$age[-length(data_scheme_02_a$age)]+data_scheme_02_a$age[-1])/2,
-                               (data_scheme_02_b$age[-length(data_scheme_02_b$age)]+data_scheme_02_b$age[-1])/2,
-                               (data_scheme_02_c$age[-length(data_scheme_02_c$age)]+data_scheme_02_c$age[-1])/2),
-                         color = c(rep("blue",nrow(data_scheme_02_a)-1),
-                                   rep("green",nrow(data_scheme_02_b)-1),
-                                   rep("red",nrow(data_scheme_02_c)-1)),
-                         VALUE = NA) %>%
-  arrange(age)
-
-
-
-for(i in 1:nrow(data_scheme_03)){
-  
-  if(i ==1){
-    data_scheme_03$VALUE[i] <- 1
-  } else {
-    data_scheme_03$VALUE[i] <- data_scheme_03$VALUE[i-1] + runif(1,min = -0.1, max = 0.1)
-    
-  }
 }
 
 
-data_scheme_03$VALUE <- lowess(data_scheme_03$age,data_scheme_03$VALUE,f=.2,iter=100)$y
-
-data_scheme_03_a<- data_scheme_03 %>%
-  filter(color == "blue")
-
-data_scheme_03_b<- data_scheme_03 %>%
-  filter(color == "green") 
-
-data_scheme_03_c<- data_scheme_03 %>%
-  filter(color == "red") 
-
-
-ggplot()+
-  theme_classic()+
-  theme (axis.text.y = element_blank(),
-         axis.ticks.y = element_blank())+
+Supplementary_F5 <- BIM_tibble %>%
+  ggplot()+
+  geom_rug(data = data_site_A$list_ages$ages, aes(x=age), sides = "b")+
+  geom_line(aes(x= AGE, y= ROC, group=BIN, color= BIN))+
+  viridis::scale_colour_viridis(direction = -1)+
   labs(x="Age (cal yr BP)",
        y= "Rate-of-Change score",
-       title = "Summarisation results from all Mowing Windows")+
-  coord_cartesian(xlim = c(0,8000))+
-  geom_point(aes(x=data_scheme_03_a$age, y=data_scheme_03_a$VALUE), shape=18, color="blue", size=3)+
-  geom_point(aes(x=data_scheme_03_b$age, y=data_scheme_03_b$VALUE), shape=18, color="green", size=3)+
-  geom_point(aes(x=data_scheme_03_c$age, y=data_scheme_03_c$VALUE), shape=18, color="red", size=3)+
-  geom_line(data=data_scheme_03, aes(x=age, y=VALUE), color="gray30", lty=2)
-
-
-dia03_A1<- ggplot()+
-  theme_classic()+
-  theme (axis.text.y = element_blank(),
-         axis.title.y = element_blank(),
-         axis.ticks.y = element_blank(),
-         axis.line.y = element_blank(),
-         axis.title.x= element_blank())+
-  labs(x="Age (cal yr BP)")+
-  coord_cartesian(xlim = c(0,8000))+
-  geom_point(data = data_scheme_01, aes(x=age, y=1.3), shape = 0 , size=2, color="gray20")+
-  geom_segment(aes(x = 4e3, y = 1.4, xend = 4e3, yend = 1.7), arrow = arrow(length = unit(0.3, "cm")), color = "gray80")+
-  geom_segment(aes(x = BINs_a, y = 1.75, xend = BINs_a, yend = 2.25), color = "blue")+
-  geom_point(data = data_scheme_01, aes(x=age, y=2), shape = 0 , size=2, color="gray80")+
-  geom_point(data= data_scheme_02_a, aes(x=age, y= 2), shape = 15, size= 2, color="gray20")+
-  geom_segment(data= data_scheme_02_a, aes(x = age, y = 2.1, xend = age, yend = 2.9), color = "gray80", lty = 3)+
-  geom_point(data= data_scheme_02_a, aes(x=age, y= 3), shape = 15, size= 2, color="blue")
-
-dia03_A1
-
-dia03_A2 <- ggplot()+
-  theme_classic()+
-  theme (
-    axis.text.y = element_blank(),
-    axis.title.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    axis.text.x = element_blank(),
-    axis.title.x = element_blank(),
-    axis.ticks.x = element_blank(),
-    axis.line.x = element_blank(),
-    axis.line.y = element_blank()
-  )+
-  labs(x="Age (cal yr BP)")+
-  coord_cartesian(xlim = c(0,8000))+
-  geom_point(data= data_scheme_02_a, aes(x=age, y= 1), shape = 15, size= 2, color="blue")+
-  geom_segment(aes(x = data_scheme_02_a$age[-length(data_scheme_02_a$age)]+100, 
-                   xend = data_scheme_02_a$age[-1]-100,
-                   y = 1.1, 
-                   yend = 1.1), color = "gray50", size= 3)+
-  geom_segment(aes(x = data_scheme_03_a$age, y = 1.4,
-                   xend = data_scheme_03_a$age, yend = data_scheme_03_a$VALUE+0.9), color = "gray50", lty = 3)+
-  #geom_line(aes(x=data_scheme_03_a$age, y=data_scheme_03_a$VALUE+1), lty=2)+
-  geom_point(aes(x=data_scheme_03_a$age, y=data_scheme_03_a$VALUE+1), shape=18, color="blue", size=3)
-
-dia03_A2
-
-dia03_B1<-ggplot()+
-  theme_classic()+
-  theme (axis.text.y = element_blank(),
-         axis.title.y = element_blank(),
-         axis.ticks.y = element_blank(),
-         axis.line.y = element_blank(),
-         axis.title.x= element_blank())+
-  labs(x="Age (cal yr BP)")+
-  coord_cartesian(xlim = c(0,8000))+
-  geom_point(data = data_scheme_01, aes(x=age, y=1.3), shape = 0 , size=2, color="gray20")+
-  geom_segment(aes(x = 4e3, y = 1.4, xend = 4e3, yend = 1.7), arrow = arrow(length = unit(0.3, "cm")), color = "gray80")+
-  geom_segment(aes(x = BINs_b, y = 1.75, xend = BINs_b, yend = 2.25), color = "green")+
-  geom_point(data = data_scheme_01, aes(x=age, y=2), shape = 0 , size=2, color="gray80")+
-  geom_point(data= data_scheme_02_b, aes(x=age, y= 2), shape = 15, size= 2, color="gray20")+
-  geom_segment(data= data_scheme_02_b, aes(x = age, y = 2.1, xend = age, yend = 2.9), color = "gray80", lty=3)+
-  geom_point(data= data_scheme_02_b, aes(x=age, y= 3), shape = 15, size= 2, color="green")
-
-dia03_B1
-
-dia03_B2<- ggplot()+
-  theme_classic()+
-  theme (  axis.text.y = element_blank(),
-           axis.title.y = element_blank(),
-           axis.ticks.y = element_blank(),
-           axis.text.x = element_blank(),
-           axis.title.x = element_blank(),
-           axis.ticks.x = element_blank(),
-           axis.line.x = element_blank(),
-           axis.line.y = element_blank())+
-  labs(x="Age (cal yr BP)")+
-  coord_cartesian(xlim = c(0,8000))+
-  geom_point(data= data_scheme_02_b, aes(x=age, y= 1), shape = 15, size= 2, color="green")+
-  geom_segment(aes(x = data_scheme_02_b$age[-length(data_scheme_02_b$age)]+100, y = 1.1, xend = data_scheme_02_b$age[-1]-100, yend = 1.1), color = "gray50", size = 3)+
-  geom_segment(aes(x = data_scheme_03_b$age, y = 1.4,
-                   xend = data_scheme_03_b$age, yend = data_scheme_03_b$VALUE+0.9), color = "gray50", lty = 3)+
-  # geom_line(aes(x=data_scheme_03_b$age, y=data_scheme_03_b$VALUE+1), lty=2)+
-  geom_point(aes(x=data_scheme_03_b$age, y=data_scheme_03_b$VALUE+1), shape=18, color="green", size=3)
-
-dia03_B2
-
-dia03_C1 <- ggplot()+
-  theme_classic()+
-  theme (axis.text.y = element_blank(),
-         axis.title.y = element_blank(),
-         axis.ticks.y = element_blank(),
-         axis.line.y = element_blank(),
-         axis.title.x= element_blank())+
-  labs(x="Age (cal yr BP)")+
-  coord_cartesian(xlim = c(0,8000))+
-  geom_point(data = data_scheme_01, aes(x=age, y=1.3), shape = 0 , size=2, color="gray20")+
-  geom_segment(aes(x = 4e3, y = 1.4, xend = 4e3, yend = 1.7), arrow = arrow(length = unit(0.3, "cm")), color = "gray80")+
-  geom_segment(aes(x = BINs_b, y = 1.75, xend = BINs_b, yend = 2.25), color = "red")+
-  geom_point(data = data_scheme_01, aes(x=age, y=2), shape = 0 , size=2, color="gray80")+
-  geom_point(data= data_scheme_02_c, aes(x=age, y= 2), shape = 15, size= 2, color="gray20")+
-  geom_segment(data= data_scheme_02_c, aes(x = age, y = 2.1, xend = age, yend = 2.9), lty = 3, color = "gray80")+
-  geom_point(data= data_scheme_02_c, aes(x=age, y= 3), shape = 15, size= 2, color="red")
-
-dia03_C1
-
-dia03_C2<-ggplot()+
-  theme_classic()+
-  theme (  axis.text.y = element_blank(),
-           axis.title.y = element_blank(),
-           axis.ticks.y = element_blank(),
-           axis.text.x = element_blank(),
-           axis.title.x = element_blank(),
-           axis.ticks.x = element_blank(),
-           axis.line.x = element_blank(),
-           axis.line.y = element_blank())+
-  labs(x="Age (cal yr BP)")+
-  coord_cartesian(xlim = c(0,8000))+
-  geom_point(data= data_scheme_02_c, aes(x=age, y= 1), shape = 15, size= 2, color="red")+
-  geom_segment(aes(x = data_scheme_02_c$age[-length(data_scheme_02_c$age)]+100, y = 1.1, xend = data_scheme_02_c$age[-1]-100, yend = 1.1), color = "gray50", size = 3)+
-  geom_segment(aes(x = data_scheme_03_c$age, y = 1.4,
-                   xend = data_scheme_03_c$age, yend = data_scheme_03_c$VALUE+0.9), 
-               lty = 3, color = "gray50")+
-  #geom_line(aes(x=data_scheme_03_c$age, y=data_scheme_03_c$VALUE+1), lty=2)+
-  geom_point(aes(x=data_scheme_03_c$age, y=data_scheme_03_c$VALUE+1), shape=18, color="red", size=3)
-
-
-dia03_C2
-
-dia03_sum <- ggarrange(
-  dia03_A2, dia03_B2, dia03_C2,
-  dia03_A1, dia03_B1, dia03_C1,
-  nrow = 2, ncol = 3
-)
-
-dia03_sum_anot <- annotate_figure(dia03_sum, bottom = "Age (yr BP)")
-
-dia03_sum_anot
-
-dia03_top <-ggplot()+
-  theme_classic()+
-  theme (axis.text.y = element_blank(),
-         axis.ticks.y = element_blank())+
-  labs(x="Age (cal yr BP)",
-       y= "Rate-of-Change score",
-       title = "Summarisation results from all Mowing Windows")+
-  coord_cartesian(xlim = c(0,8000))+
-  geom_point(aes(x=data_scheme_03_a$age, y=data_scheme_03_a$VALUE), shape=18, color="blue", size=3)+
-  geom_point(aes(x=data_scheme_03_b$age, y=data_scheme_03_b$VALUE), shape=18, color="green", size=3)+
-  geom_point(aes(x=data_scheme_03_c$age, y=data_scheme_03_c$VALUE), shape=18, color="red", size=3)+
-  geom_line(data=data_scheme_03, aes(x=age, y=VALUE), color="gray30", lty=2)
-
-dia03 <- ggarrange(
-  dia03_top,
-  dia03_sum_anot,
-  nrow=2, heights = c(0.8,1)
-) 
-
-dia_fin <- ggarrange(
-  ggarrange(dia01,
-            dia02, nrow = 2, heights = c(1,0.5), labels = c("A","B")),
-  dia03,
-  nrow = 1, labels = c("","C")
-)
-
-dia_fin
-
-ggsave("~/RESULTS/Methods/FIN/Supplementary_F6A.pdf",
-       plot = dia_fin,
-       height = 20, width = 35, units="cm")
-
-
-data_scheme_03
-
-data_scheme_04 <- matrix (nrow=nrow(data_scheme_03), ncol= 10)
-
-data_scheme_04[,1] <- data_scheme_03$VALUE
-
-
-for(i in 2:10){
-  
-  for(k in 1:nrow(data_scheme_04)){
-    data_scheme_04[k,i] <- runif(1, 
-                                 min = data_scheme_04[k,1]- sd(data_scheme_04[,1]),
-                                 max = data_scheme_04[k,1]+ sd(data_scheme_04[,1]))  
-  }
-  
-  data_scheme_04[,i] <- lowess(data_scheme_03$age,data_scheme_04[,i],f=.2,iter=100)$y
-}
+       color = "Time bin size")
 
 
 
-data_scheme_04 <-as.data.frame(data_scheme_04)
-
-data_scheme_04$AGE <- data_scheme_03$age
-
-
-dia04 <- ggarrange(
-  data_scheme_04 %>%
-    pivot_longer(cols = -c(AGE)) %>%
-    ggplot(aes(y=value, x= AGE))+
-    theme_classic()+
-    geom_line(aes(group= name), lty= 2, color="gray50")+
-    labs(x="Age (cal yr BP)",
-         y= "Rate-of-Change score",
-         title ="Summarisation results from all randomisations")+
-    theme(axis.title.x = element_blank(),
-          axis.title.y = element_blank())
-  ,
-  data_scheme_04 %>%
-    pivot_longer(cols = -c(AGE)) %>%
-    group_by(AGE) %>%
-    summarise(VALUE = median (value),
-              VALUE.dw = quantile(value, 0.2),
-              VALUE.up = quantile(value, 0.8)
-              
-    ) %>%
-    ggplot(aes(y=VALUE, x= AGE))+
-    theme_classic()+
-    geom_ribbon(aes(ymin =VALUE.dw, ymax=VALUE.up),color="gray80", fill="gray80")+
-    geom_line(color="gray30", size = 1)+
-    labs(x="Age (cal yr BP)",
-         y= "Rate-of-Change score")+
-    theme(axis.ticks.y = element_blank(),
-          axis.title.y = element_blank(),
-          axis.line.y = element_blank(),
-          axis.text.y = element_blank(),
-          axis.title.x = element_blank())
-  ,
-  data_scheme_04 %>%
-    pivot_longer(cols = -c(AGE)) %>%
-    group_by(AGE) %>%
-    summarise(VALUE = median (value),
-              VALUE.dw = quantile(value, 0.2),
-              VALUE.up = quantile(value, 0.8)
-              
-    ) %>%
-    mutate(
-      pred.gam = predict.gam(gam(VALUE~s(AGE,k=3), data = .)),
-      pred.gam.diff = VALUE - pred.gam,
-      Peak = (pred.gam.diff) > 1.5*sd(pred.gam.diff),
-      UP = VALUE > pred.gam
-    ) %>%
-    ggplot(aes(y=VALUE, x= AGE))+
-    theme_classic()+
-    geom_ribbon(aes(ymin =VALUE.dw, ymax=VALUE.up),color="gray80", fill="gray80")+
-    geom_line(color="gray30", size = 1)+
-    geom_line(aes(y=pred.gam), color= "blue", size = 2)+
-    geom_point(color="gray30")+
-    geom_segment(data= . %>% filter(UP == T & Peak == F), aes(y=pred.gam,
-                                                              yend=VALUE,
-                                                              x=AGE, 
-                                                              xend=AGE), lty= 3)+
-    geom_segment(data= . %>% filter(UP == T & Peak == T),
-                 aes(y=pred.gam,
-                     yend=VALUE,
-                     x=AGE, 
-                     xend=AGE), color= "red", lty = 3, size =1)+
-    geom_point(data = . %>%filter(Peak == T), color = "black", size= 6)+
-    geom_point(data = . %>%filter(Peak == T), color = "green", size= 5)+
-    labs(x="Age (cal yr BP)",
-         y= "Rate-of-Change score",
-         title = "Detection of Peak points")+
-    theme(axis.ticks.y = element_blank(),
-          axis.title.y = element_blank(),
-          axis.line.y = element_blank(),
-          axis.text.y = element_blank(),
-          axis.title.x = element_blank())
-,  
-  nrow = 1
-)
-dia04
-
-dia04_a <- annotate_figure(dia04,
-                            left= "Rate-of-Change score",
-                            bottom = "Age (cal yr BP)")
-dia04_a
-
-ggsave("~/RESULTS/Methods/FIN/Supplementary_F6B.pdf",
-       plot = dia04_a,
+ggsave("METHOD_RESULTS/Supplementary_F3.pdf",
+       plot = Supplementary_F5,
        height = 12, width = 20, units="cm")
 
 
-# bonus 
 
-age.df <- data.frame(AGE = data_site_A$list_ages$ages$age,
-       SAMPLE = data_site_A$list_ages$age_position %>%
-         as_tibble() %>%
-         sample_n(.,1) %>%
-         t() %>%
-         as_tibble())
-
-
-data_site_A$list_ages$age_position %>%
-  t() %>%
-  as_tibble() %>%
-  mutate(AGE = data_site_A$list_ages$ages$age) %>%
-  pivot_longer(cols = -c(AGE)) %>%
-  sample_n(.,10e3) %>% 
-  arrange(AGE) %>% 
-  ggplot(aes(x=AGE, y=value-AGE))+
-  geom_point(alpha= 1, color="gray80", shape = 0)+
-  geom_line(data = age.df , aes(x=AGE,y=V1-AGE), color="gray30")+
-  geom_point(data = age.df , aes(x=AGE,y=V1-AGE), shape = 15, color = "gray30")+
-  theme_classic()+
-  theme(axis.title = element_blank(),
-        axis.text = element_blank(),
-        axis.line.y = element_blank(),
-        axis.ticks.y = element_blank())
-
-ggsave("~/RESULTS/Methods/FIN/Supplementary_F6C.pdf",
-       height = 12, width = 20, units="cm")
-
-
-ggarrange(
-  data_site_A$filtered.counts %>%
-    as_tibble() %>%
-    mutate(SUM = rowSums(.),
-           AGE = data_site_A$list_ages$ages$age) %>%
-    pivot_longer(cols= -c(AGE, SUM)) %>%
-    filter(AGE < 8000) %>%
-    mutate(VALUE = value/SUM *100) %>%
-    filter(VALUE > 10) %>%
-    ggplot(aes(x=AGE, y= value))+
-    geom_bar(aes(fill=name), stat = "identity", orientation = "x")+
-    geom_hline(yintercept = 150)+
-    theme_classic()+
-    theme(legend.position = "none",
-          axis.title = element_blank(),
-          axis.text = element_blank(),
-          axis.ticks = element_blank())
-  ,
-  data_site_A$filtered.counts %>%
-    as_tibble() %>%
-    mutate(SUM = rowSums(.),
-           AGE = data_site_A$list_ages$ages$age) %>%
-    pivot_longer(cols= -c(AGE, SUM)) %>%
-    filter(AGE < 8000) %>%
-    mutate(VALUE = value/SUM *100) %>%
-    filter(VALUE > 10) %>%
-    ggplot(aes(x=AGE, y= value))+
-    geom_bar(aes(fill=name), stat = "identity", orientation = "x", position= position_fill())+
-    theme_classic()+
-        theme(legend.position = "none",
-          axis.title = element_blank(),
-          axis.text = element_blank(),
-          axis.ticks = element_blank())
-  
-)
-
-
-ggsave("~/RESULTS/Methods/FIN/Supplementary_F6D.pdf",
-       height = 7, width = 20, units="cm")
 
 
 ####################################
