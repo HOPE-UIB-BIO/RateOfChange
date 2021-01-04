@@ -32,6 +32,7 @@ library(MuMIn)
 library(emmeans)
 library(performance)
 library(RColorBrewer)
+library(DataExplorer)
 
 
 # instal RRatepol package download and attach
