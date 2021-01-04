@@ -1,4 +1,4 @@
-fc_estimate_RoC_by_all_methods <- function(random_data,
+.estimate.RoC.by.all.methods <- function(random_data,
                                            Working_Unit = "levels",
                                            bin_size = 500, 
                                            Number_of_shifts = 5, 

@@ -1,4 +1,4 @@
-fc_simulate_pollen_data_in_multiple_datasets <- function(time=0:10e3, 
+.simulate.pollen.data.in.multiple.datasets <- function(time=0:10e3, 
                                                          nforc=4, 
                                                          nprox=10, 
                                                          manual_edit = T,
@@ -12,7 +12,7 @@ fc_simulate_pollen_data_in_multiple_datasets <- function(time=0:10e3,
     
     # create random data
     random_data <- 
-      fc_simulate_pollen_data(time = time,
+      .simulate.pollen.data(time = time,
                               nforc = nforc, 
                               mean = 100, 
                               sdev = .15,

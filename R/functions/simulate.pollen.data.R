@@ -1,4 +1,4 @@
-fc_simulate_pollen_data <- function(time=5e3:0, 
+.simulate.pollen.data <- function(time=5e3:0, 
                                     nforc=4, 
                                     mean=100, 
                                     sdev=.15, 
