@@ -106,4 +106,6 @@ simulated_dataset
 #----------------------------------------------------------#
 # 3. Save datasets -----
 #----------------------------------------------------------#
-write_rds(simulated_dataset,"data/output/datasets/simulated_dataset.rds")
+write_rds(
+  simulated_dataset,
+  "data/output/datasets/simulated/simulated_dataset.rds")

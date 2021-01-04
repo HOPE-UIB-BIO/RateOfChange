@@ -17,14 +17,14 @@ source("R/00_config.R")
 # 1. Load data  -----
 #----------------------------------------------------------#
 
-perform_sim <-  read_rds("data/output/datasets/simulated_success.rds") 
+perform_sim <-  read_rds("data/output/datasets/success_rate/sim_success.rds") 
 
 #----------------------------------------------------------#
 # 2. Prepare data -----
 #----------------------------------------------------------#
 
 # adjust all variables to levels and save as new dataframe
-data_success_sum <- 
+data_sum <- 
   perform_sim$raw_data %>%  
   mutate(
     success = as.numeric(success),
@@ -80,8 +80,14 @@ data_success_sum <-
     RoC_setting = paste0(smooth,"_",DC) %>% 
       as.factor()) 
 
-data_success_sum %>% 
+
+# explore data
+data_sum %>% 
   summary()
+
+DataExplorer::plot_str(data_sum)
+DataExplorer::plot_intro(data_sum)
+
 
 #----------------------------------------------------------#
 # 3. Model fitting  -----
@@ -96,84 +102,82 @@ data_success_sum %>%
 #--------------------------------#
 
 # subset data to only include succesfull detection and adjust the succes for beta family
-data_success_focus <- 
-  data_success_sum %>%
+data_correct <- 
+  data_sum %>%
   filter(segment == "focus") %>%
   ungroup() %>%
   dplyr::select(-c(segment))%>% 
   mutate(success = ifelse(success == 0, success + very_small_value, success)) %>% 
   mutate(success = ifelse(success == 1, success - very_small_value, success)) 
 
+summary(data_correct)
 
-summary(data_success_focus)
+nrow(data_correct)
 
-nrow(data_success_focus)
-
-write_rds(data_success_focus, "data/output/datasets/data_success_focus.rds")
+write_rds(data_correct, "data/output/datasets/subsets/data_correct.rds")
 
 # fit actual model
 
 start_t <- Sys.time()
 
-mod_success_focus_full <-  
+mod_correct <-  
   glmmTMB(success ~ WU * Peak * dataset_type + # fixed effets 
             (1|dataset_ID) +(1|RoC_setting), # random effects
-          data = data_success_focus,
+          data = data_correct,
           family = beta_family(link = "logit")
   )
 end_t <- Sys.time()
 
 end_t-start_t
 
-summary(mod_success_focus_full)
-r2(mod_success_focus_full)
-check_distribution(mod_success_focus_full)
-check_singularity(mod_success_focus_full)
-check_heteroscedasticity(mod_success_focus_full)
-check_model(mod_success_focus_full)
-model_performance(mod_success_focus_full)
-check_autocorrelation(mod_success_focus_full)
-qplot(residuals(mod_success_focus_full))
+summary(mod_correct)
+r2(mod_correct)
+check_distribution(mod_correct)
+check_singularity(mod_correct)
+check_heteroscedasticity(mod_correct)
+check_model(mod_correct)
+model_performance(mod_correct)
+check_autocorrelation(mod_correct)
+qplot(residuals(mod_correct))
 
-write_rds(mod_success_focus_full,"data/output/models/temp_model_success_focus.rds")
+write_rds(mod_correct,"data/output/models/mod_correct.rds")
 
 # set up cluster
 cl <- parallel::makeCluster(n_cores)
-doParallel::registerDoParallel(cl); 
-parallel::clusterExport(cl,c("data_success_focus","n_cores"),envir=environment());
+doParallel::registerDoParallel(cl)
+parallel::clusterExport(cl, c("data_correct", "n_cores"), envir = environment())
 parallel::clusterEvalQ(cl,library("glmmTMB"))
 
-getAllTerms(mod_success_focus_full)
+c(getAllTerms(mod_correct))
 
 # estime th best model by AIC
-mod_success_focus_dd <- 
+mod_correct_dd <- 
   pdredge(
     mod_success_focus,
     subset = "cond(dataset_type)",
     cluster = cl,
     trace = T)
 
-mod_success_focus_dd %>% 
+mod_correct_dd %>% 
   as_tibble() %>% 
   filter(delta < 2) %>% 
   View()
 
-mod_success_focus_dd %>%
+mod_correct_dd %>%
   as_tibble() %>%
-  write_csv("data/output/result_tables/mod_success_focus.csv")
+  write_csv("data/output/result_tables/mod_correct_compare.csv")
 
 # -> full model
-mod_success_focus_select <- mod_success_focus_full
-write_rds(mod_success_focus_select,"data/output/models/temp_model_success_focus_select.rds")
+mod_correct_select <- mod_correct
+write_rds(mod_correct_select,"data/output/models/mod_correct_select.rds")
 
 #--------------------------------#
 # 3.1.2 false posities  -----
 #--------------------------------#
 
-
 # subset data to only include false positive detection and adjust the succes for beta family
-data_success_empty <- 
-  data_success_sum %>%
+data_false <- 
+  data_sum %>%
   filter(segment == "empty") %>%
   ungroup() %>%
   dplyr::select(-c(segment))%>% 
@@ -181,69 +185,69 @@ data_success_empty <-
   mutate(success = ifelse(success == 1, success - very_small_value, success)) 
 
 
-summary(data_success_empty)
+summary(data_false)
 
-nrow(data_success_empty)
+nrow(data_false)
 
-write_rds(data_success_empty, "data/output/datasets/data_success_empty.rds")
+write_rds(data_false, "data/output/datasets/subsets/data_false.rds")
 
 # fit actual model
 
 start_t <- Sys.time()
 
-mod_success_empty_full <-  
+mod_false <-  
   glmmTMB(success ~ WU * Peak * dataset_type + # fixed effets 
             (1|dataset_ID) +(1|RoC_setting), # random effects
-          data = data_success_empty,
+          data = data_false,
           family = beta_family(link = "logit")
   )
 end_t <- Sys.time()
 
 end_t-start_t
 
-summary(mod_success_empty_full)
-r2(mod_success_empty_full)
-check_distribution(mod_success_empty_full)
-check_singularity(mod_success_empty_full)
-check_heteroscedasticity(mod_success_empty_full)
-check_model(mod_success_empty_full)
-model_performance(mod_success_empty_full)
-check_autocorrelation(mod_success_empty_full)
-qplot(residuals(mod_success_empty_full))
+summary(mod_false)
+r2(mod_false)
+check_distribution(mod_false)
+check_singularity(mod_false)
+check_heteroscedasticity(mod_false)
+check_model(mod_false)
+model_performance(mod_false)
+check_autocorrelation(mod_false)
+qplot(residuals(mod_false))
 
-write_rds(mod_success_empty_full,"data/output/models/temp_model_success_empty.rds")
+write_rds(mod_false,"data/output/models/mod_false.rds")
 
 
 # set up cluster
 cl <- parallel::makeCluster(n_cores)
-doParallel::registerDoParallel(cl); 
-parallel::clusterExport(cl,c("data_success_empty","n_cores"),envir=environment());
+doParallel::registerDoParallel(cl)
+parallel::clusterExport(cl, c("data_false", "n_cores"), envir=environment())
 parallel::clusterEvalQ(cl,library("glmmTMB"))
 
-getAllTerms(mod_success_empty_full)
+c(getAllTerms(mod_false))
 
 # estime th best model by AIC
-mod_success_empty_dd <- 
+mod_false_dd <- 
   pdredge(
-    mod_success_empty_full,
+    mod_false,
     subset = "cond(dataset_type)",
     cluster = cl,
     trace = T)
 
 
-mod_success_empty_dd %>% 
+mod_false_dd %>% 
   as_tibble() %>% 
   filter(delta < 2) %>% 
   View()
 
 
-mod_success_empty_dd %>%
+mod_false_dd %>%
   as_tibble() %>%
-  write_csv("data/output/result_tables/mod_success_empty.csv")
+  write_csv("data/output/result_tables/mod_false_compare.csv")
 
 # -> full model
-mod_success_empty_select <- mod_success_empty_full
-write_rds(mod_success_empty_select,"data/output/models/temp_model_success_empty_select.rds")
+mod_false_select <- mod_false
+write_rds(mod_false_select,"data/output/models/mod_false_select.rds")
 
 #---------------------------------------------#
 # 3.2 RoC and dataset properties   -----
@@ -254,8 +258,8 @@ write_rds(mod_success_empty_select,"data/output/models/temp_model_success_empty_
 #--------------------------------#
 
 # subset data to only include succesfull detection and adjust the succes for beta family
-data_detail_focus <- 
-  data_success_sum %>%
+data_detail_correct <- 
+  data_sum %>%
   filter(segment == "focus") %>%
   filter(Peak == "trend non linear") %>% 
   filter(WU == "MW") %>% 
@@ -265,96 +269,96 @@ data_detail_focus <-
   mutate(success = ifelse(success == 1, success - very_small_value, success)) 
 
 
-summary(data_detail_focus)
+summary(data_detail_correct)
 
-nrow(data_detail_focus)
+nrow(data_detail_correct)
 
-write_rds(data_detail_focus, "data/output/datasets/data_detail_focus.rds")
+write_rds(data_detail_correct, "data/output/datasets/subsets/data_detail_correct.rds")
 
 # fit the model
 start_t <- Sys.time()
 
-mod_detail_focus <-  
+mod_detail_correct <-  
   glmmTMB(success ~ diversity * position *  smooth *  DC + # fixed effets
             (1|dataset_ID), # random effects
-          data = data_detail_focus,
+          data = data_detail_correct,
           family = beta_family(link = "logit")
   )
 end_t <- Sys.time()
 
 end_t-start_t
 
-summary(mod_detail_focus)
-r2(mod_detail_focus)
-check_distribution(mod_detail_focus)
-check_singularity(mod_detail_focus)
-check_heteroscedasticity(mod_detail_focus)
-check_model(mod_detail_focus)
-model_performance(mod_detail_focus)
-check_autocorrelation(mod_detail_focus)
-qplot(residuals(mod_detail_focus))
+summary(mod_detail_correct)
+r2(mod_detail_correct)
+check_distribution(mod_detail_correct)
+check_singularity(mod_detail_correct)
+check_heteroscedasticity(mod_detail_correct)
+check_model(mod_detail_correct)
+model_performance(mod_detail_correct)
+check_autocorrelation(mod_detail_correct)
+qplot(residuals(mod_detail_correct))
 
 
-write_rds(mod_detail_focus,"data/output/models/temp_model_detail_focus.rds")
+write_rds(mod_detail_correct,"data/output/models/mod_detail_correct.rds")
 
 # set up cluster
 cl <- parallel::makeCluster(n_cores)
-doParallel::registerDoParallel(cl); 
-parallel::clusterExport(cl,c("data_detail_focus","n_cores"),envir=environment());
+doParallel::registerDoParallel(cl)
+parallel::clusterExport(cl, c("data_detail_correct", "n_cores"), envir = environment())
 parallel::clusterEvalQ(cl,library("glmmTMB"))
 
-getAllTerms(data_detail_focus)
+c(getAllTerms(data_detail_correct))
 
 # estime th best model by AIC
-mod_detail_focus_dd <- 
+mod_detail_correct_dd <- 
   pdredge(
-    mod_detail_focus,
+    mod_detail_correct,
     cluster = cl,
     trace = T)
 
-mod_detail_focus_dd %>%
+mod_detail_correct_dd %>%
   as_tibble() %>%
-  write_csv("data/output/result_tables/mod_detail_focus.csv")
+  write_csv("data/output/result_tables/mod_detail_correct_compare.csv")
 
 
 # more models have similar AIC
-mod_detail_focus_dd %>% 
+mod_detail_correct_dd %>% 
   as_tibble() %>% 
   filter(delta < 2) %>% 
   View()
 
-mod_detail_focus_m1 <-  
+mod_detail_correct_m1 <-  
   glmmTMB(success ~ position +  smooth + position:smooth + # fixed effets
             (1|dataset_ID), # random effects
-          data = data_detail_focus,
+          data = data_detail_correct,
           family = beta_family(link = "logit")
   )
 
 
-mod_detail_focus_m2 <-  
+mod_detail_correct_m2 <-  
   glmmTMB(success ~ DC + position +  smooth  + position:smooth + # fixed effets
             (1|dataset_ID), # random effects
-          data = data_detail_focus,
+          data = data_detail_correct,
           family = beta_family(link = "logit")
   )
 
-mod_detail_focus_m3 <-  
+mod_detail_correct_m3 <-  
   glmmTMB(success ~ diversity + position + smooth  + position:smooth + # fixed effets
             (1|dataset_ID), # random effects
-          data = data_detail_focus,
+          data = data_detail_correct,
           family = beta_family(link = "logit")
   )
 
 compare_performance(
-  mod_detail_focus_m1,
-  mod_detail_focus_m2,
-  mod_detail_focus_m3,
+  mod_detail_correct_m1,
+  mod_detail_correct_m2,
+  mod_detail_correct_m3,
   rank = T
 )
 
 # -> model 1 is the best
-mod_detail_focus_select <-  mod_detail_focus_m1
-write_rds(mod_detail_focus_select,"data/output/models/temp_model_detail_focus_select.rds")
+mod_detail_correct_select <-  mod_detail_correct_m1
+write_rds(mod_detail_correct_select,"data/output/models/mod_detail_correct_select.rds")
 
 #--------------------------------#
 # 3.2.2 false positives -----
@@ -362,8 +366,8 @@ write_rds(mod_detail_focus_select,"data/output/models/temp_model_detail_focus_se
 
 
 # subset data to only include succesfull detection and adjust the succes for beta family
-data_detail_empty <- 
-  data_success_sum %>%
+data_detail_false <- 
+  data_sum %>%
   filter(segment == "empty") %>%
   filter(Peak == "trend non linear") %>% 
   filter(WU == "MW") %>% 
@@ -383,37 +387,37 @@ data_detail_empty <-
       success)) 
 
 
-summary(data_detail_empty)
+summary(data_detail_false)
 
-nrow(data_detail_empty)
+nrow(data_detail_false)
 
-write_rds(data_detail_empty, "data/output/datasets/data_detail_empty.rds")
+write_rds(data_detail_false, "data/output/datasets/subsets/data_detail_false.rds")
 
 # fit the model
 start_t <- Sys.time()
 
-mod_detail_empty <-  
+mod_detail_false <-  
   glmmTMB(success ~ diversity * position *  smooth *  DC + # fixed effets
             (1|dataset_ID), # random effects
-          data = data_detail_empty,
+          data = data_detail_false,
           family = beta_family(link = "logit")
   )
 end_t <- Sys.time()
 
 end_t-start_t
 
-summary(mod_detail_empty)
-r2(mod_detail_empty)
-check_distribution(mod_detail_empty)
-check_singularity(mod_detail_empty)
-check_heteroscedasticity(mod_detail_empty)
-check_model(mod_detail_empty)
-model_performance(mod_detail_empty)
-check_autocorrelation(mod_detail_empty)
-qplot(residuals(mod_detail_empty))
+summary(mod_detail_false)
+r2(mod_detail_false)
+check_distribution(mod_detail_false)
+check_singularity(mod_detail_false)
+check_heteroscedasticity(mod_detail_false)
+check_model(mod_detail_false)
+model_performance(mod_detail_false)
+check_autocorrelation(mod_detail_false)
+qplot(residuals(mod_detail_false))
 
 
-write_rds(mod_detail_empty,"data/output/models/temp_model_detail_empty.rds")
+write_rds(mod_detail_false,"data/output/models/mod_detail_false.rds")
 
 
 # set up cluster
@@ -423,61 +427,61 @@ doParallel::registerDoParallel(cl)
 
 parallel::clusterExport(
   cl, 
-  c("data_detail_empty", "n_cores"),
+  c("data_detail_false", "n_cores"),
   envir = environment())
 
 parallel::clusterEvalQ(cl,library("glmmTMB"))
 
-getAllTerms(data_detail_empty)
+getAllTerms(data_detail_false)
 
 # estime th best model by AIC
-mod_detail_empty_dd <- 
+mod_detail_false_dd <- 
   pdredge(
-    mod_detail_empty,
+    mod_detail_false,
     cluster = cl,
     trace = T)
 
 # more models have similar AIC
-mod_detail_empty_dd %>% 
+mod_detail_false_dd %>% 
   as_tibble() %>% 
   filter(delta < 2) %>% 
   View()
 
-mod_detail_empty_dd %>%
+mod_detail_false_dd %>%
   as_tibble() %>%
-  write_csv("data/output/result_tables/mod_detail_empty.csv")
+  write_csv("data/output/result_tables/mod_detail_false_compare.csv")
 
 
-mod_detail_empty_m1 <-  
+mod_detail_false_m1 <-  
   glmmTMB(success ~ position +  smooth + position:smooth + # fixed effets
             (1|dataset_ID), # random effects
-          data = data_detail_empty,
+          data = data_detail_false,
           family = beta_family(link = "logit")
   )
 
 
-mod_detail_empty_m2 <-  
+mod_detail_false_m2 <-  
   glmmTMB(success ~ DC + position +  smooth  + position:smooth + # fixed effets
             (1|dataset_ID), # random effects
-          data = data_detail_empty,
+          data = data_detail_false,
           family = beta_family(link = "logit")
   )
 
-mod_detail_empty_m3 <-  
+mod_detail_false_m3 <-  
   glmmTMB(success ~ diversity + position + smooth  + position:smooth + # fixed effets
             (1|dataset_ID), # random effects
-          data = data_detail_empty,
+          data = data_detail_false,
           family = beta_family(link = "logit")
   )
 
 
 compare_performance(
-  mod_detail_empty_m1,
-  mod_detail_empty_m2,
-  mod_detail_empty_m3,
+  mod_detail_false_m1,
+  mod_detail_false_m2,
+  mod_detail_false_m3,
   rank = T
 )
 
 # -> model 1 is the best
-mod_detail_empty_select <-  mod_detail_empty_m1
-write_rds(mod_detail_empty_select,"data/output/models/temp_model_detail_empty_select.rds")
+mod_detail_false_select <-  mod_detail_false_m1
+write_rds(mod_detail_false_select,"data/output/models/mod_detail_false_select.rds")
