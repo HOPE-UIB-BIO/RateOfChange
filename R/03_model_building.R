@@ -465,7 +465,6 @@ mod_detail_false_m2 <-
           data = data_detail_false,
           family = beta_family(link = "logit"))
   
-
 mod_detail_false_m3 <- 
   glmmTMB(success ~ DC + diversity + position +  smooth + 
             DC:diversity + DC:smooth + position:smooth + 
@@ -546,9 +545,7 @@ mod_detail_false_final_comp %>%
     .,"data/output/result_tables/mod_detail_false_final_comp.csv")
 
 
-
-
 # -> model 2 is the best
-mod_detail_false_select <-  mod_detail_correct_m2
+mod_detail_false_select <-  mod_detail_false_m2
 
 write_rds(mod_detail_false_select,"data/output/models/mod_detail_false_select.rds")
