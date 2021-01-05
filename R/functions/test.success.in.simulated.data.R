@@ -8,8 +8,7 @@
   
   # breaks definition
   break_type <-  sim_data$position %>% unique()
-  breaks <-  get(break_type)
-  breaks_seq <-  c("empty",rep(c("focus","empty"),length(breaks)))
+  breaks_seq <-  c("empty",rep(c("focus","empty"),length(2)))
   
   # Peak definition
   peak_type_names <-  names(sim_data)[grepl("Peak", names(sim_data))]
@@ -47,6 +46,14 @@
     # prelocate space 
     res_mat_temp_detect <- res_mat_temp_detect_fresh
     res_mat_temp_samples <- res_mat_temp_samples_fresh
+    
+    # breaks 
+    breaks <-  
+      dataset_work$position %>%
+      unique() %>% 
+      get()
+    
+   
     
     # extract values for each PEAK significance test type
     for(l in 1:length(peak_type_names)){
@@ -103,7 +110,7 @@
                 .groups = "keep") %>%
       mutate(
         success = total_detected/total_samples,
-        calculation_ID = i,
+        calculation_ID = unique(dataset_work$calculation_ID),
         dataset_ID = unique(dataset_work$dataset_ID),
         smooth = unique(dataset_work$smooth),
         DC = unique(dataset_work$DC),
