@@ -32,6 +32,7 @@ library(MuMIn)
 library(emmeans)
 library(performance)
 library(RColorBrewer)
+library(ggpubr)
 library(DataExplorer)
 
 
@@ -76,6 +77,11 @@ n_cores <-  parallel::detectCores()
 # value for beta family values
 very_small_value <-  .Machine$double.eps*100
 
+# ROC Rratepol setiing
+age_lim <- 8e3
+roc_n_rand <- 10
+pollen_grains <- 150
+
 #----------------------------------------------------------#
 # 4. Graphical setings  -----
 #----------------------------------------------------------#
@@ -83,6 +89,14 @@ very_small_value <-  .Machine$double.eps*100
 theme_set(theme_classic())
 
 text_size <- 12
+line_size <- 0.1
+
+pdf_width <- 20
+pdf_height <- 12
+pdf_units = "cm"
+
+gray_light <- "gray80"
+gray_dark <- "gray30"
 
 color_legen_segment <- brewer.pal(n = 3, name = 'Set2')
 names(color_legen_segment) <- c("correct detection", "false positives")
@@ -97,7 +111,7 @@ names(color_legen_dataset_type) <-
   )
 
 color_legen_smooth <- brewer.pal(n = 5, name = 'Set3')
-names(color_legen_smooth) <- c("None","M.avg","Grimm","Age.w","Shep")
+names(color_legen_smooth) <- c("None","M_avg","Grimm","Age_w","Shep")
 
 
 
