@@ -90,10 +90,10 @@ names(color_legen_segment) <- c("correct detection", "false positives")
 
 color_legen_dataset_type <- brewer.pal(n = 4, name = 'Set1')
 names(color_legen_dataset_type) <- 
-  c("high density level_high richness",
-    "high density level_low richness",
-    "low_density level_high richness",
-    "low_density level_low richness"
+  c("high density level - high richness",
+    "high density level - low richness",
+    "low density level - high richness",
+    "low density level - low richness"
   )
 
 color_legen_smooth <- brewer.pal(n = 5, name = 'Set3')
