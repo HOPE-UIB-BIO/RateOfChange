@@ -20,13 +20,16 @@ source("R/00_config.R")
 
 example_data <- RRatepol::example_data
 
-
 data_site_A <- 
   list(dataset_ID = example_data$dataset.id[[4]],
        community_data = example_data$filtered.counts[[4]],
        age_data = example_data$list_ages[[4]]$ages,
        uncertainity_data = example_data$list_ages[[4]]$age_position)
 
+write_rds(
+  data_site_A,
+  "data/output/datasets/pollen_sites/data_site_A.rds"
+)
 
 data_site_B <- 
   list(dataset_ID = example_data$dataset.id[[1]],
@@ -34,6 +37,10 @@ data_site_B <-
        age_data = example_data$list_ages[[1]]$ages,
        uncertainity_data = example_data$list_ages[[1]]$age_position)
 
+write_rds(
+  data_site_B,
+  "data/output/datasets/pollen_sites/data_site_B.rds"
+)
 
 data_site_C <- 
   list(dataset_ID = example_data$dataset.id[[2]],
@@ -41,6 +48,10 @@ data_site_C <-
        age_data = example_data$list_ages[[2]]$ages,
        uncertainity_data = example_data$list_ages[[2]]$age_position)
 
+write_rds(
+  data_site_C,
+  "data/output/datasets/pollen_sites/data_site_C.rds"
+)
 
 data_site_D <- 
   list(dataset_ID = example_data$dataset.id[[3]],
@@ -48,7 +59,13 @@ data_site_D <-
        age_data = example_data$list_ages[[3]]$ages,
        uncertainity_data = example_data$list_ages[[3]]$age_position)
 
+write_rds(
+  data_site_D,
+  "data/output/datasets/pollen_sites/data_site_D.rds"
+)
 
+
+# check size
 data_site_A$community_data[ ,-1] %>%
   as_tibble() %>%
   dim()
@@ -316,56 +333,4 @@ data_site_D_RoC_MW <-
 data_site_D_RoC_MW %>% 
   write_rds(
     ., "data/output/example_data_roc/data_site_D_RoC_MW.rds")
-
-#----------------------------------------------------------#
-# 3. Extract pollen data  -----
-#----------------------------------------------------------#
-
-# common taxa in each dataset
-data_site_A_dom <- .extract.dominant.pollen.taxa(data_site_A)
-data_site_B_dom <- .extract.dominant.pollen.taxa(data_site_B)
-data_site_C_dom <- .extract.dominant.pollen.taxa(data_site_C)
-data_site_D_dom <- .extract.dominant.pollen.taxa(data_site_D)
-
-# Common pollen taxa in all datasets
-common_taxa <- 
-  c(data_site_A_dom,
-    data_site_B_dom,
-    data_site_C_dom,
-    data_site_D_dom) %>%
-  unique() %>%
-  sub("/",".",.) %>%
-  sub("-",".",.) %>%
-  sub(")",".",.) %>%
-  sub(".\\(","..",.) 
-
-# prepare pollen data for the common taxa
-data_site_A_pollen <- .get.pollen.data(data_site_A, common_taxa)
-data_site_B_pollen <- .get.pollen.data(data_site_B, common_taxa)
-data_site_C_pollen <- .get.pollen.data(data_site_C, common_taxa)
-data_site_D_pollen <- .get.pollen.data(data_site_D, common_taxa)
-
-#----------------------------------------------------------#
-# 4. Create individual plots  -----
-#----------------------------------------------------------#
-
-# 4.1. Sample density -----
-plot_site_A_density <- .plot.density.of.samples(data_site_A)
-plot_site_B_density <- .plot.density.of.samples(data_site_B)
-plot_site_C_density <- .plot.density.of.samples(data_site_C)
-plot_site_D_density <- .plot.density.of.samples(data_site_D)
-
-# 4.2. pollen distribution -----
-plot_site_A_pollen <- 
-  .plot.pollen.data(data_site_A_pollen, common_taxa, strip_names = T)
-
-plot_site_B_pollen <- 
-  .plot.pollen.data(data_site_B_pollen, common_taxa)
-
-plot_site_C_pollen <- 
-  .plot.pollen.data(data_site_C_pollen, common_taxa)
-
-plot_site_D_pollen <- 
-  .plot.pollen.data(data_site_D_pollen, common_taxa)
-
 
