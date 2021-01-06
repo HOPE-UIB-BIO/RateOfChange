@@ -21,6 +21,7 @@
         ymin = ROC_dw, 
         ymax = ROC_up),
       alpha=1/2,
+      size = line_size,
       color = gray_light,
       fill = gray_light) +
     
@@ -33,14 +34,18 @@
       color = "green",
       size = 2,
       shape=16,
-      alpha=2/3) +
+      alpha=1) +
     
     geom_hline(
       yintercept = 0,
       color = gray_dark,
       size = line_size)+
     
-    scale_x_continuous(trans = "reverse")+
+    scale_x_continuous(trans = "reverse") +
+    scale_y_continuous(
+      breaks = seq(from = 0, to = roc_max, by = 0.5)
+    ) +
+    
     coord_flip(
       xlim = c(age_lim, 0),
       ylim = c(0, roc_max)) +
