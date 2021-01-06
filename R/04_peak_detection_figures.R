@@ -126,13 +126,15 @@ emmeans_detail_correct_full_tibble <-
   tibble(
     emmeans_detail_correct_full$emmeans %>% 
       as_tibble(),
-    segment = "correct detection") 
+    segment = "correct detection") %>% 
+  mutate(smooth = fct_relevel(smooth,"None", "Shep", "M_avg", "Age_w", "Grimm"))
 
 emmeans_detail_false_full_tibble <- 
   tibble(
     emmeans_detail_false_full$emmeans %>% 
       as_tibble(),
-    segment = "false positives")
+    segment = "false positives") %>% 
+  mutate(smooth = fct_relevel(smooth,"None", "Shep", "M_avg", "Age_w", "Grimm"))
 
 
 emmeans_detail_correct_smooth <-
@@ -151,14 +153,16 @@ emmeans_detail_correct_smooth_tibble <-
   tibble(
     emmeans_detail_correct_smooth$emmeans %>% 
       as_tibble(),
-    segment = "correct detection") 
+    segment = "correct detection") %>% 
+  mutate(smooth = fct_relevel(smooth,"None", "Shep", "M_avg", "Age_w", "Grimm"))
 
 
 emmeans_detail_false_smooth_tibble <- 
   tibble(
     emmeans_detail_false_smooth$emmeans %>% 
       as_tibble(),
-    segment = "false positives") 
+    segment = "false positives") %>% 
+  mutate(smooth = fct_relevel(smooth,"None", "Shep", "M_avg", "Age_w", "Grimm"))
 
 emmeans_detail_correct_DC <-
   emmeans(
