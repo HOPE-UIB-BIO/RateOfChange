@@ -33,6 +33,7 @@ library(emmeans)
 library(performance)
 library(RColorBrewer)
 library(ggpubr)
+library(cowplot)
 library(DataExplorer)
 
 
@@ -54,6 +55,7 @@ sapply(paste0("R/functions/", files_sources, sep =""), source)
 # 3. Definition of variables -----
 #----------------------------------------------------------#
 
+# 3.1 dataset generation -----
 # Number of simulated enviromental variables
 N_env <-  4
 
@@ -71,16 +73,19 @@ N_rep <-  100
 # template of time sequence with uneven distribution of points
 time_seq <-  data_example$list_ages[[4]]$ages$age
 
+
+# 3.2. ROC Rratepol setting -----
+age_lim <- 8e3
+roc_n_rand <- 10e3
+pollen_grains <- 150
+
+
+# 3.3. other -----
 # number of cores
 n_cores <-  parallel::detectCores()
 
 # value for beta family values
 very_small_value <-  .Machine$double.eps*100
-
-# ROC Rratepol setiing
-age_lim <- 8e3
-roc_n_rand <- 10
-pollen_grains <- 150
 
 #----------------------------------------------------------#
 # 4. Graphical setings  -----
