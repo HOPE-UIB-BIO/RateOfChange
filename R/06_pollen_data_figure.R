@@ -51,6 +51,9 @@ data_site_D_RoC_bins <-
 data_site_D_RoC_MW <-
   read_rds("data/output/example_data_roc/data_site_D_RoC_MW.rds")
 
+ROC_site_A_all_settings <-
+  read_rds("data/output/datasets/RoC/ROC_site_A_all_settings.rds")
+
 #----------------------------------------------------------#
 # 2. Extract pollen data  -----
 #----------------------------------------------------------#
@@ -104,24 +107,26 @@ plot_site_D_pollen <-
 
 
 # 4.3. RoC curve -----
-plot_site_A_roc_levels <- .plot.roc.curve(data_site_A_RoC_levels)
-plot_site_B_roc_levels <- .plot.roc.curve(data_site_B_RoC_levels)
-plot_site_C_roc_levels <- .plot.roc.curve(data_site_C_RoC_levels)
-plot_site_D_roc_levels <- .plot.roc.curve(data_site_D_RoC_levels)
+max_roc <- 1.5
 
-plot_site_A_roc_bins <- .plot.roc.curve(data_site_A_RoC_bins)
-plot_site_B_roc_bins <- .plot.roc.curve(data_site_B_RoC_bins)
-plot_site_C_roc_bins <- .plot.roc.curve(data_site_C_RoC_bins)
-plot_site_D_roc_bins <- .plot.roc.curve(data_site_D_RoC_bins)
+plot_site_A_roc_levels <- .plot.roc.curve(data_site_A_RoC_levels, roc_max = max_roc)
+plot_site_B_roc_levels <- .plot.roc.curve(data_site_B_RoC_levels, roc_max = max_roc)
+plot_site_C_roc_levels <- .plot.roc.curve(data_site_C_RoC_levels, roc_max = max_roc)
+plot_site_D_roc_levels <- .plot.roc.curve(data_site_D_RoC_levels, roc_max = max_roc)
 
-plot_site_A_roc_MW <- .plot.roc.curve(data_site_A_RoC_MW)
-plot_site_B_roc_MW <- .plot.roc.curve(data_site_B_RoC_MW)
-plot_site_C_roc_MW <- .plot.roc.curve(data_site_C_RoC_MW)
-plot_site_D_roc_MW <- .plot.roc.curve(data_site_D_RoC_MW)
+plot_site_A_roc_bins <- .plot.roc.curve(data_site_A_RoC_bins, roc_max = max_roc)
+plot_site_B_roc_bins <- .plot.roc.curve(data_site_B_RoC_bins, roc_max = max_roc)
+plot_site_C_roc_bins <- .plot.roc.curve(data_site_C_RoC_bins, roc_max = max_roc)
+plot_site_D_roc_bins <- .plot.roc.curve(data_site_D_RoC_bins, roc_max = max_roc)
+
+plot_site_A_roc_MW <- .plot.roc.curve(data_site_A_RoC_MW, roc_max = max_roc)
+plot_site_B_roc_MW <- .plot.roc.curve(data_site_B_RoC_MW, roc_max = max_roc)
+plot_site_C_roc_MW <- .plot.roc.curve(data_site_C_RoC_MW, roc_max = max_roc)
+plot_site_D_roc_MW <- .plot.roc.curve(data_site_D_RoC_MW, roc_max = max_roc)
 
 
 #----------------------------------------------------------#
-# 5. Building the figure  -----
+# 5. Building the figure 4 -----
 #----------------------------------------------------------#
 
 rel_w_density <- 1
@@ -210,6 +215,44 @@ ggsave(
   "data/output/figures/fig_4_raw.pdf",
   figure_4,
   height = pdf_height * 2,
+  width = pdf_width,
+  units = pdf_units)
+
+
+#----------------------------------------------------------#
+# 6. fig 5 Roc in ultiple settings -----
+#----------------------------------------------------------#
+
+(figure_5 <- 
+  ROC_site_A_all_settings %>% 
+  unnest(ROC) %>% 
+  mutate(
+    smooth_type = fct_relevel(
+      smooth_type,
+      "none", "shep", "m.avg", "age.w", "grim"),
+    DC = fct_relevel(
+      DC,
+      "chord","chisq"
+    )) %>%
+  mutate(
+    smooth_type = fct_recode(
+      smooth_type,
+      "None" = "none",
+      "Shep" = "shep",
+      "M_avg" = "m.avg",
+      "Age_w" = "age.w",
+      "Grimm" = "grim"),
+    DC = fct_recode(
+      DC,
+      "Chord" = "chord",
+      "Chisq" = "chisq")) %>% 
+  .plot.roc.curve(., roc_max = 1) +
+  facet_grid(DC~smooth_type))
+
+ggsave(
+  "data/output/figures/fig_5_raw.pdf",
+  figure_5,
+  height = pdf_height,
   width = pdf_width,
   units = pdf_units)
 

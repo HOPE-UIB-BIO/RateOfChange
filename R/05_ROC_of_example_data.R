@@ -334,3 +334,13 @@ data_site_D_RoC_MW %>%
   write_rds(
     ., "data/output/example_data_roc/data_site_D_RoC_MW.rds")
 
+#----------------------------------------------------------#
+# 3. Calculate RoC for a site A in all setting -----
+#----------------------------------------------------------#
+
+ROC_site_A_all_settings <- .calculate.roc.in.all.settings(data_site_A)
+
+write_rds(
+  ROC_site_A_all_settings,
+  "data/output/datasets/RoC/ROC_site_A_all_settings.rds"
+)
