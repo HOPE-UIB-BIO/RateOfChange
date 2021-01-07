@@ -20,7 +20,7 @@ source("R/00_config.R")
 # low diversity recent
 
 sim_ld_recent <- 
-  fc_simulate_pollen_data_in_multiple_datasets(
+  .simulate.pollen.data.in.multiple.datasets(
     time = time_seq, 
     nforc = N_env, 
     nprox = low_diversity, 
@@ -32,7 +32,7 @@ sim_ld_recent <-
 
 
 sim_ld_late <- 
-  fc_simulate_pollen_data_in_multiple_datasets(
+  .simulate.pollen.data.in.multiple.datasets(
     time=time_seq, 
     nforc=N_env, 
     nprox=high_diversity, 
@@ -44,7 +44,7 @@ sim_ld_late <-
 
 
 sim_hd_recent <- 
-  fc_simulate_pollen_data_in_multiple_datasets(
+  .simulate.pollen.data.in.multiple.datasets(
     time=time_seq, 
     nforc=N_env, 
     nprox=high_diversity, 
@@ -56,7 +56,7 @@ sim_hd_recent <-
 
 
 sim_hd_late <- 
-  fc_simulate_pollen_data_in_multiple_datasets(
+  .simulate.pollen.data.in.multiple.datasets(
     time=time_seq, 
     nforc=N_env, 
     nprox=high_diversity, 
