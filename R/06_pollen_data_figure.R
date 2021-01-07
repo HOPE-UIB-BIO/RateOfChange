@@ -3,8 +3,7 @@
 #
 #             Rate-of-change in palaeoecology 
 #
-#                     Calculation RoC 
-#                     in example data
+#                 Plotting RoC figures
 #
 #                     Ondrej Mottl 
 #                         2020
@@ -53,6 +52,10 @@ data_site_D_RoC_MW <-
 
 ROC_site_A_all_settings <-
   read_rds("data/output/datasets/RoC/ROC_site_A_all_settings.rds")
+
+bin_size_result <- 
+  read_rds("data/output/datasets/RoC/bin_size_result.rds")
+
 
 #----------------------------------------------------------#
 # 2. Extract pollen data  -----
@@ -126,7 +129,7 @@ plot_site_D_roc_MW <- .plot.roc.curve(data_site_D_RoC_MW, roc_max = max_roc)
 
 
 #----------------------------------------------------------#
-# 5. Building the figure 4 -----
+# 5. (Fig 4) Building the figure 4 -----
 #----------------------------------------------------------#
 
 rel_w_density <- 1
@@ -220,7 +223,7 @@ ggsave(
 
 
 #----------------------------------------------------------#
-# 6. fig 5 Roc in ultiple settings -----
+# 6. (Fig 5) Roc in multiple settings -----
 #----------------------------------------------------------#
 
 (figure_5 <- 
@@ -256,3 +259,40 @@ ggsave(
   width = pdf_width,
   units = pdf_units)
 
+#----------------------------------------------------------#
+# 6. (Fig S3) binning affect on RoC -----
+#----------------------------------------------------------#
+
+(figure_S3 <- 
+   bin_size_result %>%
+   ggplot() +
+   
+   geom_rug(
+     data = data_site_A$age_data,
+     aes(x = age),
+     sides = "b") +
+   
+   geom_line(
+     aes(
+       x = Age,
+       y= ROC,
+       group = bin,
+       color = bin)) +
+   
+   viridis::scale_colour_viridis(direction = -1) +
+   
+   theme(
+     line = element_line(size = line_size),
+     text = element_text(size = text_size)) +
+   
+   labs(
+     x ="Age (cal yr BP)",
+     y = "Rate-of-Change score",
+     color = "Bin size"))
+
+ggsave(
+  "data/output/figures/fig_S3_raw.pdf",
+  figure_S3,
+  height = pdf_height,
+  width = pdf_width,
+  units = pdf_units)
