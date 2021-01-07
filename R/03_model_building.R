@@ -354,6 +354,13 @@ mod_detail_correct_final_comp
 
 mod_detail_correct_final_comp %>% 
   as_tibble() %>% 
+  left_join(.,
+            tibble(
+              Model = paste0("mod_detail_correct_m",1:2),
+              formula = lapply(paste0("mod_detail_correct_m",1:2), FUN = function(x) formula(get(x))) %>% 
+                as.character()),
+            by = "Model") %>% 
+  dplyr::select(formula, everything()) %>% 
   write_csv(
     .,"data/output/result_tables/mod_detail_correct_final_comp.csv")
 
@@ -541,9 +548,15 @@ mod_detail_false_final_comp
 
 mod_detail_false_final_comp %>% 
   as_tibble() %>% 
+  left_join(.,
+            tibble(
+              Model = paste0("mod_detail_false_m",1:10),
+              formula = lapply(paste0("mod_detail_false_m",1:10), FUN = function(x) formula(get(x))) %>% 
+                as.character()),
+            by = "Model") %>% 
+  dplyr::select(formula, everything()) %>% 
   write_csv(
     .,"data/output/result_tables/mod_detail_false_final_comp.csv")
-
 
 # -> model 2 is the best
 mod_detail_false_select <-  mod_detail_false_m2
