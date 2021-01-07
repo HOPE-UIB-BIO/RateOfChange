@@ -88,18 +88,19 @@ data_site_D$community_data[ ,-1] %>%
 
 # 2.1. Site A ----- 
 data_site_A_RoC_levels <- 
-  RRatepol::fc_estimate_RoC(data_source_community = data_site_A$community_data,
-                            data_source_age = data_site_A$age_data,
-                            age_uncertainty = data_site_A$uncertainity_data,
-                            smooth_method  = "shep",
-                            Working_Units  = "levels",
-                            rand = roc_n_rand,
-                            standardise = T, 
-                            N_individuals  = pollen_grains, 
-                            DC = "chisq",
-                            treads = T,
-                            interest_threshold  = age_lim,
-                            Debug = F) %>% 
+  RRatepol::fc_estimate_RoC(
+    data_source_community = data_site_A$community_data,
+    data_source_age = data_site_A$age_data,
+    age_uncertainty = data_site_A$uncertainity_data,
+    smooth_method  = "shep",
+    Working_Units  = "levels",
+    rand = roc_n_rand,
+    standardise = T, 
+    N_individuals  = pollen_grains, 
+    DC = "chisq",
+    treads = T,
+    interest_threshold  = age_lim,
+    Debug = F) %>% 
   RRatepol::fc_detect_peak_points(.,method = "trend_non_linear")
 
 data_site_A_RoC_levels %>% 
@@ -107,19 +108,20 @@ data_site_A_RoC_levels %>%
     ., "data/output/example_data_roc/data_site_A_RoC_levels.rds")
 
 data_site_A_RoC_bins <- 
-  RRatepol::fc_estimate_RoC(data_source_community = data_site_A$community_data,
-                            data_source_age = data_site_A$age_data,
-                            age_uncertainty = data_site_A$uncertainity_data,
-                            smooth_method  = "shep", 
-                            Working_Units  = "bins",
-                            bin_size  = 500,
-                            rand = roc_n_rand,
-                            standardise = T, 
-                            N_individuals  = pollen_grains, 
-                            DC = "chisq",
-                            treads = T,
-                            interest_threshold  = age_lim,
-                            Debug = F) %>% 
+  RRatepol::fc_estimate_RoC(
+    data_source_community = data_site_A$community_data,
+    data_source_age = data_site_A$age_data,
+    age_uncertainty = data_site_A$uncertainity_data,
+    smooth_method  = "shep", 
+    Working_Units  = "bins",
+    bin_size  = 500,
+    rand = roc_n_rand,
+    standardise = T, 
+    N_individuals  = pollen_grains, 
+    DC = "chisq",
+    treads = T,
+    interest_threshold  = age_lim,
+    Debug = F) %>% 
   RRatepol::fc_detect_peak_points(.,method = "trend_non_linear")
 
 data_site_A_RoC_bins %>% 
@@ -128,20 +130,21 @@ data_site_A_RoC_bins %>%
 
 
 data_site_A_RoC_MW <- 
-  RRatepol::fc_estimate_RoC(data_source_community = data_site_A$community_data,
-                            data_source_age = data_site_A$age_data,
-                            age_uncertainty = data_site_A$uncertainity_data,
-                            smooth_method  = "shep", 
-                            Working_Units  = "MW",
-                            bin_size  = 500,
-                            Number_of_shifts  = 5,
-                            rand = roc_n_rand,
-                            standardise = T, 
-                            N_individuals  = pollen_grains, 
-                            DC = "chisq",
-                            treads = T,
-                            interest_threshold  = age_lim,
-                            Debug = F) %>% 
+  RRatepol::fc_estimate_RoC(
+    data_source_community = data_site_A$community_data,
+    data_source_age = data_site_A$age_data,
+    age_uncertainty = data_site_A$uncertainity_data,
+    smooth_method  = "shep", 
+    Working_Units  = "MW",
+    bin_size  = 500,
+    Number_of_shifts  = 5,
+    rand = roc_n_rand,
+    standardise = T, 
+    N_individuals  = pollen_grains, 
+    DC = "chisq",
+    treads = T,
+    interest_threshold  = age_lim,
+    Debug = F) %>% 
   RRatepol::fc_detect_peak_points(.,method = "trend_non_linear")
 
 data_site_A_RoC_MW %>% 
@@ -150,18 +153,19 @@ data_site_A_RoC_MW %>%
 
 # 2.2. Site B ----- 
 data_site_B_RoC_levels <- 
-  RRatepol::fc_estimate_RoC(data_source_community = data_site_B$community_data,
-                            data_source_age = data_site_B$age_data,
-                            age_uncertainty = data_site_B$uncertainity_data,
-                            smooth_method  = "shep",
-                            Working_Units  = "levels",
-                            rand = roc_n_rand,
-                            standardise = T, 
-                            N_individuals  = pollen_grains, 
-                            DC = "chisq",
-                            treads = T,
-                            interest_threshold  = age_lim,
-                            Debug = F) %>% 
+  RRatepol::fc_estimate_RoC(
+    data_source_community = data_site_B$community_data,
+    data_source_age = data_site_B$age_data,
+    age_uncertainty = data_site_B$uncertainity_data,
+    smooth_method  = "shep",
+    Working_Units  = "levels",
+    rand = roc_n_rand,
+    standardise = T, 
+    N_individuals  = pollen_grains, 
+    DC = "chisq",
+    treads = T,
+    interest_threshold  = age_lim,
+    Debug = F) %>% 
   RRatepol::fc_detect_peak_points(.,method = "trend_non_linear")
 
 data_site_B_RoC_levels %>% 
@@ -169,19 +173,20 @@ data_site_B_RoC_levels %>%
     ., "data/output/example_data_roc/data_site_B_RoC_levels.rds")
 
 data_site_B_RoC_bins <- 
-  RRatepol::fc_estimate_RoC(data_source_community = data_site_B$community_data,
-                            data_source_age = data_site_B$age_data,
-                            age_uncertainty = data_site_B$uncertainity_data,
-                            smooth_method  = "shep", 
-                            Working_Units  = "bins",
-                            bin_size  = 500,
-                            rand = roc_n_rand,
-                            standardise = T, 
-                            N_individuals  = pollen_grains, 
-                            DC = "chisq",
-                            treads = T,
-                            interest_threshold  = age_lim,
-                            Debug = F) %>% 
+  RRatepol::fc_estimate_RoC(
+    data_source_community = data_site_B$community_data,
+    data_source_age = data_site_B$age_data,
+    age_uncertainty = data_site_B$uncertainity_data,
+    smooth_method  = "shep", 
+    Working_Units  = "bins",
+    bin_size  = 500,
+    rand = roc_n_rand,
+    standardise = T, 
+    N_individuals  = pollen_grains, 
+    DC = "chisq",
+    treads = T,
+    interest_threshold  = age_lim,
+    Debug = F) %>% 
   RRatepol::fc_detect_peak_points(.,method = "trend_non_linear")
 
 data_site_B_RoC_bins %>% 
@@ -190,20 +195,21 @@ data_site_B_RoC_bins %>%
 
 
 data_site_B_RoC_MW <- 
-  RRatepol::fc_estimate_RoC(data_source_community = data_site_B$community_data,
-                            data_source_age = data_site_B$age_data,
-                            age_uncertainty = data_site_B$uncertainity_data,
-                            smooth_method  = "shep", 
-                            Working_Units  = "MW",
-                            bin_size  = 500,
-                            Number_of_shifts  = 5,
-                            rand = roc_n_rand,
-                            standardise = T, 
-                            N_individuals  = pollen_grains, 
-                            DC = "chisq",
-                            treads = T,
-                            interest_threshold  = age_lim,
-                            Debug = F) %>% 
+  RRatepol::fc_estimate_RoC(
+    data_source_community = data_site_B$community_data,
+    data_source_age = data_site_B$age_data,
+    age_uncertainty = data_site_B$uncertainity_data,
+    smooth_method  = "shep", 
+    Working_Units  = "MW",
+    bin_size  = 500,
+    Number_of_shifts  = 5,
+    rand = roc_n_rand,
+    standardise = T, 
+    N_individuals  = pollen_grains, 
+    DC = "chisq",
+    treads = T,
+    interest_threshold  = age_lim,
+    Debug = F) %>% 
   RRatepol::fc_detect_peak_points(.,method = "trend_non_linear")
 
 data_site_B_RoC_MW %>% 
@@ -212,18 +218,19 @@ data_site_B_RoC_MW %>%
 
 # 2.3. Site C ----- 
 data_site_C_RoC_levels <- 
-  RRatepol::fc_estimate_RoC(data_source_community = data_site_C$community_data,
-                            data_source_age = data_site_C$age_data,
-                            age_uncertainty = data_site_C$uncertainity_data,
-                            smooth_method  = "shep",
-                            Working_Units  = "levels",
-                            rand = roc_n_rand,
-                            standardise = T, 
-                            N_individuals  = pollen_grains, 
-                            DC = "chisq",
-                            treads = T,
-                            interest_threshold  = age_lim,
-                            Debug = F) %>% 
+  RRatepol::fc_estimate_RoC(
+    data_source_community = data_site_C$community_data,
+    data_source_age = data_site_C$age_data,
+    age_uncertainty = data_site_C$uncertainity_data,
+    smooth_method  = "shep",
+    Working_Units  = "levels",
+    rand = roc_n_rand,
+    standardise = T, 
+    N_individuals  = pollen_grains, 
+    DC = "chisq",
+    treads = T,
+    interest_threshold  = age_lim,
+    Debug = F) %>% 
   RRatepol::fc_detect_peak_points(.,method = "trend_non_linear")
 
 data_site_C_RoC_levels %>% 
@@ -231,19 +238,20 @@ data_site_C_RoC_levels %>%
     ., "data/output/example_data_roc/data_site_C_RoC_levels.rds")
 
 data_site_C_RoC_bins <- 
-  RRatepol::fc_estimate_RoC(data_source_community = data_site_C$community_data,
-                            data_source_age = data_site_C$age_data,
-                            age_uncertainty = data_site_C$uncertainity_data,
-                            smooth_method  = "shep", 
-                            Working_Units  = "bins",
-                            bin_size  = 500,
-                            rand = roc_n_rand,
-                            standardise = T, 
-                            N_individuals  = pollen_grains, 
-                            DC = "chisq",
-                            treads = T,
-                            interest_threshold  = age_lim,
-                            Debug = F) %>% 
+  RRatepol::fc_estimate_RoC(
+    data_source_community = data_site_C$community_data,
+    data_source_age = data_site_C$age_data,
+    age_uncertainty = data_site_C$uncertainity_data,
+    smooth_method  = "shep", 
+    Working_Units  = "bins",
+    bin_size  = 500,
+    rand = roc_n_rand,
+    standardise = T, 
+    N_individuals  = pollen_grains, 
+    DC = "chisq",
+    treads = T,
+    interest_threshold  = age_lim,
+    Debug = F) %>% 
   RRatepol::fc_detect_peak_points(.,method = "trend_non_linear")
 
 data_site_C_RoC_bins %>% 
@@ -252,20 +260,21 @@ data_site_C_RoC_bins %>%
 
 
 data_site_C_RoC_MW <- 
-  RRatepol::fc_estimate_RoC(data_source_community = data_site_C$community_data,
-                            data_source_age = data_site_C$age_data,
-                            age_uncertainty = data_site_C$uncertainity_data,
-                            smooth_method  = "shep", 
-                            Working_Units  = "MW",
-                            bin_size  = 500,
-                            Number_of_shifts  = 5,
-                            rand = roc_n_rand,
-                            standardise = T, 
-                            N_individuals  = pollen_grains, 
-                            DC = "chisq",
-                            treads = T,
-                            interest_threshold  = age_lim,
-                            Debug = F) %>% 
+  RRatepol::fc_estimate_RoC(
+    data_source_community = data_site_C$community_data,
+    data_source_age = data_site_C$age_data,
+    age_uncertainty = data_site_C$uncertainity_data,
+    smooth_method  = "shep", 
+    Working_Units  = "MW",
+    bin_size  = 500,
+    Number_of_shifts  = 5,
+    rand = roc_n_rand,
+    standardise = T, 
+    N_individuals  = pollen_grains, 
+    DC = "chisq",
+    treads = T,
+    interest_threshold  = age_lim,
+    Debug = F) %>% 
   RRatepol::fc_detect_peak_points(.,method = "trend_non_linear")
 
 data_site_C_RoC_MW %>% 
@@ -274,18 +283,19 @@ data_site_C_RoC_MW %>%
 
 # 2.4. Site D ----- 
 data_site_D_RoC_levels <- 
-  RRatepol::fc_estimate_RoC(data_source_community = data_site_D$community_data,
-                            data_source_age = data_site_D$age_data,
-                            age_uncertainty = data_site_D$uncertainity_data,
-                            smooth_method  = "shep",
-                            Working_Units  = "levels",
-                            rand = roc_n_rand,
-                            standardise = T, 
-                            N_individuals  = pollen_grains, 
-                            DC = "chisq",
-                            treads = T,
-                            interest_threshold  = age_lim,
-                            Debug = F) %>% 
+  RRatepol::fc_estimate_RoC(
+    data_source_community = data_site_D$community_data,
+    data_source_age = data_site_D$age_data,
+    age_uncertainty = data_site_D$uncertainity_data,
+    smooth_method  = "shep",
+    Working_Units  = "levels",
+    rand = roc_n_rand,
+    standardise = T, 
+    N_individuals  = pollen_grains, 
+    DC = "chisq",
+    treads = T,
+    interest_threshold  = age_lim,
+    Debug = F) %>% 
   RRatepol::fc_detect_peak_points(.,method = "trend_non_linear")
 
 data_site_D_RoC_levels %>% 
@@ -293,19 +303,20 @@ data_site_D_RoC_levels %>%
     ., "data/output/example_data_roc/data_site_D_RoC_levels.rds")
 
 data_site_D_RoC_bins <- 
-  RRatepol::fc_estimate_RoC(data_source_community = data_site_D$community_data,
-                            data_source_age = data_site_D$age_data,
-                            age_uncertainty = data_site_D$uncertainity_data,
-                            smooth_method  = "shep", 
-                            Working_Units  = "bins",
-                            bin_size  = 500,
-                            rand = roc_n_rand,
-                            standardise = T, 
-                            N_individuals  = pollen_grains, 
-                            DC = "chisq",
-                            treads = T,
-                            interest_threshold  = age_lim,
-                            Debug = F) %>% 
+  RRatepol::fc_estimate_RoC(
+    data_source_community = data_site_D$community_data,
+    data_source_age = data_site_D$age_data,
+    age_uncertainty = data_site_D$uncertainity_data,
+    smooth_method  = "shep", 
+    Working_Units  = "bins",
+    bin_size  = 500,
+    rand = roc_n_rand,
+    standardise = T, 
+    N_individuals  = pollen_grains, 
+    DC = "chisq",
+    treads = T,
+    interest_threshold  = age_lim,
+    Debug = F) %>% 
   RRatepol::fc_detect_peak_points(.,method = "trend_non_linear")
 
 data_site_D_RoC_bins %>% 
@@ -314,20 +325,21 @@ data_site_D_RoC_bins %>%
 
 
 data_site_D_RoC_MW <- 
-  RRatepol::fc_estimate_RoC(data_source_community = data_site_D$community_data,
-                            data_source_age = data_site_D$age_data,
-                            age_uncertainty = data_site_D$uncertainity_data,
-                            smooth_method  = "shep", 
-                            Working_Units  = "MW",
-                            bin_size  = 500,
-                            Number_of_shifts  = 5,
-                            rand = roc_n_rand,
-                            standardise = T, 
-                            N_individuals  = pollen_grains, 
-                            DC = "chisq",
-                            treads = T,
-                            interest_threshold  = age_lim,
-                            Debug = F) %>% 
+  RRatepol::fc_estimate_RoC(
+    data_source_community = data_site_D$community_data,
+    data_source_age = data_site_D$age_data,
+    age_uncertainty = data_site_D$uncertainity_data,
+    smooth_method  = "shep", 
+    Working_Units  = "MW",
+    bin_size  = 500,
+    Number_of_shifts  = 5,
+    rand = roc_n_rand,
+    standardise = T, 
+    N_individuals  = pollen_grains, 
+    DC = "chisq",
+    treads = T,
+    interest_threshold  = age_lim,
+    Debug = F) %>% 
   RRatepol::fc_detect_peak_points(.,method = "trend_non_linear")
 
 data_site_D_RoC_MW %>% 
@@ -344,3 +356,47 @@ write_rds(
   ROC_site_A_all_settings,
   "data/output/datasets/RoC/ROC_site_A_all_settings.rds"
 )
+
+
+#----------------------------------------------------------#
+# 4. Calculate RoC for a site A in various bin size -----
+#----------------------------------------------------------#
+
+bin_sizes <- seq(from = 100, to = 1e3, by = 100)
+
+for(i in bin_sizes){
+  
+  df_w <- 
+    RRatepol::fc_estimate_RoC(
+      data_source_community = data_site_A$community_data,
+      data_source_age = data_site_A$age_data,
+      age_uncertainty = data_site_A$uncertainity_data,
+      smooth_method  = "shep", 
+      Working_Units  = "MW",
+      bin_size  = i,
+      Number_of_shifts  = 5,
+      rand = roc_n_rand,
+      standardise = T, 
+      N_individuals  = pollen_grains, 
+      DC = "chisq",
+      treads = T,
+      interest_threshold  = age_lim,
+      Debug = F)
+  
+  if(exists("bin_size_result") == FALSE){
+    bin_size_result <- tibble(df_w, bin = i)
+  } else {
+    bin_size_result <- 
+      bind_rows(
+        bin_size_result,
+        tibble(df_w, bin = i))
+  }
+}
+
+
+write_rds(
+  bin_size_result,
+  "data/output/datasets/RoC/bin_size_result.rds"
+)
+
+
