@@ -1,16 +1,16 @@
 .simulate.pollen.data <- function(time=5e3:0, 
-                                    nforc=4, 
-                                    mean=100, 
-                                    sdev=.15, 
-                                    nprox=10, 
-                                    var=20, 
-                                    range=15,
-                                    manual_edit = T,
-                                    breaks=c(2000,3000),
-                                    transform_to_counts = T,
-                                    N_pollen_grains = 300,
-                                    rarity = T,
-                                    jitter = T)
+                                  nforc=4, 
+                                  mean=100, 
+                                  sdev=.15, 
+                                  nprox=10, 
+                                  var=20, 
+                                  range=15,
+                                  manual_edit = T,
+                                  breaks=c(2000,3000),
+                                  transform_to_counts = T,
+                                  N_pollen_grains = 300,
+                                  rarity = T,
+                                  jitter = T)
 {
   # create enviromental variables
   forcing <-  array(0, dim = c(length(time), nforc))
@@ -18,7 +18,7 @@
   for(i in 2:length(time)){
     forcing[i, ] <-  rnorm(nforc, forcing[i-1, ], sdev)
   }
-    
+  
   # manual edit of env.var.
   if (manual_edit == T){
     
@@ -55,7 +55,7 @@
   for(i in 1:nprox){
     ecology[[i]] <-  list(mean = rnorm(nforc, mean, var), sd = rgamma(nforc, range, 1))
   }
-    
+  
   # reactions of the biota to the environmental changes
   proxies <-  array(1, dim = c(length(time), nprox))
   o <-  c()
@@ -87,7 +87,7 @@
   
   # tranform to pollen grains 
   if(transform_to_counts == T){
-      proxies <-  round(proxies * N_pollen_grains)
+    proxies <-  round(proxies * N_pollen_grains)
   }
   
   # jitter the resul the pollen data
@@ -104,5 +104,6 @@
   
   return(list(
     community_data = data_source_pollen,
-    list_ages = data_source_age))
+    list_ages = data_source_age,
+    env_var = forcing))
 }

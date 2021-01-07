@@ -1,30 +1,31 @@
 .simulate.pollen.data.in.multiple.datasets <- function(time=0:10e3, 
-                                                         nforc=4, 
-                                                         nprox=10, 
-                                                         manual_edit = T,
-                                                         breaks=c(2000,3000),
-                                                         jitter = T,
-                                                         rarity=T,
-                                                         N_datasets=100){
+                                                       nforc=4, 
+                                                       nprox=10, 
+                                                       manual_edit = T,
+                                                       breaks=c(2000,3000),
+                                                       jitter = T,
+                                                       rarity=T,
+                                                       N_datasets=100){
   
   
   for(i in 1:N_datasets) {
     
     # create random data
     random_data <- 
-      .simulate.pollen.data(time = time,
-                              nforc = nforc, 
-                              mean = 100, 
-                              sdev = .15,
-                              nprox = nprox,
-                              var = 20,
-                              range = 20,
-                              manual_edit = manual_edit,
-                              breaks = breaks,
-                              jitter = jitter,
-                              rarity = rarity,
-                              transform_to_counts = T,
-                              N_pollen_grains = 300)
+      .simulate.pollen.data(
+        time = time,
+        nforc = nforc, 
+        mean = 100, 
+        sdev = .15,
+        nprox = nprox,
+        var = 20,
+        range = 20,
+        manual_edit = manual_edit,
+        breaks = breaks,
+        jitter = jitter,
+        rarity = rarity,
+        transform_to_counts = T,
+        N_pollen_grains = 300)
     
     
     
