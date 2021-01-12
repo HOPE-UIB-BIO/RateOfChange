@@ -250,7 +250,7 @@ plot_random_data_late_full
 
 # 1.2. Plot figure  -----
 
-figure_S1 <- 
+(figure_S1 <- 
   ggarrange(
     plot_random_data_recent_full,
     plot_random_data_late_full,
@@ -260,7 +260,7 @@ figure_S1 <-
                   left = text_grob(
                     "Age (cal yr BP)",
                     size = text_size,
-                    rot = 90))
+                    rot = 90)))
 
 ggsave(
   "data/output/figures/fig_S1_raw.pdf",
@@ -268,6 +268,17 @@ ggsave(
   height = pdf_height,
   width = pdf_width,
   units = pdf_units)
+
+# save the data
+
+write_rds(
+  random_data_recent,
+  "data/output/datasets/simulated/fig_S1_random_data_recent.rds")
+
+write_rds(
+  random_data_late,
+  "data/output/datasets/simulated/fig_S1_random_data_late.rds")
+
 
 
 #----------------------------------------------------------#
