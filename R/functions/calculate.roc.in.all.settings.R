@@ -17,21 +17,22 @@
       ROC = purrr::map2(smooth_type, DC, function(x, y){
         
         roc_score <-
-          RRatepol::fc_estimate_RoC(data_source_community = data$community_data,
-                                    data_source_age = data$age_data,
-                                    age_uncertainty = data$uncertainity_data,
-                                    smooth_method  = x,
-                                    smooth_N_points = 5,
-                                    smooth_N_max = 9,
-                                    smooth_age_range = 500,
-                                    Working_Units  = "MW",
-                                    rand = roc_n_rand,
-                                    standardise = T, 
-                                    N_individuals  = pollen_grains, 
-                                    DC = y,
-                                    treads = T,
-                                    interest_threshold  = age_lim,
-                                    Debug = F)
+          RRatepol::fc_estimate_RoC(
+            data_source_community = data$community_data,
+            data_source_age = data$age_data,
+            age_uncertainty = data$uncertainity_data,
+            smooth_method  = x,
+            smooth_N_points = 5,
+            smooth_N_max = 9,
+            smooth_age_range = 500,
+            Working_Units  = "MW",
+            rand = roc_n_rand,
+            standardise = T, 
+            N_individuals  = pollen_grains, 
+            DC = y,
+            treads = T,
+            interest_threshold  = age_lim,
+            Debug = F)
         roc_peak <-
           RRatepol::fc_detect_peak_points(roc_score,method = "trend_non_linear")
         
