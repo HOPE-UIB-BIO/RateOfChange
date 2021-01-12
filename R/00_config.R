@@ -36,10 +36,8 @@ library(ggpubr)
 library(cowplot)
 library(DataExplorer)
 
-
 # instal RRatepol package download and attach
 # devtools::install_github("HOPE-UIB-BIO/R-Ratepol-package")
-
 library(RRatepol)
 
 #----------------------------------------------------------#
