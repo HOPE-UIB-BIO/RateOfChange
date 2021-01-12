@@ -94,7 +94,7 @@ theme_set(theme_classic())
 text_size <- 12
 line_size <- 0.1
 
-pdf_width <- 20
+pdf_width <- 18.4
 pdf_height <- 12
 pdf_units = "cm"
 
