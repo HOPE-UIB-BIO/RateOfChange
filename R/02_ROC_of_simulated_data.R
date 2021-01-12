@@ -18,14 +18,8 @@ source("R/00_config.R")
 # 1. Load data -----
 #----------------------------------------------------------#
 
-list_files_output <-  list.files("data/output/datasets/simulated/")
-
-if(any(list_files_output %in% "simulated_dataset.rds")){
-  simulated_dataset <-  
-    read_rds("data/output/datasets/simulated/simulated_dataset.rds") 
-} else {
-  source("R/01_data_creation.R")
-}
+simulated_dataset <-  
+  read_rds("data/output/datasets/simulated/simulated_dataset.rds") 
 
 #----------------------------------------------------------#
 # 2. Calculate RoC -----
@@ -77,8 +71,7 @@ ROC_all <-
   bind_rows(
     tibble(ROC_levels, WU = "levels"),
     tibble(ROC_bins, WU = "bins"),
-    tibble(ROC_MW, WU = "MW")
-  ) %>% 
+    tibble(ROC_MW, WU = "MW")) %>% 
   mutate(
     calculation_ID = paste0(WU, calculation_number) %>% 
       as.factor() %>% 
@@ -86,14 +79,17 @@ ROC_all <-
   dplyr::select(dataset_ID, calculation_ID, everything()) %>% 
   arrange(dataset_ID, calculation_ID)
 
+# check the number of calculations
 ROC_all$calculation_ID %>% 
   unique() %>% 
   length()
 
+# check the number of datasets
 ROC_all$dataset_ID %>% 
   unique() %>% 
   length()
 
+# save merged file
 write_rds(
   ROC_all,
   "data/output/datasets/RoC/ROC_all.rds",
@@ -105,5 +101,7 @@ write_rds(
 
 perform_sim <-  .test.success.in.simulated.data(ROC_all)
 
-write_rds(perform_sim, "data/output/datasets/success_rate/sim_success.rds")
+write_rds(
+  perform_sim,
+  "data/output/datasets/success_rate/sim_success.rds")
 
