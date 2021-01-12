@@ -128,6 +128,20 @@ plot_site_C_roc_MW <- .plot.roc.curve(data_site_C_RoC_MW, roc_max = max_roc)
 plot_site_D_roc_MW <- .plot.roc.curve(data_site_D_RoC_MW, roc_max = max_roc)
 
 
+# position of Peak points in MW
+data_site_A_RoC_MW %>% 
+  filter(Peak == T)
+
+data_site_B_RoC_MW %>% 
+  filter(Peak == T)
+
+data_site_C_RoC_MW %>% 
+  filter(Peak == T)
+
+data_site_D_RoC_MW %>% 
+  filter(Peak == T)
+
+
 #----------------------------------------------------------#
 # 5. (Fig 4) Building the figure 4 -----
 #----------------------------------------------------------#
@@ -203,7 +217,7 @@ plot_site_D_full <-
     axis = "bt",
     rel_widths = c(rel_w_density, rel_w_pollen, rel_w_roc, rel_w_roc, rel_w_roc))
 
-figure_4 <-
+(figure_4 <-
   ggarrange(
     plot_site_A_full,
     plot_site_B_full,
@@ -212,7 +226,7 @@ figure_4 <-
     nrow = 4,
     labels = LETTERS[1:4],
     heights = c(1.5, 1, 1, 1.1),
-    legend = "none")
+    legend = "none"))
 
 ggsave(
   "data/output/figures/fig_4_raw.pdf",
