@@ -323,7 +323,7 @@ emmeans_correct_WU
       text = element_text(size = text_size))+
     labs(
       y = "Proportion of detected Working Units",
-      x = "Peak point detection method",
+      x = "Peak-point detection method",
       color = "",
       fill = ""))
 
@@ -354,6 +354,10 @@ ggsave("data/output/figures/fig_2_raw.pdf",
    bind_rows(
      emmeans_detail_correct_full_tibble,
      emmeans_detail_false_full_tibble) %>% 
+   mutate(
+     position = stringr::str_replace(position, " density level", "") ) %>% 
+   mutate(
+     position = factor(position, levels = c("low","high") )) %>% 
    ggplot(
      aes(
        y = response,
