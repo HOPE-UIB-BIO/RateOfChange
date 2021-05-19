@@ -33,8 +33,8 @@ data_sum <-
       position,
       levels = c("breaks_recent", "breaks_late")) %>%
       fct_recode(
-        "high density level" = "breaks_recent",
-        "low density level" = "breaks_late"),
+        "low density level" = "breaks_recent",
+        "high density level" = "breaks_late"),
     diversity = factor(
       diversity,
       levels = c("low_diversity", "high_diversity")) %>% 
