@@ -62,8 +62,8 @@ low_diversity <-  5
 high_diversity <-  50
 
 # position of the enviromental change in the sequence 
-breaks_recent <-  c(2000, 3000)
-breaks_late <-  c(5500, 6500)
+breaks_late <-  c(2000, 3000)
+breaks_recent <-  c(5500, 6500)
 
 # Number of simulated datasest of pollen data
 N_rep <-  100
