@@ -12,6 +12,6 @@ Next, we apply our new methodology to four representative European pollen sequen
 Expanding the approach using R-Ratepol to open-access paleoecological datasets in global databases, such as Neotoma, will allow future palaeoecological and macroecological studies to quantify major changes in biotic composition or in sets of abiotic variables across broad spatio-temporal scales. 
 
 
-##Reference:
+## Reference:
 
 Ondřej Mottl, John-Arvid Grytnes, Alistair W.R. Seddon, Manuel J. Steinbauer, Kuber P. Bhatta, Vivian A. Felde, Suzette G.A. Flantua, H. John B. Birks. Rate-of-change analysis in palaeoecology revisited: a new approach bioRxiv 2020.12.16.422943; doi: https://doi.org/10.1101/2020.12.16.422943
