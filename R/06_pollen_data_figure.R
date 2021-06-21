@@ -53,10 +53,6 @@ data_site_D_RoC_MW <-
 ROC_site_A_all_settings <-
   read_rds("data/output/datasets/RoC/ROC_site_A_all_settings.rds")
 
-bin_size_result <- 
-  read_rds("data/output/datasets/RoC/bin_size_result.rds")
-
-
 #----------------------------------------------------------#
 # 2. Extract pollen data  -----
 #----------------------------------------------------------#
@@ -110,22 +106,61 @@ plot_site_D_pollen <-
 
 
 # 4.3. RoC curve -----
-max_roc <- 1.5
+max_roc_levels <- 15
+max_roc_bins <- 1.1
+roc_ticks_levels <- 5
+roc_ticks_bins <- 0.5
 
-plot_site_A_roc_levels <- .plot.roc.curve(data_site_A_RoC_levels, roc_max = max_roc)
-plot_site_B_roc_levels <- .plot.roc.curve(data_site_B_RoC_levels, roc_max = max_roc)
-plot_site_C_roc_levels <- .plot.roc.curve(data_site_C_RoC_levels, roc_max = max_roc)
-plot_site_D_roc_levels <- .plot.roc.curve(data_site_D_RoC_levels, roc_max = max_roc)
+plot_site_A_roc_levels <- 
+  .plot.roc.curve(data_site_A_RoC_levels,
+                  roc_max = max_roc_levels,
+                  roc_ticks = roc_ticks_levels)
+plot_site_B_roc_levels <- 
+  .plot.roc.curve(data_site_B_RoC_levels,
+                  roc_max = max_roc_levels,
+                  roc_ticks = roc_ticks_levels)
+plot_site_C_roc_levels <- 
+  .plot.roc.curve(data_site_C_RoC_levels,
+                  roc_max = max_roc_levels,
+                  roc_ticks = roc_ticks_levels)
+plot_site_D_roc_levels <- 
+  .plot.roc.curve(data_site_D_RoC_levels,
+                  roc_max = max_roc_levels,
+                  roc_ticks = roc_ticks_levels)
 
-plot_site_A_roc_bins <- .plot.roc.curve(data_site_A_RoC_bins, roc_max = max_roc)
-plot_site_B_roc_bins <- .plot.roc.curve(data_site_B_RoC_bins, roc_max = max_roc)
-plot_site_C_roc_bins <- .plot.roc.curve(data_site_C_RoC_bins, roc_max = max_roc)
-plot_site_D_roc_bins <- .plot.roc.curve(data_site_D_RoC_bins, roc_max = max_roc)
+plot_site_A_roc_bins <- 
+  .plot.roc.curve(data_site_A_RoC_bins, 
+                  roc_max = max_roc_bins,
+                  roc_ticks = roc_ticks_bins)
+plot_site_B_roc_bins <- 
+  .plot.roc.curve(data_site_B_RoC_bins,
+                  roc_max = max_roc_bins,
+                  roc_ticks = roc_ticks_bins)
+plot_site_C_roc_bins <- 
+  .plot.roc.curve(data_site_C_RoC_bins,
+                  roc_max = max_roc_bins,
+                  roc_ticks = roc_ticks_bins)
+plot_site_D_roc_bins <- 
+  .plot.roc.curve(data_site_D_RoC_bins,
+                  roc_max = max_roc_bins,
+                  roc_ticks = roc_ticks_bins)
 
-plot_site_A_roc_MW <- .plot.roc.curve(data_site_A_RoC_MW, roc_max = max_roc)
-plot_site_B_roc_MW <- .plot.roc.curve(data_site_B_RoC_MW, roc_max = max_roc)
-plot_site_C_roc_MW <- .plot.roc.curve(data_site_C_RoC_MW, roc_max = max_roc)
-plot_site_D_roc_MW <- .plot.roc.curve(data_site_D_RoC_MW, roc_max = max_roc)
+plot_site_A_roc_MW <- 
+  .plot.roc.curve(data_site_A_RoC_MW,
+                  roc_max = max_roc_bins,
+                  roc_ticks = roc_ticks_bins)
+plot_site_B_roc_MW <- 
+  .plot.roc.curve(data_site_B_RoC_MW,
+                  roc_max = max_roc_bins,
+                  roc_ticks = roc_ticks_bins)
+plot_site_C_roc_MW <- 
+  .plot.roc.curve(data_site_C_RoC_MW,
+                  roc_max = max_roc_bins,
+                  roc_ticks = roc_ticks_bins)
+plot_site_D_roc_MW <- 
+  .plot.roc.curve(data_site_D_RoC_MW,
+                  roc_max = max_roc_bins,
+                  roc_ticks = roc_ticks_bins)
 
 
 # position of Peak points in MW
@@ -273,40 +308,3 @@ ggsave(
   width = pdf_width,
   units = pdf_units)
 
-#----------------------------------------------------------#
-# 6. (Fig S3) binning affect on RoC -----
-#----------------------------------------------------------#
-
-(figure_S3 <- 
-   bin_size_result %>%
-   ggplot() +
-   
-   geom_rug(
-     data = data_site_A$age_data,
-     aes(x = age),
-     sides = "b") +
-   
-   geom_line(
-     aes(
-       x = Age,
-       y= ROC,
-       group = bin,
-       color = bin)) +
-   
-   viridis::scale_colour_viridis(direction = -1) +
-   
-   theme(
-     line = element_line(size = line_size),
-     text = element_text(size = text_size)) +
-   
-   labs(
-     x ="Age (cal yr BP)",
-     y = "Rate-of-Change score",
-     color = "Bin size"))
-
-ggsave(
-  "data/output/figures/fig_S3_raw.pdf",
-  figure_S3,
-  height = pdf_height,
-  width = pdf_width,
-  units = pdf_units)

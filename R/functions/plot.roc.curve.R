@@ -1,4 +1,4 @@
-.plot.roc.curve <- function(data, roc_max = 2){
+.plot.roc.curve <- function(data, roc_max = 2, roc_ticks = 0.5){
   
   data_peak <-
     data %>% 
@@ -43,7 +43,7 @@
     
     scale_x_continuous(trans = "reverse") +
     scale_y_continuous(
-      breaks = seq(from = 0, to = roc_max, by = 0.5)
+      breaks = seq(from = 0, to = roc_max, by = roc_ticks)
     ) +
     
     coord_flip(

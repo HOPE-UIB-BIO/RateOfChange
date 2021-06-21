@@ -17,15 +17,15 @@ source("R/00_config.R")
 # 1. Simulate datasets -----
 #----------------------------------------------------------#
 
-# low diversity recent
+# low diversity early
 
-sim_ld_recent <- 
+sim_ld_early <- 
   .simulate.pollen.data.in.multiple.datasets(
     time = time_seq, 
     nforc = N_env, 
     nprox = low_diversity, 
     manual_edit = TRUE,
-    breaks = breaks_recent,
+    breaks = breaks_early,
     jitter = TRUE,
     rarity = TRUE,
     N_datasets = N_rep)
@@ -43,13 +43,13 @@ sim_ld_late <-
     N_datasets=N_rep)
 
 
-sim_hd_recent <- 
+sim_hd_early <- 
   .simulate.pollen.data.in.multiple.datasets(
     time=time_seq, 
     nforc=N_env, 
     nprox=high_diversity, 
     manual_edit = T,
-    breaks=breaks_recent,
+    breaks=breaks_early,
     jitter = T,
     rarity=T,
     N_datasets=N_rep)
@@ -75,9 +75,9 @@ simulated_dataset <-
   dpyr::bind_rows(
     
     tibble::tibble(
-      sim_ld_recent,
+      sim_ld_early,
       diversity = "low_diversity",
-      position = "breaks_recent"),
+      position = "breaks_early"),
     
     tibble::tibble(
       sim_ld_late,
@@ -85,9 +85,9 @@ simulated_dataset <-
       position = "breaks_late"),
     
     tibble::tibble(
-      sim_ld_recent,
+      sim_ld_early,
       diversity = "high_diversity",
-      position = "breaks_recent"),
+      position = "breaks_early"),
     
     tibble::tibble(
       sim_ld_late,

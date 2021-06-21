@@ -27,7 +27,7 @@ simulated_dataset <-
 
 ROC_levels <- 
   .estimate.RoC.by.all.methods(
-    simulated_dataset,
+    random_data = simulated_dataset,
     Working_Unit = "levels", 
     interest_threshold = 8000)
 

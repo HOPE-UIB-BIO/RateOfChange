@@ -31,9 +31,9 @@ data_sum <-
     
     position = factor(
       position,
-      levels = c("breaks_recent", "breaks_late")) %>%
+      levels = c("breaks_early", "breaks_late")) %>%
       fct_recode(
-        "low density level" = "breaks_recent",
+        "low density level" = "breaks_early",
         "high density level" = "breaks_late"),
     diversity = factor(
       diversity,
@@ -79,7 +79,6 @@ data_sum <-
       as.factor(),
     RoC_setting = paste0(smooth," - ",DC) %>% 
       as.factor()) 
-
 
 # explore data
 data_sum %>% 
@@ -326,9 +325,8 @@ mod_detail_correct_dd %>%
   View()
 
 mod_detail_correct_m1 <-  
-  glmmTMB(success ~ DC + position +  smooth + 
-            DC:position + DC:smooth + position:smooth + 
-            DC:position:smooth +  # fixed effets
+  glmmTMB(success ~ position + smooth +
+            position:smooth + # fixed effets
             (1|dataset_ID), # random effects
           data = data_detail_correct,
           family = beta_family(link = "logit")
@@ -336,18 +334,29 @@ mod_detail_correct_m1 <-
 
 
 mod_detail_correct_m2 <-  
-  glmmTMB(success ~ DC + diversity + position +  smooth + 
-            DC:position + DC:smooth + position:smooth + 
-            DC:position:smooth + # fixed effets
+  glmmTMB(success ~ DC + position + smooth +
+            position:smooth + # fixed effets
             (1|dataset_ID), # random effects
           data = data_detail_correct,
           family = beta_family(link = "logit")
   )
 
+mod_detail_correct_m3 <-  
+  glmmTMB(success ~ diversity + position + smooth +
+            position:smooth + # fixed effets
+            (1|dataset_ID), # random effects
+          data = data_detail_correct,
+          family = beta_family(link = "logit")
+  )
+
+
+
+
 mod_detail_correct_final_comp <-
   compare_performance(
     mod_detail_correct_m1,
     mod_detail_correct_m2,
+    mod_detail_correct_m3,
     rank = T)
 
 mod_detail_correct_final_comp
@@ -356,16 +365,17 @@ mod_detail_correct_final_comp %>%
   as_tibble() %>% 
   left_join(.,
             tibble(
-              Model = paste0("mod_detail_correct_m",1:2),
-              formula = lapply(paste0("mod_detail_correct_m",1:2), FUN = function(x) formula(get(x))) %>% 
+              Model = paste0("mod_detail_correct_m",1:nrow(mod_detail_correct_final_comp)),
+              formula = lapply(paste0("mod_detail_correct_m",1:nrow(mod_detail_correct_final_comp)),
+                               FUN = function(x) formula(get(x))) %>% 
                 as.character()),
             by = "Model") %>% 
   dplyr::select(formula, everything()) %>% 
   write_csv(
     .,"data/output/result_tables/mod_detail_correct_final_comp.csv")
 
-# -> model 1 is the best
-mod_detail_correct_select <-  mod_detail_correct_m1
+# -> model 2 is the best
+mod_detail_correct_select <-  mod_detail_correct_m2
 write_rds(mod_detail_correct_select,"data/output/models/mod_detail_correct_select.rds")
 
 #--------------------------------#
@@ -459,14 +469,14 @@ mod_detail_false_dd %>%
 
 mod_detail_false_m1 <- 
   glmmTMB(success ~ DC + position +  smooth + 
-            DC:smooth + position:smooth + 
+            position:smooth +
             (1|dataset_ID), # random effects
           data = data_detail_false,
           family = beta_family(link = "logit"))
 
 mod_detail_false_m2 <- 
   glmmTMB(success ~ DC + position +  smooth + 
-            DC:position + DC:smooth + position:smooth + 
+            DC:position + position:smooth + 
             DC:position:smooth + 
             (1|dataset_ID), # random effects
           data = data_detail_false,
@@ -474,60 +484,11 @@ mod_detail_false_m2 <-
   
 mod_detail_false_m3 <- 
   glmmTMB(success ~ DC + diversity + position +  smooth + 
-            DC:diversity + DC:smooth + position:smooth + 
-            (1|dataset_ID), # random effects
-          data = data_detail_false,
-          family = beta_family(link = "logit"))
-
-mod_detail_false_m4 <- 
-  glmmTMB(success ~ DC + diversity + position +  smooth + 
-            DC:diversity + DC:position + DC:smooth + position:smooth + 
-            DC:position:smooth +
-            (1|dataset_ID), # random effects
-          data = data_detail_false,
-          family = beta_family(link = "logit"))
-
-mod_detail_false_m5 <- 
-  glmmTMB(success ~ DC + position +  smooth + 
-            DC:position + DC:smooth + position:smooth + 
-            (1|dataset_ID), # random effects
-          data = data_detail_false,
-          family = beta_family(link = "logit"))
-
-mod_detail_false_m6 <- 
-  glmmTMB(success ~ DC + diversity + position +  smooth + 
-            DC:diversity + DC:position + DC:smooth + position:smooth + 
-            (1|dataset_ID), # random effects
-          data = data_detail_false,
-          family = beta_family(link = "logit"))
-
-mod_detail_false_m7 <- 
-  glmmTMB(success ~ DC + diversity + position +  smooth + 
-            DC:smooth + position:smooth + 
-            (1|dataset_ID), # random effects
-          data = data_detail_false,
-          family = beta_family(link = "logit"))
-
-mod_detail_false_m8 <- 
-  glmmTMB(success ~ DC + diversity + position +  smooth + 
-            DC:diversity + DC:smooth + diversity:position + position:smooth + 
-            (1|dataset_ID), # random effects
-          data = data_detail_false,
-          family = beta_family(link = "logit"))
-
-mod_detail_false_m9 <- 
-  glmmTMB(success ~  position +  smooth + 
             position:smooth + 
             (1|dataset_ID), # random effects
           data = data_detail_false,
           family = beta_family(link = "logit"))
 
-mod_detail_false_m10 <- 
-  glmmTMB(success ~ DC + position +  smooth + 
-            position:smooth + 
-            (1|dataset_ID), # random effects
-          data = data_detail_false,
-          family = beta_family(link = "logit"))
 
 
 mod_detail_false_final_comp <-
@@ -535,13 +496,6 @@ mod_detail_false_final_comp <-
     mod_detail_false_m1,
     mod_detail_false_m2,
     mod_detail_false_m3,
-    mod_detail_false_m4,
-    mod_detail_false_m5,
-    mod_detail_false_m6,
-    mod_detail_false_m7,
-    mod_detail_false_m8,
-    mod_detail_false_m9,
-    mod_detail_false_m10,
     rank = T)
 
 mod_detail_false_final_comp
@@ -550,8 +504,9 @@ mod_detail_false_final_comp %>%
   as_tibble() %>% 
   left_join(.,
             tibble(
-              Model = paste0("mod_detail_false_m",1:10),
-              formula = lapply(paste0("mod_detail_false_m",1:10), FUN = function(x) formula(get(x))) %>% 
+              Model = paste0("mod_detail_false_m",1:nrow(mod_detail_false_final_comp)),
+              formula = lapply(paste0("mod_detail_false_m",1:nrow(mod_detail_false_final_comp)),
+                               FUN = function(x) formula(get(x))) %>% 
                 as.character()),
             by = "Model") %>% 
   dplyr::select(formula, everything()) %>% 

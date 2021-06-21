@@ -63,18 +63,18 @@ high_diversity <-  50
 
 # position of the enviromental change in the sequence 
 breaks_late <-  c(2000, 3000)
-breaks_recent <-  c(5500, 6500)
+breaks_early <-  c(5500, 6500)
 
 # Number of simulated datasest of pollen data
 N_rep <-  100
 
 # template of time sequence with uneven distribution of points
-time_seq <-  data_example$list_ages[[4]]$ages$age
+time_seq <-  data_example$sample_age[[4]]$age
 
 
 # 3.2. ROC Rratepol setting -----
 age_lim <- 8e3
-roc_n_rand <- 10e3
+roc_n_rand <- 1e3
 pollen_grains <- 150
 
 
