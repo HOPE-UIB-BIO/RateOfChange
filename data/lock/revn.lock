@@ -1,10 +1,10 @@
 {
   "R": {
-    "Version": "4.0.3",
+    "Version": "4.0.1",
     "Repositories": [
       {
         "Name": "CRAN",
-        "URL": "https://cran.uib.no"
+        "URL": "https://cran.rstudio.com"
       }
     ]
   },
@@ -81,15 +81,9 @@
     },
     "RRatepol": {
       "Package": "RRatepol",
-      "Version": "0.4.6",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "R-Ratepol-package",
-      "RemoteUsername": "HOPE-UIB-BIO",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "ab1c7a4a42da225e91ef28141470eccc8dfc415e",
-      "Hash": "0c751530004049d53b9e3d2b748d2779"
+      "Version": "0.6.0",
+      "Source": "unknown",
+      "Hash": "46e7fc5b46b3e3e7cc234b92c022f0e2"
     },
     "Rcpp": {
       "Package": "Rcpp",
@@ -363,13 +357,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "1886c5bce3d9c0b4f9d0b113d76f9357"
-    },
-    "doSNOW": {
-      "Package": "doSNOW",
-      "Version": "1.0.18",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "e9a2bbaed801170abc3c6c8f1c1377e2"
     },
     "dplyr": {
       "Package": "dplyr",
@@ -692,13 +679,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "1bb58822a20301cee84a41678e25d9b7"
-    },
-    "maps": {
-      "Package": "maps",
-      "Version": "3.3.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "392212982257ea03c37b63547dc871b4"
     },
     "maptools": {
       "Package": "maptools",
@@ -1112,13 +1092,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "308013098befe37484df72c39cf90d6e"
-    },
-    "snow": {
-      "Package": "snow",
-      "Version": "0.4-3",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "11b822ad6214111a4188d5e5fd1b144c"
     },
     "sp": {
       "Package": "sp",

@@ -21,8 +21,13 @@
       repeat {
         try( data_temp <- 
                fc_estimate_RoC( 
-                 data_source_community =  random_data$community_data[[i]],
-                 data_source_age = random_data$list_ages[[i]],
+                 data_source_community =  random_data$community_data[[i]] %>% 
+                   dplyr::mutate(
+                     sample.id = as.character(dplyr::row_number())) %>% 
+                   dplyr::relocate(sample.id),
+                 data_source_age = random_data$list_ages[[i]] %>% 
+                   dplyr::mutate(
+                     sample.id = as.character(sample.id)),
                  age_uncertainty = F,
                  smooth_method  = performance_smooth[j],
                  smooth_N_points  = 5,
@@ -38,6 +43,7 @@
                  tranform_to_proportions = T,
                  DC  = performance_DC[j],
                  interest_threshold  = interest_threshold, 
+                 time_standardisation = 500,
                  Debug  = F) %>%
                as_tibble(),
              silent = T )

@@ -32,6 +32,7 @@
             DC = y,
             treads = T,
             interest_threshold  = age_lim,
+            time_standardisation = 500,
             Debug = F)
         roc_peak <-
           RRatepol::fc_detect_peak_points(roc_score,method = "trend_non_linear")
